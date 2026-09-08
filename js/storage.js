@@ -38,6 +38,9 @@ function leadParaLinhaSupabase(l) {
         usuario_id: l.usuarioId || null,
         historico: l.historico || [],
         orcamento_anexos: l.orcamentoAnexos || [],
+        orcamento_pdf_principal: l.orcamentoPdfPrincipal || null,
+        orcamento_modo: l.orcamentoModo || 'pdf',
+        orcamento_reset_em: l.orcamentoResetEm || null,
         data_entrada_etapa: l.dataEntradaEtapa || l.dataCriacao || new Date().toISOString(),
         card_obs: l.cardObs || '',
         autorizacao_pedido_id: l.autorizacaoPedidoId || null,
@@ -79,6 +82,9 @@ function linhaSupabaseParaLead(r) {
         usuarioId: r.usuario_id,
         historico: r.historico || [],
         orcamentoAnexos: r.orcamento_anexos || [],
+        orcamentoPdfPrincipal: r.orcamento_pdf_principal || null,
+        orcamentoModo: r.orcamento_modo || 'pdf',
+        orcamentoResetEm: r.orcamento_reset_em || null,
         dataEntradaEtapa: r.data_entrada_etapa,
         cardObs: r.card_obs || '',
         autorizacaoPedidoId: r.autorizacao_pedido_id || null,
@@ -285,16 +291,22 @@ async function salvarDados() {
         if (error) {
             console.error('Erro ao salvar leads no Supabase:', error);
             const msg = (error.message || '') + ' ' + (error.details || '') + ' ' + (error.code || '');
-            if (/PGRST204|cnpj|classificacao|column .* does not exist|schema cache/i.test(msg)) {
+            if (/PGRST204|cnpj|classificacao|orcamento|column .* does not exist|schema cache/i.test(msg)) {
+                // Identifica dinamicamente coluna ausente ou limpa as colunas mais recentes para não travar a aplicação
                 const linhasCompatibilidade = linhas.map(linha => {
                     const clone = { ...linha };
                     delete clone.cnpj;
                     delete clone.classificacao;
+                    delete clone.orcamento_pdf_principal;
+                    delete clone.orcamento_modo;
+                    delete clone.orcamento_reset_em;
                     return clone;
                 });
                 const retry = await supabaseClient.from('leads').upsert(linhasCompatibilidade, { onConflict: 'id' });
                 if (retry.error) {
                     console.error('Erro no fallback do Supabase:', retry.error);
+                } else {
+                    console.info('Leads salvos com fallback de compatibilidade do Supabase.');
                 }
             } else {
                 showToast('Erro ao salvar no banco de dados: ' + error.message, 'error');
