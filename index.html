@@ -1050,6 +1050,9 @@
                     <button class="btn btn-warning btn-sm rel-btn-action" onclick="mudarSubAbaRelatorio('orcamentos-abertos')" title="Visualizar relatório detalhado de orçamentos em aberto e dias de aging">
                         <span class="rel-btn-icon">⏳</span> Orçamentos em Aberto
                     </button>
+                    <button class="btn btn-primary btn-sm rel-btn-action" onclick="mudarSubAbaRelatorio('produtos')" title="Visualizar produtos mais orçados e mais vendidos com filtros de data e classificação">
+                        <span class="rel-btn-icon">📦</span> Produtos Mais Orçados & Vendidos
+                    </button>
                     <button class="btn btn-danger btn-sm rel-btn-action" onclick="mudarSubAbaRelatorio('orcamentos-perdidos')" title="Visualizar relatório detalhado de orçamentos perdidos e motivos por período">
                         <span class="rel-btn-icon">📉</span> Orçamentos Perdidos
                     </button>
@@ -1110,6 +1113,9 @@
             <nav class="rel-fluid-tabs-bar" aria-label="Abas de relatórios">
                 <button type="button" class="rel-tab-nav-btn active" data-tab="visao-geral" onclick="mudarSubAbaRelatorio('visao-geral')">
                     <span class="rel-tab-icon">📊</span> Visão Geral & Metas
+                </button>
+                <button type="button" class="rel-tab-nav-btn" data-tab="produtos" onclick="mudarSubAbaRelatorio('produtos')">
+                    <span class="rel-tab-icon">📦</span> Produtos Mais Orçados & Vendidos
                 </button>
                 <button type="button" class="rel-tab-nav-btn" data-tab="orcamentos-abertos" onclick="mudarSubAbaRelatorio('orcamentos-abertos')">
                     <span class="rel-tab-icon">⏳</span> Orçamentos em Aberto (Aging)
@@ -1370,6 +1376,105 @@
             <div id="rel-pane-gestao-comercial" class="rel-tab-pane">
                 <div class="relatorio-card mb-16" id="relIndicadoresGestaoContainer"></div>
                 <div class="relatorio-card mb-16" id="relInsightsLeadsContainer"></div>
+            </div>
+
+            <!-- Aba 6: Produtos Mais Orçados & Mais Vendidos -->
+            <div id="rel-pane-produtos" class="rel-tab-pane">
+                <div class="rel-painel-detalhado mb-16">
+                    <div class="rel-painel-detalhado-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border-color);">
+                        <div>
+                            <h3 style="margin:0;font-size:18px;display:flex;align-items:center;gap:8px;color:var(--text-primary);">
+                                <span>📦 Relatório de Produtos Mais Orçados & Mais Vendidos</span>
+                            </h3>
+                            <p class="text-xs text-muted" style="margin:4px 0 0 0;">
+                                Análise inteligente de SKUs, volumes orçados, pedidos fechados e taxa de conversão por produto com filtros de data e classificação.
+                            </p>
+                        </div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button class="btn btn-outline btn-sm" onclick="exportarCsvProdutos()" title="Exportar dados consolidados em planilha CSV">
+                                📊 Exportar CSV
+                            </button>
+                            <button class="btn btn-primary btn-sm" onclick="imprimirRelatorioProdutos()" title="Imprimir relatório executivo ou salvar em PDF">
+                                🖨️ Imprimir / Salvar PDF
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filtros Rápidos de Período e Navegação -->
+                    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;background:var(--bg-input,#f8fafc);padding:10px 14px;border-radius:var(--radius);border:1px solid var(--border-color);">
+                        <div class="rel-periodo-pills rel-produtos-pills" style="display:flex;gap:6px;flex-wrap:wrap;">
+                            <button type="button" class="rel-pill-btn" data-periodo="hoje" onclick="mudarPeriodoProdutosRapido('hoje')">Hoje</button>
+                            <button type="button" class="rel-pill-btn" data-periodo="semana" onclick="mudarPeriodoProdutosRapido('semana')">Semana</button>
+                            <button type="button" class="rel-pill-btn active" data-periodo="mes" onclick="mudarPeriodoProdutosRapido('mes')">Mês</button>
+                            <button type="button" class="rel-pill-btn" data-periodo="trimestre" onclick="mudarPeriodoProdutosRapido('trimestre')">Trimestre</button>
+                            <button type="button" class="rel-pill-btn" data-periodo="semestre" onclick="mudarPeriodoProdutosRapido('semestre')">Semestre</button>
+                            <button type="button" class="rel-pill-btn" data-periodo="ano" onclick="mudarPeriodoProdutosRapido('ano')">Ano</button>
+                            <button type="button" class="rel-pill-btn" data-periodo="todos" onclick="mudarPeriodoProdutosRapido('todos')">Todo Período</button>
+                            <button type="button" class="rel-pill-btn" data-periodo="personalizado" onclick="mudarPeriodoProdutosRapido('personalizado')">Personalizado</button>
+                        </div>
+
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <button type="button" class="btn btn-outline btn-xs" onclick="mudarOffsetProdutos(-1)" title="Período anterior">◀</button>
+                            <strong id="relProdutosPeriodoLabel" style="font-size:13px;color:var(--text-primary);min-width:140px;text-align:center;">Mês Atual</strong>
+                            <button type="button" class="btn btn-outline btn-xs" onclick="mudarOffsetProdutos(1)" title="Próximo período">▶</button>
+                        </div>
+                    </div>
+
+                    <!-- Caixa de Período Personalizado (oculta por padrão) -->
+                    <div id="relProdutosPersonalizadoBox" style="display:none;gap:10px;align-items:center;margin-bottom:14px;background:var(--bg-card);padding:10px 14px;border:1px solid var(--border-color);border-radius:var(--radius);flex-wrap:wrap;">
+                        <label class="text-xs" style="font-weight:600;">De:</label>
+                        <input type="date" id="relProdutosDataInicio" class="form-control" style="width:auto;font-size:12px;padding:4px 8px;" onchange="aplicarFiltroProdutosPersonalizado()">
+                        <label class="text-xs" style="font-weight:600;">Até:</label>
+                        <input type="date" id="relProdutosDataFim" class="form-control" style="width:auto;font-size:12px;padding:4px 8px;" onchange="aplicarFiltroProdutosPersonalizado()">
+                        <button class="btn btn-primary btn-xs" onclick="aplicarFiltroProdutosPersonalizado()">Filtrar Datas</button>
+                    </div>
+
+                    <!-- Linha de Filtros: Classificação, Vendedor, Ordenação e Busca -->
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px;">
+                        <!-- Filtro de Classificação -->
+                        <div>
+                            <label class="text-xs text-muted" style="display:block;margin-bottom:4px;font-weight:600;">Classificação do Lead</label>
+                            <select id="relProdutosFiltroClassificacao" class="form-control" style="font-size:12.5px;height:36px;" onchange="mudarFiltrosProdutosPainel()">
+                                <option value="">Todas as classificações</option>
+                                <option value="consumidor">Consumidor Final</option>
+                                <option value="revendedor">Revenda / Comércio</option>
+                                <option value="distribuidor">Distribuidor</option>
+                                <option value="industrializacao">Industrialização</option>
+                                <option value="outros">Outros</option>
+                            </select>
+                        </div>
+
+                        <!-- Filtro de Vendedor -->
+                        <div>
+                            <label class="text-xs text-muted" style="display:block;margin-bottom:4px;font-weight:600;">Vendedor Responsável</label>
+                            <select id="relProdutosFiltroVendedor" class="form-control" style="font-size:12.5px;height:36px;" onchange="mudarFiltrosProdutosPainel()">
+                                <option value="">Todos os vendedores</option>
+                            </select>
+                        </div>
+
+                        <!-- Ordenação -->
+                        <div>
+                            <label class="text-xs text-muted" style="display:block;margin-bottom:4px;font-weight:600;">Ordenar Resultados Por</label>
+                            <select id="relProdutosOrdenacao" class="form-control" style="font-size:12.5px;height:36px;" onchange="mudarFiltrosProdutosPainel()">
+                                <option value="orcadosQtdDesc">Mais Orçados (Quantidade)</option>
+                                <option value="orcadosValorDesc">Mais Orçados (Valor Total)</option>
+                                <option value="vendidosQtdDesc">Mais Vendidos (Quantidade)</option>
+                                <option value="vendidosValorDesc">Mais Vendidos (Valor Total)</option>
+                                <option value="conversaoDesc">Maior Taxa de Conversão</option>
+                                <option value="nomeAsc">Nome do Produto (A-Z)</option>
+                            </select>
+                        </div>
+
+                        <!-- Busca Textual -->
+                        <div>
+                            <label class="text-xs text-muted" style="display:block;margin-bottom:4px;font-weight:600;">Buscar Produto / Código</label>
+                            <input type="text" id="relProdutosBusca" class="form-control" placeholder="Buscar por descrição, código ou NCM..." style="font-size:12.5px;height:36px;" oninput="mudarFiltrosProdutosPainel()">
+                        </div>
+                    </div>
+
+                    <!-- Container Dinâmico com os Cards, Gráficos e Tabela de Produtos -->
+                    <div id="relProdutosPainel"></div>
+                </div>
             </div>
 
             <!-- Elementos técnicos invisíveis para compatibilidade e integridade de queries JS -->
@@ -2784,6 +2889,7 @@ npx @open-wa/wa-automate -p 8080 --popup
     <script src="js/comunicacao.js"></script>
     <script src="js/relatorios.js"></script>
     <script src="js/relatorios-detalhados.js"></script>
+    <script src="js/relatorio-produtos.js"></script>
     <script src="js/import-export.js"></script>
     <script src="js/categorias-produtos.js"></script>
     <script src="js/relatorios-avancados.js"></script>

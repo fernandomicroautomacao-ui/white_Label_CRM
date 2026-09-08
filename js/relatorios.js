@@ -511,6 +511,11 @@ function mudarSubAbaRelatorio(tabId) {
             renderizarRelatorioPerdidosMotivos();
         }
     }
+    if (tabId === 'produtos' || tabId === 'visao-completa') {
+        if (typeof renderizarRelatorioProdutos === 'function') {
+            renderizarRelatorioProdutos();
+        }
+    }
 }
 
 function inicializarSubAbasRelatorio() {
@@ -644,6 +649,9 @@ function renderizarRelatorios() {
     }
     if (typeof renderizarRelatorioPerdidosMotivos === 'function') {
         renderizarRelatorioPerdidosMotivos();
+    }
+    if (typeof renderizarRelatorioProdutos === 'function') {
+        renderizarRelatorioProdutos();
     }
 }
 
