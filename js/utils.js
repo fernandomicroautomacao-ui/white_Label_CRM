@@ -21,6 +21,64 @@ function formatarMoeda(valor) {
     return 'R$ ' + Number(valor).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+// Copia texto para a área de transferência com feedback visual (Toast) e fallback
+function copiarTexto(texto, mensagemSucesso = 'Copiado para a área de transferência!') {
+    if (!texto || String(texto).trim() === '' || String(texto).trim() === '—' || String(texto).trim() === 'N/A') {
+        showToast('Nenhum código para copiar.', 'error');
+        return;
+    }
+    const textoLimpo = String(texto).trim();
+
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(textoLimpo)
+            .then(() => {
+                showToast(mensagemSucesso, 'success');
+            })
+            .catch(() => {
+                fallbackCopiarTexto(textoLimpo, mensagemSucesso);
+            });
+    } else {
+        fallbackCopiarTexto(textoLimpo, mensagemSucesso);
+    }
+}
+
+function fallbackCopiarTexto(texto, mensagemSucesso) {
+    try {
+        const textarea = document.createElement('textarea');
+        textarea.value = texto;
+        textarea.style.position = 'fixed';
+        textarea.style.top = '0';
+        textarea.style.left = '0';
+        textarea.style.width = '2em';
+        textarea.style.height = '2em';
+        textarea.style.padding = '0';
+        textarea.style.border = 'none';
+        textarea.style.outline = 'none';
+        textarea.style.boxShadow = 'none';
+        textarea.style.background = 'transparent';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        if (ok) {
+            showToast(mensagemSucesso, 'success');
+        } else {
+            showToast('Não foi possível copiar automaticamente.', 'error');
+        }
+    } catch (err) {
+        showToast('Erro ao copiar texto.', 'error');
+    }
+}
+
+function copiarCodigoUnico(event, codigo) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    copiarTexto(codigo, `Código "${codigo}" copiado com sucesso!`);
+}
+
 function hoje() {
     return new Date().toISOString().split('T')[0];
 }

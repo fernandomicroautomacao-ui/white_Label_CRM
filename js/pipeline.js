@@ -105,7 +105,7 @@ function renderizarPipeline() {
                             </span>
                             ${classifBadge}
                         </div>
-                        ${lead.codigoUnico ? `<div class="card-badge">${lead.codigoUnico}</div>` : ''}
+                        ${lead.codigoUnico ? `<div class="card-badge info-badge-copiavel" onclick="copiarCodigoUnico(event, '${lead.codigoUnico}')" title="Clique para copiar o Código Único" style="cursor:pointer;">${lead.codigoUnico} <span style="opacity:0.6;font-size:9px;">📋</span></div>` : ''}
                         ${lead.autorizacaoPedidoStatus === 'assinado' ? `<div class="card-assinado-badge" title="Pedido assinado pelo cliente">✓ Pedido assinado</div>` : ''}
                         <div class="card-data-row">
                             <span>Nesta etapa desde ${formatarData(lead.dataEntradaEtapa || lead.dataCriacao)}</span>

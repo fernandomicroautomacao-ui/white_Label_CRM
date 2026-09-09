@@ -713,7 +713,11 @@ function renderizarRelatorioAbc() {
                         <strong style="color:var(--text-primary);display:block;">${c.empresa}</strong>
                         <span class="text-xs text-muted">${c.decisor || '—'} • ${c.cidade}/${c.estado} • Vendedor: ${c.vendedorNome}</span>
                     </td>
-                    <td style="padding:8px 12px;font-family:monospace;font-size:11.5px;color:var(--text-secondary);">${c.codigoUnico}</td>
+                    <td style="padding:8px 12px;font-family:monospace;font-size:11.5px;color:var(--text-secondary);">
+                        <span class="info-badge-copiavel" onclick="copiarCodigoUnico(event, '${c.codigoUnico}')" title="Clique para copiar o Código Único" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+                            ${c.codigoUnico} <span style="opacity:0.6;font-size:10px;">📋</span>
+                        </span>
+                    </td>
                     <td style="padding:8px 12px;">
                         <span class="card-classif-badge" style="color:${classifObj.cor};background:${classifObj.bg};border:1px solid ${classifObj.cor}33;font-size:11px;padding:2px 6px;">
                             ${classifObj.label}

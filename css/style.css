@@ -4739,6 +4739,38 @@ tr.tratado-row td {
     word-break: break-word;
 }
 
+/* ============================================
+   CÓDIGO ÚNICO COPIÁVEL COM FEEDBACK VISUAL
+   ============================================ */
+.info-badge-copiavel {
+    cursor: pointer !important;
+    position: relative;
+    user-select: none;
+    transition: all 0.15s ease-in-out;
+}
+
+.info-badge-copiavel:hover {
+    filter: brightness(1.15);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.info-badge-copiavel:active {
+    transform: scale(0.96);
+    filter: brightness(0.9);
+}
+
+.info-badge-copiavel .badge-copiar-icon {
+    display: inline-block;
+    transition: transform 0.15s ease;
+}
+
+.info-badge-copiavel:hover .badge-copiar-icon {
+    transform: scale(1.2);
+    opacity: 1 !important;
+}
+
+
 
 
 

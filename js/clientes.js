@@ -69,7 +69,7 @@ function renderizarClientes() {
                 ${c.whatsapp ? `${c.whatsapp}<br>` : ''}
                 ${c.email ? `${c.email}` : ''}
             </td>
-            <td><span class="numero-pedido" style="font-family:monospace;font-weight:600;">${c.codigoUnico || 'N/A'}</span></td>
+            <td><span class="numero-pedido info-badge-copiavel" style="font-family:monospace;font-weight:600;cursor:pointer;" onclick="copiarCodigoUnico(event, '${c.codigoUnico || ''}')" title="Clique para copiar o Código Único">${c.codigoUnico || 'N/A'} <span style="opacity:0.6;font-size:10px;">📋</span></span></td>
             <td style="font-weight:700;color:var(--stage-pedido);">
                 ${formatarMoeda(c.valorTotal)}
                 <div class="text-muted" style="font-size:10px;font-weight:400;">${c.contagem} pedido(s)</div>
@@ -140,7 +140,14 @@ function abrirModalCliente(leadId) {
     const classifPrincipal = CLASSIFICACOES_LEAD.find(c => c.id === (principal.classificacao || 'outros')) || CLASSIFICACOES_LEAD[4];
     const html = `
         <div class="cliente-info-grid">
-            <div class="info-item"><span class="info-item-label">Código Único</span><span class="info-item-value"><span class="info-badge">${codigo}</span></span></div>
+            <div class="info-item">
+                <span class="info-item-label">Código Único</span>
+                <span class="info-item-value">
+                    <span class="info-badge info-badge-copiavel" onclick="copiarCodigoUnico(event, '${codigo}')" title="Clique para copiar o Código Único">
+                        ${codigo} <span class="badge-copiar-icon" style="opacity:0.7;margin-left:4px;font-size:11px;">📋</span>
+                    </span>
+                </span>
+            </div>
             <div class="info-item"><span class="info-item-label">Empresa</span><span class="info-item-value">${principal.empresa}</span></div>
             <div class="info-item"><span class="info-item-label">Classificação</span><span class="info-item-value"><span class="card-classif-badge" style="color:${classifPrincipal.cor};background:${classifPrincipal.bg};border:1px solid ${classifPrincipal.cor}33;cursor:pointer;" onclick="alterarClassificacaoRapida(event, '${principal.id}');abrirModalCliente('${principal.id}');" title="Clique para alterar classificação">${classifPrincipal.label} ▾</span></span></div>
             <div class="info-item"><span class="info-item-label">Decisor</span><span class="info-item-value">${principal.decisor || '—'}</span></div>
