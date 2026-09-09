@@ -90,7 +90,7 @@ function renderizarPipeline() {
                         ? `<div class="card-vendedor-badge" style="background:${corAvatar(vendedor.nome)};" title="Vendedor: ${vendedor.nome}">${iniciais(vendedor.nome)}</div>`
                         : '';
                     const classifObj = CLASSIFICACOES_LEAD.find(c => c.id === (lead.classificacao || 'outros')) || CLASSIFICACOES_LEAD[4];
-                    const classifBadge = `<span class="card-classif-badge" style="color:${classifObj.cor};background:${classifObj.bg};border:1px solid ${classifObj.cor}33;" title="Classificação: ${classifObj.label}">${classifObj.label}</span>`;
+                    const classifBadge = `<span class="card-classif-badge" style="color:${classifObj.cor};background:${classifObj.bg};border:1px solid ${classifObj.cor}33;cursor:pointer;" onclick="alterarClassificacaoRapida(event, '${lead.id}')" title="Classificação: ${classifObj.label} (clique para alterar)">${classifObj.label} ▾</span>`;
                     return `
                     <div class="pipeline-card ${lead.etapa}"
                          draggable="true"
@@ -128,6 +128,7 @@ function renderizarPipeline() {
                                         <button onclick="fecharCardMenus();abrirEnvioEmail('${lead.id}')">Enviar Email</button>
                                         <button onclick="fecharCardMenus();abrirEnvioWhatsApp('${lead.id}')">Enviar WhatsApp</button>
                                         ${showItens ? `<button onclick="fecharCardMenus();abrirItens('${lead.id}','${lead.etapa}')">Itens/Orçamento</button>` : ''}
+                                        <button onclick="fecharCardMenus();alterarClassificacaoRapida(null, '${lead.id}')">Alterar Classificação</button>
                                         <button onclick="fecharCardMenus();editarObsCard('${lead.id}')">Observação rápida</button>
                                         ${lead.etapa === 'orcamento' ? `<button onclick="fecharCardMenus();resetarContagemOrcamento('${lead.id}')">Resetar contagem Orçamento</button>` : ''}
                                         <button onclick="fecharCardMenus();abrirModalMotivo('${lead.id}')" class="danger">Excluir</button>
@@ -213,8 +214,40 @@ function resetarContagemOrcamento(leadId) {
 }
 
 // ============================================
-// OBSERVAÇÃO RÁPIDA DO CARD
+// OBSERVAÇÃO RÁPIDA DO CARD E CLASSIFICAÇÃO
 // ============================================
+function alterarClassificacaoRapida(e, leadId) {
+    if (e) e.stopPropagation();
+    const lead = leads.find(l => l.id === leadId);
+    if (!lead) return;
+    if (usuarioAtual.papel !== 'admin' && lead.usuarioId !== usuarioAtual.id) {
+        showToast('Você não tem permissão para editar este card.', 'error');
+        return;
+    }
+
+    const opcoes = CLASSIFICACOES_LEAD.map((c, i) => `${i + 1} - ${c.label}`).join('\n');
+    const resp = prompt(`Selecione a nova classificação para "${lead.empresa}":\n\n${opcoes}\n\nDigite o número (1 a 5):`);
+    if (!resp) return;
+
+    const idx = parseInt(resp.trim(), 10) - 1;
+    if (idx >= 0 && idx < CLASSIFICACOES_LEAD.length) {
+        const novaClassif = CLASSIFICACOES_LEAD[idx].id;
+        lead.classificacao = novaClassif;
+        if (!Array.isArray(lead.historico)) lead.historico = [];
+        lead.historico.push({
+            data: hoje(),
+            hora: new Date().toTimeString().slice(0, 5),
+            tipo: 'Registro',
+            descricao: `Classificação alterada para "${CLASSIFICACOES_LEAD[idx].label}" por ${usuarioAtual.nome || usuarioAtual.email}`
+        });
+        salvarDados();
+        renderizarAll();
+        showToast(`Classificação alterada para ${CLASSIFICACOES_LEAD[idx].label}!`);
+    } else {
+        showToast('Opção de classificação inválida.', 'error');
+    }
+}
+
 function editarObsCard(leadId) {
     const lead = leads.find(l => l.id === leadId);
     if (!lead) return;

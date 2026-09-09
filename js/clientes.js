@@ -142,7 +142,7 @@ function abrirModalCliente(leadId) {
         <div class="cliente-info-grid">
             <div class="info-item"><span class="info-item-label">Código Único</span><span class="info-item-value"><span class="info-badge">${codigo}</span></span></div>
             <div class="info-item"><span class="info-item-label">Empresa</span><span class="info-item-value">${principal.empresa}</span></div>
-            <div class="info-item"><span class="info-item-label">Classificação</span><span class="info-item-value"><span class="card-classif-badge" style="color:${classifPrincipal.cor};background:${classifPrincipal.bg};border:1px solid ${classifPrincipal.cor}33;">${classifPrincipal.label}</span></span></div>
+            <div class="info-item"><span class="info-item-label">Classificação</span><span class="info-item-value"><span class="card-classif-badge" style="color:${classifPrincipal.cor};background:${classifPrincipal.bg};border:1px solid ${classifPrincipal.cor}33;cursor:pointer;" onclick="alterarClassificacaoRapida(event, '${principal.id}');abrirModalCliente('${principal.id}');" title="Clique para alterar classificação">${classifPrincipal.label} ▾</span></span></div>
             <div class="info-item"><span class="info-item-label">Decisor</span><span class="info-item-value">${principal.decisor || '—'}</span></div>
             <div class="info-item"><span class="info-item-label">Telefone</span><span class="info-item-value">${principal.telefone || '—'}</span></div>
             <div class="info-item"><span class="info-item-label">WhatsApp</span><span class="info-item-value">${principal.whatsapp || '—'}</span></div>

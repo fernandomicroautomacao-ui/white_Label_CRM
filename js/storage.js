@@ -177,7 +177,25 @@ async function carregarDados() {
     }
     leadsIdsCarregados = new Set(leads.map(l => l.id));
 
+    let cacheLocalLeads = [];
+    try {
+        const rawCache = localStorage.getItem('ploomesLeadsCache');
+        if (rawCache) cacheLocalLeads = JSON.parse(rawCache);
+    } catch (e) {}
+
+    const mapaCache = new Map(cacheLocalLeads.map(cl => [cl.id, cl]));
+
     leads = leads.map(l => {
+        const itemCache = mapaCache.get(l.id);
+        if ((!l.classificacao || l.classificacao === 'outros') && itemCache && itemCache.classificacao && itemCache.classificacao !== 'outros') {
+            l.classificacao = itemCache.classificacao;
+        }
+        if (!l.orcamentoPdfPrincipal && itemCache && itemCache.orcamentoPdfPrincipal) {
+            l.orcamentoPdfPrincipal = itemCache.orcamentoPdfPrincipal;
+        }
+        if ((!l.itens || l.itens.length === 0) && itemCache && Array.isArray(itemCache.itens) && itemCache.itens.length > 0) {
+            l.itens = itemCache.itens;
+        }
         if (!l.codigoUnico) l.codigoUnico = l.empresa ? l.empresa.trim().toLowerCase().replace(
             /\s+/g, '-') : l.id;
         if (!l.historico) l.historico = [];
@@ -260,6 +278,10 @@ async function carregarDados() {
 }
 
 async function salvarDados() {
+    try {
+        localStorage.setItem('ploomesLeadsCache', JSON.stringify(leads || []));
+    } catch (e) {}
+
     localStorage.setItem('ploomesLeadsV5', JSON.stringify({
         modelos,
         campanhas,
