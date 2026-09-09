@@ -516,6 +516,11 @@ function mudarSubAbaRelatorio(tabId) {
             renderizarRelatorioProdutos();
         }
     }
+    if (tabId === 'curva-abc' || tabId === 'visao-completa') {
+        if (typeof renderizarRelatorioAbc === 'function') {
+            renderizarRelatorioAbc();
+        }
+    }
 }
 
 function inicializarSubAbasRelatorio() {
