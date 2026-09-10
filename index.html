@@ -1123,6 +1123,15 @@
                 <button type="button" class="rel-tab-nav-btn" data-tab="curva-abc" onclick="mudarSubAbaRelatorio('curva-abc')">
                     <span class="rel-tab-icon">📈</span> Curva ABC (Pareto)
                 </button>
+                <button type="button" class="rel-tab-nav-btn" data-tab="frequencia-cnpj" onclick="mudarSubAbaRelatorio('frequencia-cnpj')">
+                    <span class="rel-tab-icon">⚖️</span> Confronto Orçamentos x Pedidos
+                </button>
+                <button type="button" class="rel-tab-nav-btn" data-tab="matriz-esforco" onclick="mudarSubAbaRelatorio('matriz-esforco')">
+                    <span class="rel-tab-icon">🎯</span> Matriz Esforço x Retorno
+                </button>
+                <button type="button" class="rel-tab-nav-btn" data-tab="ciclo-fechamento" onclick="mudarSubAbaRelatorio('ciclo-fechamento')">
+                    <span class="rel-tab-icon">⏱️</span> Ciclo Médio de Fechamento
+                </button>
                 <button type="button" class="rel-tab-nav-btn" data-tab="orcamentos-abertos" onclick="mudarSubAbaRelatorio('orcamentos-abertos')">
                     <span class="rel-tab-icon">⏳</span> Orçamentos em Aberto (Aging)
                 </button>
@@ -1597,6 +1606,243 @@
 
                     <!-- Container Dinâmico com a Curva ABC -->
                     <div id="relAbcPainel"></div>
+                </div>
+            </div>
+
+            <!-- Aba NOVA: Confronto de Orçamentos x Pedidos de Venda (Valores Absolutos) -->
+            <div id="rel-pane-frequencia-cnpj" class="rel-tab-pane">
+                <div class="rel-painel-detalhado mb-16">
+                    <!-- Cabeçalho do Painel Confronto de Orçamentos x Pedidos -->
+                    <div class="rel-painel-detalhado-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border-color);">
+                        <div>
+                            <h3 style="margin:0;font-size:18px;display:flex;align-items:center;gap:8px;color:var(--text-primary);">
+                                <span>⚖️ Confronto de Orçamentos x Pedidos de Venda</span>
+                            </h3>
+                            <p class="text-xs text-muted" style="margin:4px 0 0 0;">
+                                Análise em <strong>valores absolutos acumulados</strong> (sem limitação periódica). Confronto direto entre o que foi cotado e o que foi efetivamente fechado em pedidos de venda.
+                            </p>
+                        </div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button class="btn btn-outline btn-sm" onclick="exportarCsvFrequenciaCnpj()" title="Exportar dados de confronto em planilha CSV">
+                                📊 Exportar CSV
+                            </button>
+                            <button class="btn btn-primary btn-sm" onclick="imprimirRelatorioFrequenciaCnpj()" title="Imprimir relatório analítico ou salvar em PDF">
+                                🖨️ Imprimir / Salvar PDF
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Barra Superior: Alternador de Visão (Consolidado x Linha a Linha) e Status -->
+                    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;background:var(--bg-input,#f8fafc);padding:10px 14px;border-radius:var(--radius);border:1px solid var(--border-color);">
+                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                            <span style="font-size:12px;font-weight:700;color:var(--text-secondary);margin-right:4px;">Modo de Visualização:</span>
+                            <button id="btnConfrontoVisaoConsolidado" type="button" class="btn btn-primary btn-sm" onclick="mudarVisaoConfronto('consolidado')">
+                                🏢 Consolidado por CNPJ
+                            </button>
+                            <button id="btnConfrontoVisaoLinhas" type="button" class="btn btn-outline btn-sm" onclick="mudarVisaoConfronto('linha_a_linha')">
+                                📑 Linha a Linha (Orçamento x Pedido)
+                            </button>
+                        </div>
+
+                        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted);">
+                            <span>📍 Base de Dados:</span>
+                            <strong style="color:var(--text-primary);">Histórico Absoluto Completo</strong>
+                        </div>
+                    </div>
+
+                    <!-- Linha de Filtros: Status do Confronto, Classificação, Vendedor, Ordenação e Busca -->
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px;">
+                        <!-- Filtro de Status do Confronto -->
+                        <div>
+                            <label class="text-xs text-muted" style="display:block;margin-bottom:4px;font-weight:600;">Status do Confronto</label>
+                            <select id="relFreqCnpjFiltroStatus" class="form-control" style="font-size:12px;height:36px;" onchange="mudarFiltrosFreqCnpjPainel()">
+                                <option value="">Todos os status</option>
+                                <option value="fechado">🟢 Apenas Pedidos Fechados</option>
+                                <option value="aberto">🔵 Apenas Orçamentos em Aberto</option>
+                                <option value="perdido">🔴 Apenas Orçamentos Perdidos</option>
+                                <option value="divergencia">🟡 Com Desconto ou Acréscimo</option>
+                            </select>
+                        </div>
+
+                        <!-- Filtro de Classificação do Lead -->
+                        <div>
+                            <label class="text-xs text-muted" style="display:block;margin-bottom:4px;font-weight:600;">Classificação</label>
+                            <select id="relFreqCnpjFiltroClassificacao" class="form-control" style="font-size:12px;height:36px;" onchange="mudarFiltrosFreqCnpjPainel()">
+                                <option value="">Todas as classificações</option>
+                                <option value="consumidor">Consumidor Final</option>
+                                <option value="revendedor">Revenda / Comércio</option>
+                                <option value="distribuidor">Distribuidor</option>
+                                <option value="industrializacao">Industrialização</option>
+                                <option value="outros">Outros</option>
+                            </select>
+                        </div>
+
+                        <!-- Filtro de Vendedor -->
+                        <div>
+                            <label class="text-xs text-muted" style="display:block;margin-bottom:4px;font-weight:600;">Vendedor</label>
+                            <select id="relFreqCnpjFiltroVendedor" class="form-control" style="font-size:12px;height:36px;" onchange="mudarFiltrosFreqCnpjPainel()">
+                                <option value="">Todos os vendedores</option>
+                            </select>
+                        </div>
+
+                        <!-- Ordenação -->
+                        <div>
+                            <label class="text-xs text-muted" style="display:block;margin-bottom:4px;font-weight:600;">Ordenar Por</label>
+                            <select id="relFreqCnpjOrdenacao" class="form-control" style="font-size:12px;height:36px;" onchange="mudarFiltrosFreqCnpjPainel()">
+                                <option value="orcamentoValorDesc">Maior Valor Orçado (R$)</option>
+                                <option value="pedidoValorDesc">Maior Valor em Pedidos (R$)</option>
+                                <option value="saldoDesc">Maior Saldo / Diferença (R$)</option>
+                                <option value="conversaoDesc">Maior Taxa de Efetivação (%)</option>
+                                <option value="nomeAsc">Nome da Empresa (A-Z)</option>
+                            </select>
+                        </div>
+
+                        <!-- Busca Textual -->
+                        <div>
+                            <label class="text-xs text-muted" style="display:block;margin-bottom:4px;font-weight:600;">Buscar CNPJ / Empresa / Nº</label>
+                            <input type="text" id="relFreqCnpjBusca" class="form-control" placeholder="CNPJ, Razão Social, Nº Orç..." style="font-size:12px;height:36px;" oninput="mudarFiltrosFreqCnpjPainel()">
+                        </div>
+                    </div>
+
+                    <!-- Container Dinâmico com os Dados do Confronto -->
+                    <div id="relFrequenciaCnpjPainel"></div>
+                </div>
+            </div>
+
+            <!-- Aba NOVA 2: Matriz de Esforço Comercial x Retorno (Cotador x Comprador) -->
+            <div id="rel-pane-matriz-esforco" class="rel-tab-pane">
+                <div class="rel-painel-detalhado mb-16">
+                    <div class="rel-painel-detalhado-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border-color);">
+                        <div>
+                            <h3 style="margin:0;font-size:18px;display:flex;align-items:center;gap:8px;color:var(--text-primary);">
+                                <span>🎯 Matriz de Esforço Comercial x Retorno</span>
+                            </h3>
+                            <p class="text-xs text-muted" style="margin:4px 0 0 0;">
+                                Identificação imediata de <strong>Cotadores de Balcão</strong> (muitas cotações sem pedido), <strong>Clientes VIP</strong> e <strong>Recorrentes Fiéis</strong> em valores acumulados.
+                            </p>
+                        </div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button class="btn btn-outline btn-sm" onclick="exportarCsvMatrizEsforco()" title="Exportar matriz em planilha CSV">
+                                📊 Exportar CSV
+                            </button>
+                            <button class="btn btn-primary btn-sm" onclick="imprimirRelatorioMatrizEsforco()" title="Imprimir relatório analítico">
+                                🖨️ Imprimir / Salvar PDF
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filtros da Matriz -->
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px;">
+                        <div>
+                            <label class="text-xs text-muted" style="display:block;margin-bottom:4px;font-weight:600;">Quadrante / Classificação</label>
+                            <select id="relMatrizFiltroQuadrante" class="form-control" style="font-size:12px;height:36px;" onchange="mudarFiltrosMatrizEsforco()">
+                                <option value="">Todos os quadrantes</option>
+                                <option value="cotador">⚠️ Cotador Compulsivo (Alerta)</option>
+                                <option value="vip">⭐ VIP / Alta Eficiência</option>
+                                <option value="fiel">📦 Recorrente Fiel</option>
+                                <option value="negociacao">⏳ Negociação em Andamento</option>
+                                <option value="outros">⚪ Cotação Pontual</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="text-xs text-muted" style="display:block;margin-bottom:4px;font-weight:600;">Responsável / Vendedor</label>
+                            <select id="relMatrizFiltroVendedor" class="form-control" style="font-size:12px;height:36px;" onchange="mudarFiltrosMatrizEsforco()">
+                                <option value="">Todos os responsáveis</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="text-xs text-muted" style="display:block;margin-bottom:4px;font-weight:600;">Ordenar Por</label>
+                            <select id="relMatrizOrdenacao" class="form-control" style="font-size:12px;height:36px;" onchange="mudarFiltrosMatrizEsforco()">
+                                <option value="cotacoesDesc">Mais Cotações (Esforço)</option>
+                                <option value="valorOrcadoDesc">Maior Valor Cotado (R$)</option>
+                                <option value="valorPedidosDesc">Maior Faturamento em Pedidos (R$)</option>
+                                <option value="taxaConversaoAsc">Menor Taxa de Efetivação (%)</option>
+                                <option value="taxaConversaoDesc">Maior Taxa de Efetivação (%)</option>
+                                <option value="empresaAsc">Nome da Empresa (A-Z)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="text-xs text-muted" style="display:block;margin-bottom:4px;font-weight:600;">Buscar Cliente / CNPJ</label>
+                            <input type="text" id="relMatrizBusca" class="form-control" placeholder="CNPJ, Razão Social, Cidade..." style="font-size:12px;height:36px;" oninput="mudarFiltrosMatrizEsforco()">
+                        </div>
+                    </div>
+
+                    <div id="relMatrizEsforcoPainel"></div>
+                </div>
+            </div>
+
+            <!-- Aba NOVA 3: Ciclo Médio de Fechamento (Aging Orçamento ➔ Pedido) -->
+            <div id="rel-pane-ciclo-fechamento" class="rel-tab-pane">
+                <div class="rel-painel-detalhado mb-16">
+                    <div class="rel-painel-detalhado-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border-color);">
+                        <div>
+                            <h3 style="margin:0;font-size:18px;display:flex;align-items:center;gap:8px;color:var(--text-primary);">
+                                <span>⏱️ Ciclo Médio de Fechamento (Orçamento ➔ Pedido)</span>
+                            </h3>
+                            <p class="text-xs text-muted" style="margin:4px 0 0 0;">
+                                Acompanhamento do <strong>tempo real em dias</strong> entre a proposta comercial e o faturamento, com alerta preventivo de propostas abertas em risco.
+                            </p>
+                        </div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button class="btn btn-outline btn-sm" onclick="exportarCsvCicloFechamento()" title="Exportar ciclo em planilha CSV">
+                                📊 Exportar CSV
+                            </button>
+                            <button class="btn btn-primary btn-sm" onclick="imprimirRelatorioCicloFechamento()" title="Imprimir relatório analítico">
+                                🖨️ Imprimir / Salvar PDF
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filtros do Ciclo -->
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px;">
+                        <div>
+                            <label class="text-xs text-muted" style="display:block;margin-bottom:4px;font-weight:600;">Status do Ciclo</label>
+                            <select id="relCicloFiltroStatus" class="form-control" style="font-size:12px;height:36px;" onchange="mudarFiltrosCicloFechamento()">
+                                <option value="">Todos os status</option>
+                                <option value="aberto_em_risco">🚨 Propostas em Risco (Atrasadas)</option>
+                                <option value="aberto_no_prazo">⏳ Em Negociação (No Prazo)</option>
+                                <option value="fechado">✅ Pedidos Fechados</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="text-xs text-muted" style="display:block;margin-bottom:4px;font-weight:600;">Faixa de Valor</label>
+                            <select id="relCicloFiltroFaixa" class="form-control" style="font-size:12px;height:36px;" onchange="mudarFiltrosCicloFechamento()">
+                                <option value="">Todas as faixas</option>
+                                <option value="ate5k">Até R$ 5.000</option>
+                                <option value="5k_20k">R$ 5.000 a R$ 20.000</option>
+                                <option value="20k_50k">R$ 20.000 a R$ 50.000</option>
+                                <option value="acima50k">Acima de R$ 50.000</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="text-xs text-muted" style="display:block;margin-bottom:4px;font-weight:600;">Responsável / Vendedor</label>
+                            <select id="relCicloFiltroVendedor" class="form-control" style="font-size:12px;height:36px;" onchange="mudarFiltrosCicloFechamento()">
+                                <option value="">Todos os responsáveis</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="text-xs text-muted" style="display:block;margin-bottom:4px;font-weight:600;">Ordenar Por</label>
+                            <select id="relCicloOrdenacao" class="form-control" style="font-size:12px;height:36px;" onchange="mudarFiltrosCicloFechamento()">
+                                <option value="diasDesc">Mais Dias (Mais Antigos/Demorados)</option>
+                                <option value="diasAsc">Menos Dias (Mais Rápidos)</option>
+                                <option value="valorDesc">Maior Valor (R$)</option>
+                                <option value="recente">Data Mais Recente</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="text-xs text-muted" style="display:block;margin-bottom:4px;font-weight:600;">Buscar Orçamento / Pedido</label>
+                            <input type="text" id="relCicloBusca" class="form-control" placeholder="Cliente, Nº Orç, Nº Ped..." style="font-size:12px;height:36px;" oninput="mudarFiltrosCicloFechamento()">
+                        </div>
+                    </div>
+
+                    <div id="relCicloFechamentoPainel"></div>
                 </div>
             </div>
 
@@ -2491,6 +2737,19 @@
         </div>
     </div>
 
+    <!-- MODAL DETALHES DE FREQUÊNCIA E COMPRAS POR CNPJ -->
+    <div class="modal-overlay" id="relFreqCnpjDetalhesModal">
+        <div class="modal modal-lg" style="max-width:900px;width:95vw;max-height:90vh;overflow-y:auto;">
+            <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;">
+                <h2 style="font-size:16px;margin:0;display:flex;align-items:center;gap:8px;">
+                    <span>🏢 Histórico Consolidado do CNPJ / Cliente</span>
+                </h2>
+                <button class="modal-close" onclick="fecharDetalhesCnpj()" aria-label="Fechar detalhes">✕</button>
+            </div>
+            <div id="relFreqCnpjDetalhesCorpo" style="padding:16px;"></div>
+        </div>
+    </div>
+
     <!-- MODAL ITENS / ORÇAMENTO -->
     <div class="modal-overlay" id="itensModal">
         <div class="modal" style="max-width:860px;width:95vw;">
@@ -3014,6 +3273,9 @@ npx @open-wa/wa-automate -p 8080 --popup
     <script src="js/relatorios-detalhados.js"></script>
     <script src="js/relatorio-produtos.js"></script>
     <script src="js/relatorio-curva-abc.js"></script>
+    <script src="js/relatorio-frequencia-cnpj.js"></script>
+    <script src="js/relatorio-matriz-esforco.js"></script>
+    <script src="js/relatorio-ciclo-fechamento.js"></script>
     <script src="js/import-export.js"></script>
     <script src="js/categorias-produtos.js"></script>
     <script src="js/relatorios-avancados.js"></script>

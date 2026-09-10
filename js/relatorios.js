@@ -521,6 +521,21 @@ function mudarSubAbaRelatorio(tabId) {
             renderizarRelatorioAbc();
         }
     }
+    if (tabId === 'frequencia-cnpj' || tabId === 'visao-completa') {
+        if (typeof renderizarRelatorioFrequenciaCnpj === 'function') {
+            renderizarRelatorioFrequenciaCnpj();
+        }
+    }
+    if (tabId === 'matriz-esforco' || tabId === 'visao-completa') {
+        if (typeof renderizarRelatorioMatrizEsforco === 'function') {
+            renderizarRelatorioMatrizEsforco();
+        }
+    }
+    if (tabId === 'ciclo-fechamento' || tabId === 'visao-completa') {
+        if (typeof renderizarRelatorioCicloFechamento === 'function') {
+            renderizarRelatorioCicloFechamento();
+        }
+    }
 }
 
 function inicializarSubAbasRelatorio() {
@@ -657,6 +672,9 @@ function renderizarRelatorios() {
     }
     if (typeof renderizarRelatorioProdutos === 'function') {
         renderizarRelatorioProdutos();
+    }
+    if (typeof renderizarRelatorioFrequenciaCnpj === 'function') {
+        renderizarRelatorioFrequenciaCnpj();
     }
 }
 
