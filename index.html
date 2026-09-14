@@ -2806,7 +2806,7 @@
                 <!-- Banner de Valor e Dados Extraídos do PDF -->
                 <div id="orcPdfExtracaoBanner" class="pdf-extracao-banner" style="display:none;">
                     <div class="pdf-extracao-info">
-                        <div>✨ <strong>Total do Orçamento com impostos:</strong> <span id="orcPdfValorDetectadoTexto" style="font-size:18px;font-weight:800;color:#10b981;">R$ 0,00</span></div>
+                        <div>✨ <strong id="orcPdfBannerLabel">Total do Orçamento com impostos:</strong> <span id="orcPdfValorDetectadoTexto" style="font-size:18px;font-weight:800;color:#10b981;">R$ 0,00</span></div>
                         <div class="text-xs text-muted" id="orcPdfDetectadoDica">Dados e lista de itens extraídos com sucesso do documento.</div>
                     </div>
                     <div style="display:flex;gap:6px;">
@@ -2901,9 +2901,9 @@
             <div class="admin-card-header mt-16" style="margin-bottom:10px;">Condições Comerciais & Valores</div>
             <div class="form-row">
                 <div class="form-group" id="groupPrecoDiretoPdf">
-                    <label>Valor Total do Orçamento (R$)</label>
+                    <label id="lblValorDiretoPdf">Subtotal Produtos / Orçamento (R$)</label>
                     <input type="number" id="itemValorDiretoPdf" step="0.01" min="0" placeholder="0,00" oninput="recalcularTotalItens()">
-                    <span class="text-xs text-muted">Definido pelo PDF ou digitado diretamente.</span>
+                    <span class="text-xs text-muted" id="dicaValorDiretoPdf">Valor dos produtos extraído do PDF (sem frete) ou digitado.</span>
                 </div>
                 <div class="form-group">
                     <label>Desconto (%)</label>

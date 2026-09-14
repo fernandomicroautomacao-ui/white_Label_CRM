@@ -25,11 +25,21 @@ function abrirItens(leadId, tipo) {
     document.getElementById('itemCondicoes').value = lead.condicoes || '';
     document.getElementById('itemObsOrcamento').value = lead.obsOrcamento || '';
     
-    // Campo de valor direto
+    // Campo de valor direto (subtotal dos produtos antes de frete/desconto)
     const campoValorDireto = document.getElementById('itemValorDiretoPdf');
     if (campoValorDireto) {
-        const val = lead.valor || (itensEditPdfPrincipal && (itensEditPdfPrincipal.dadosExtraidos?.totalComImpostos || itensEditPdfPrincipal.valorDetectado)) || '';
-        campoValorDireto.value = val ? parseFloat(val).toFixed(2) : '';
+        let valSubtotal = '';
+        if (lead.valorProdutos !== undefined && lead.valorProdutos !== null && lead.valorProdutos > 0) {
+            valSubtotal = lead.valorProdutos;
+        } else if (lead.valor) {
+            const freteNum = parseFloat(lead.frete) || 0;
+            valSubtotal = (freteNum > 0 && lead.valor > freteNum) ? (lead.valor - freteNum) : lead.valor;
+        } else if (itensEditPdfPrincipal) {
+            const totalPdf = itensEditPdfPrincipal.dadosExtraidos?.totalComImpostos || itensEditPdfPrincipal.valorDetectado || 0;
+            const fretePdf = itensEditPdfPrincipal.dadosExtraidos?.frete || 0;
+            valSubtotal = (fretePdf > 0 && totalPdf > fretePdf) ? (totalPdf - fretePdf) : totalPdf;
+        }
+        campoValorDireto.value = valSubtotal ? parseFloat(valSubtotal).toFixed(2) : '';
     }
 
     renderizarAnexosOrcamento();
@@ -67,12 +77,20 @@ function renderizarVisualizadorPdfOrcamento() {
 
     const extraidos = itensEditPdfPrincipal.dadosExtraidos || {};
     const valorFinal = extraidos.totalComImpostos || itensEditPdfPrincipal.valorDetectado || 0;
+    const freteVal = extraidos.frete || 0;
 
     if (valorFinal > 0) {
         if (bannerExtracao) bannerExtracao.style.display = 'flex';
         if (valorDetectadoTexto) valorDetectadoTexto.textContent = formatarMoeda(valorFinal);
+        const bannerLabel = document.getElementById('orcPdfBannerLabel');
+        if (bannerLabel) {
+            bannerLabel.textContent = (extraidos.totalJaIncluiFrete || freteVal > 0)
+                ? 'Total do Orçamento com impostos + Frete:'
+                : 'Total do Orçamento com impostos:';
+        }
         if (campoValorDireto && (!campoValorDireto.value || parseFloat(campoValorDireto.value) === 0)) {
-            campoValorDireto.value = valorFinal.toFixed(2);
+            const subtotalCalc = (freteVal > 0 && valorFinal > freteVal) ? (valorFinal - freteVal) : valorFinal;
+            campoValorDireto.value = subtotalCalc.toFixed(2);
         }
     } else {
         if (bannerExtracao) bannerExtracao.style.display = 'none';
@@ -212,7 +230,7 @@ function processarPdfVisualOrcamento(file) {
             }
 
             // Atualiza valor total direto (subtotal de produtos).
-            // Se o total geral já inclui o frete detectado, ajusta o subtotal dos produtos para não duplicar o cálculo em recalcularTotalItens()
+            // Se o total geral já inclui o frete detectado (ou tem frete > 0), deduz o frete do subtotal dos produtos para que Subtotal + Frete seja exatamente igual ao valor final
             const campoValorDireto = document.getElementById('itemValorDiretoPdf');
             let subtotalProdutos = valorFinal;
             if (freteDetectado > 0 && valorFinal > freteDetectado) {
@@ -220,8 +238,8 @@ function processarPdfVisualOrcamento(file) {
             }
             if (valorFinal > 0) {
                 if (campoValorDireto) campoValorDireto.value = subtotalProdutos.toFixed(2);
-                const infoFreteMsg = freteDetectado > 0 ? ` (+ Frete: ${formatarMoeda(freteDetectado)})` : '';
-                showToast(`PDF carregado! Valor de ${formatarMoeda(valorFinal)}${infoFreteMsg} e ${dadosExtraidos.itens?.length || 0} item(ns) extraídos.`, 'success');
+                const infoFreteMsg = freteDetectado > 0 ? ` (Produtos: ${formatarMoeda(subtotalProdutos)} + Frete: ${formatarMoeda(freteDetectado)})` : '';
+                showToast(`PDF carregado! Total: ${formatarMoeda(valorFinal)}${infoFreteMsg} e ${dadosExtraidos.itens?.length || 0} item(ns) extraídos.`, 'success');
             } else {
                 showToast('PDF carregado com sucesso no visualizador.', 'success');
             }
@@ -308,12 +326,17 @@ function extrairDadosCompletosPdf(texto) {
     }
 
     // 5. Totais
-    const matchSemIpi = texto.match(/Total\s+do\s+Or[çc]amento\s+sem\s+IPI:\s*([0-9\.\,]+)/i);
+    // 5.1 Total sem IPI
+    const matchSemIpi = texto.match(/(?:Total\s+(?:do\s+Or[çc]amento\s+)?sem\s+IPI)[\s\:\-\=]*([0-9]{1,3}(?:\.[0-9]{3})*\,[0-9]{2}|[0-9]+\,[0-9]{2}|[0-9]+(?:\.[0-9]{2}))/i);
     if (matchSemIpi) dados.totalSemIpi = parsearNumeroMonetario(matchSemIpi[1]);
 
-    const matchComImpostos = texto.match(/Total\s+do\s+Or[çc]amento\s+com\s+impostos?:\s*([0-9\.\,]+)/i);
+    // 5.2 Total com Impostos (incluindo variações com "+ Frete", "+ frete:", etc.)
+    // Exemplo real Micro Automação: "Total do Orçamento com impostos + Frete: 381,53"
+    const regexComImpostos = /(?:Total\s+(?:do\s+Or[çc]amento\s+)?(?:com|c\/)\s*impostos?(?:\s*\+\s*frete)?|Total\s+com\s+impostos?(?:\s*\+\s*frete)?)[\s\:\-\=]*(?:R\$)?\s*([0-9]{1,3}(?:\.[0-9]{3})*\,[0-9]{2}|[0-9]+\,[0-9]{2}|[0-9]+(?:\.[0-9]{2}))/i;
+    const matchComImpostos = texto.match(regexComImpostos);
     if (matchComImpostos) {
         dados.totalComImpostos = parsearNumeroMonetario(matchComImpostos[1]);
+        dados.totalJaIncluiFrete = /frete/i.test(matchComImpostos[0]);
     } else {
         dados.totalComImpostos = extrairPrecoFinalDeTexto(texto);
     }
@@ -429,44 +452,37 @@ function extrairPrecoFinalDeTexto(texto) {
     if (!texto) return 0;
     const t = texto.replace(/\s+/g, ' ');
 
-    // 1. PRIORIDADE MÁXIMA: "Total do Orçamento com impostos:"
-    const regexPadraoExato = /(?:total\s+do\s+or[çc]amento\s+com\s+impostos?|total\s+com\s+impostos?)[\s\:\-\=]*(?:R\$)?\s*([0-9]{1,3}(?:\.[0-9]{3})*(?:\,[0-9]{2})|[0-9]+(?:\.[0-9]{2}))/i;
+    // 1. PRIORIDADE MÁXIMA: "Total do Orçamento com impostos (+ Frete):"
+    const regexPadraoExato = /(?:total\s+(?:do\s+or[çc]amento\s+)?(?:com|c\/)\s*impostos?(?:\s*\+\s*frete)?|total\s+com\s+impostos?(?:\s*\+\s*frete)?)[\s\:\-\=]*(?:R\$)?\s*([0-9]{1,3}(?:\.[0-9]{3})*\,[0-9]{2}|[0-9]+\,[0-9]{2}|[0-9]+(?:\.[0-9]{2}))/i;
     const matchExato = regexPadraoExato.exec(t);
     if (matchExato && matchExato[1]) {
         const val = parsearNumeroMonetario(matchExato[1]);
         if (val > 0) return val;
     }
 
-    // 2. OUTROS TERMOS DE TOTALIZAÇÃO
+    // 2. OUTROS TERMOS DE TOTALIZAÇÃO ESPECÍFICOS (Ignorando cláusulas de faturamento/pedido mínimo)
     const padroes = [
-        /(?:valor\s+total|total\s+geral|preço\s+final|preco\s+final|total\s+da\s+proposta|valor\s+da\s+proposta|total\s+do\s+pedido|total\s+orçamento|total\s+orcamento|valor\s+líquido|valor\s+liquido|valor\s+global|total)[\s\:\-\=]*(?:R\$)?\s*([0-9]{1,3}(?:\.[0-9]{3})*(?:\,[0-9]{2})|[0-9]+(?:\.[0-9]{2}))/gi,
-        /(?:R\$\s*)([0-9]{1,3}(?:\.[0-9]{3})*(?:\,[0-9]{2}))/gi
+        /(?:total\s+do\s+or[çc]amento(?:\s+com\s+frete)?|valor\s+total\s+da\s+proposta|valor\s+total|total\s+geral|preço\s+final|preco\s+final|total\s+da\s+proposta|valor\s+da\s+proposta|total\s+do\s+pedido|total\s+orçamento|total\s+orcamento|valor\s+líquido|valor\s+liquido|valor\s+global)[\s\:\-\=]*(?:R\$)?\s*([0-9]{1,3}(?:\.[0-9]{3})*\,[0-9]{2}|[0-9]+\,[0-9]{2}|[0-9]+(?:\.[0-9]{2}))/gi,
+        /(?:total\s+sem\s+ipi)[\s\:\-\=]*(?:R\$)?\s*([0-9]{1,3}(?:\.[0-9]{3})*\,[0-9]{2}|[0-9]+\,[0-9]{2}|[0-9]+(?:\.[0-9]{2}))/gi
     ];
 
-    let candidatos = [];
-    let match;
-    const regexForte = padroes[0];
-    while ((match = regexForte.exec(t)) !== null) {
-        if (match[1]) {
-            const val = parsearNumeroMonetario(match[1]);
-            if (val > 0) candidatos.push(val);
+    for (const regex of padroes) {
+        let match;
+        let lastVal = 0;
+        while ((match = regex.exec(t)) !== null) {
+            // Ignora se for mínimo / faturamento mínimo / parcela mínima
+            const antes = t.slice(Math.max(0, match.index - 30), match.index).toLowerCase();
+            const depois = t.slice(match.index, Math.min(t.length, match.index + 60)).toLowerCase();
+            if (antes.includes('mínimo') || antes.includes('minimo') || antes.includes('parcela') ||
+                depois.includes('mínimo') || depois.includes('minimo') || depois.includes('parcela')) {
+                continue;
+            }
+            if (match[1]) {
+                const val = parsearNumeroMonetario(match[1]);
+                if (val > 0) lastVal = val;
+            }
         }
-    }
-
-    if (candidatos.length > 0) {
-        return candidatos[candidatos.length - 1];
-    }
-
-    const regexR = padroes[1];
-    while ((match = regexR.exec(t)) !== null) {
-        if (match[1]) {
-            const val = parsearNumeroMonetario(match[1]);
-            if (val > 0) candidatos.push(val);
-        }
-    }
-
-    if (candidatos.length > 0) {
-        return Math.max(...candidatos);
+        if (lastVal > 0) return lastVal;
     }
 
     return 0;
@@ -487,6 +503,8 @@ function parsearNumeroMonetario(str) {
 function removerPdfVisualOrcamento() {
     if (confirm('Deseja remover este anexo de PDF da proposta?')) {
         itensEditPdfPrincipal = null;
+        const input = document.getElementById('orcPdfInput');
+        if (input) input.value = '';
         renderizarVisualizadorPdfOrcamento();
         recalcularTotalItens();
         showToast('PDF removido.');
@@ -673,6 +691,8 @@ function salvarItensOrcamento() {
         lead.numeroPedido = itensEditPdfPrincipal.dadosExtraidos.numero;
     }
 
+    const subtotal = parseFloat(document.getElementById('itemValorDiretoPdf').value) || 0;
+    lead.valorProdutos = subtotal;
     lead.desconto = desconto;
     lead.frete = frete;
     lead.orcamentoAnexos = itensEditAnexos;
