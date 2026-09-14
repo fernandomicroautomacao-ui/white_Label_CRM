@@ -104,6 +104,7 @@ function renderizarDadosExtraidosNaTela(extraidos) {
     setVal('pdfExtCondicoes', extraidos.condicoesPagamento);
     setVal('pdfExtCliente', extraidos.cliente ? `${extraidos.cliente} ${extraidos.clienteCnpj ? `(${extraidos.clienteCnpj})` : ''}` : '-');
     setVal('pdfExtVendedor', extraidos.vendedor);
+    setVal('pdfExtFrete', extraidos.frete && extraidos.frete > 0 ? formatarMoeda(extraidos.frete) : 'Sem frete adicional (R$ 0,00)');
 
     // Renderizar tabela de itens
     const tbody = document.getElementById('pdfItensExtraidosBody');
@@ -203,11 +204,24 @@ function processarPdfVisualOrcamento(file) {
                 }
             }
 
-            // Atualiza valor total direto
+            // Atualiza campo de frete se detectado no PDF
+            const freteDetectado = dadosExtraidos.frete || 0;
+            const campoFrete = document.getElementById('itemFrete');
+            if (freteDetectado > 0 && campoFrete) {
+                campoFrete.value = freteDetectado.toFixed(2);
+            }
+
+            // Atualiza valor total direto (subtotal de produtos).
+            // Se o total geral já inclui o frete detectado, ajusta o subtotal dos produtos para não duplicar o cálculo em recalcularTotalItens()
             const campoValorDireto = document.getElementById('itemValorDiretoPdf');
+            let subtotalProdutos = valorFinal;
+            if (freteDetectado > 0 && valorFinal > freteDetectado) {
+                subtotalProdutos = valorFinal - freteDetectado;
+            }
             if (valorFinal > 0) {
-                if (campoValorDireto) campoValorDireto.value = valorFinal.toFixed(2);
-                showToast(`PDF carregado! Valor de ${formatarMoeda(valorFinal)} e ${dadosExtraidos.itens?.length || 0} item(ns) extraídos.`, 'success');
+                if (campoValorDireto) campoValorDireto.value = subtotalProdutos.toFixed(2);
+                const infoFreteMsg = freteDetectado > 0 ? ` (+ Frete: ${formatarMoeda(freteDetectado)})` : '';
+                showToast(`PDF carregado! Valor de ${formatarMoeda(valorFinal)}${infoFreteMsg} e ${dadosExtraidos.itens?.length || 0} item(ns) extraídos.`, 'success');
             } else {
                 showToast('PDF carregado com sucesso no visualizador.', 'success');
             }
@@ -242,6 +256,7 @@ function extrairDadosCompletosPdf(texto) {
         condicoesPagamento: '',
         pesoBruto: '',
         pesoLiquido: '',
+        frete: 0,
         totalSemIpi: 0,
         totalComImpostos: 0,
         itens: []
@@ -279,12 +294,18 @@ function extrairDadosCompletosPdf(texto) {
     const matchVendedorTel = texto.match(/Telefone:\s*([0-9\s\-]{8,20})/i);
     if (matchVendedorTel) dados.vendedorTelefone = matchVendedorTel[1].trim();
 
-    // 4. Condições Comerciais
+    // 4. Condições Comerciais & Frete
     const matchCond = texto.match(/Condi[çc][õo]es\s+de\s+Pagamento:\s*([^\n\r]+?)(?:Descri[çc][ãa]o|Item|Informa|\n)/i);
     if (matchCond) dados.condicoesPagamento = matchCond[1].trim();
 
     const matchDest = texto.match(/Destina[çc][ãa]o:\s*([^\n\r]+?)(?:Condi|Descri|\n)/i);
     if (matchDest) dados.destinacao = matchDest[1].trim();
+
+    // Extração robusta do campo Frete (ex: "Frete: R$ 150,00", "Valor do Frete: 85,50", "Frete (CIF/FOB): ...")
+    const matchFrete = texto.match(/(?:valor\s+do\s+frete|total\s+do\s+frete|frete\s*(?:\([^\)]+\))?|taxa\s+de\s+entrega)[\s\:\-\=]*(?:R\$)?\s*([0-9]{1,3}(?:\.[0-9]{3})*\,[0-9]{2}|[0-9]+\,[0-9]{2}|[0-9]+(?:\.[0-9]{2}))/i);
+    if (matchFrete && matchFrete[1]) {
+        dados.frete = parsearNumeroMonetario(matchFrete[1]);
+    }
 
     // 5. Totais
     const matchSemIpi = texto.match(/Total\s+do\s+Or[çc]amento\s+sem\s+IPI:\s*([0-9\.\,]+)/i);

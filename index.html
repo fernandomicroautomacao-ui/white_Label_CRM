@@ -1112,45 +1112,77 @@
                 </div>
             </div>
 
-            <!-- Sub-Abas Fluidas de Navegação -->
-            <nav class="rel-fluid-tabs-bar" aria-label="Abas de relatórios">
-                <button type="button" class="rel-tab-nav-btn active" data-tab="visao-geral" onclick="mudarSubAbaRelatorio('visao-geral')">
-                    <span class="rel-tab-icon">📊</span> Visão Geral & Metas
-                </button>
-                <button type="button" class="rel-tab-nav-btn" data-tab="produtos" onclick="mudarSubAbaRelatorio('produtos')">
-                    <span class="rel-tab-icon">📦</span> Produtos Mais Orçados & Vendidos
-                </button>
-                <button type="button" class="rel-tab-nav-btn" data-tab="curva-abc" onclick="mudarSubAbaRelatorio('curva-abc')">
-                    <span class="rel-tab-icon">📈</span> Curva ABC (Pareto)
-                </button>
-                <button type="button" class="rel-tab-nav-btn" data-tab="frequencia-cnpj" onclick="mudarSubAbaRelatorio('frequencia-cnpj')">
-                    <span class="rel-tab-icon">⚖️</span> Confronto Orçamentos x Pedidos
-                </button>
-                <button type="button" class="rel-tab-nav-btn" data-tab="matriz-esforco" onclick="mudarSubAbaRelatorio('matriz-esforco')">
-                    <span class="rel-tab-icon">🎯</span> Matriz Esforço x Retorno
-                </button>
-                <button type="button" class="rel-tab-nav-btn" data-tab="ciclo-fechamento" onclick="mudarSubAbaRelatorio('ciclo-fechamento')">
-                    <span class="rel-tab-icon">⏱️</span> Ciclo Médio de Fechamento
-                </button>
-                <button type="button" class="rel-tab-nav-btn" data-tab="orcamentos-abertos" onclick="mudarSubAbaRelatorio('orcamentos-abertos')">
-                    <span class="rel-tab-icon">⏳</span> Orçamentos em Aberto (Aging)
-                </button>
-                <button type="button" class="rel-tab-nav-btn" data-tab="orcamentos-perdidos" onclick="mudarSubAbaRelatorio('orcamentos-perdidos')">
-                    <span class="rel-tab-icon">📉</span> Orçamentos Perdidos & Motivos
-                </button>
-                <button type="button" class="rel-tab-nav-btn" data-tab="funil-vendas" onclick="mudarSubAbaRelatorio('funil-vendas')">
-                    <span class="rel-tab-icon">🌪️</span> Funil & Conversão
-                </button>
-                <button type="button" class="rel-tab-nav-btn" data-tab="carteira-saude" onclick="mudarSubAbaRelatorio('carteira-saude')">
-                    <span class="rel-tab-icon">🩺</span> Saúde & Carteira
-                </button>
-                <button type="button" class="rel-tab-nav-btn" data-tab="gestao-comercial" onclick="mudarSubAbaRelatorio('gestao-comercial')">
-                    <span class="rel-tab-icon">💡</span> Gestão & Indicadores
-                </button>
-                <button type="button" class="rel-tab-nav-btn" data-tab="visao-completa" onclick="mudarSubAbaRelatorio('visao-completa')">
-                    <span class="rel-tab-icon">📑</span> Visão Completa
-                </button>
-            </nav>
+            <!-- Navegação de Abas Moderna, Limpa e Segmentada por Grupos Estratégicos -->
+            <div class="rel-nav-wrapper" role="region" aria-label="Navegação dos Relatórios">
+                <!-- Grupo 1: Executivo & Pipeline -->
+                <div class="rel-nav-cluster-row">
+                    <span class="rel-nav-cluster-label">
+                        <span>📊</span> Visão Executiva
+                    </span>
+                    <div class="rel-nav-cluster-tabs rel-fluid-tabs-bar">
+                        <button type="button" class="rel-tab-nav-btn active" data-tab="visao-geral" onclick="mudarSubAbaRelatorio('visao-geral')">
+                            <span class="rel-tab-icon">🎯</span> Visão Geral & Metas
+                        </button>
+                        <button type="button" class="rel-tab-nav-btn" data-tab="funil-vendas" onclick="mudarSubAbaRelatorio('funil-vendas')">
+                            <span class="rel-tab-icon">🌪️</span> Funil & Conversão
+                        </button>
+                        <button type="button" class="rel-tab-nav-btn" data-tab="gestao-comercial" onclick="mudarSubAbaRelatorio('gestao-comercial')">
+                            <span class="rel-tab-icon">💡</span> Indicadores de Gestão
+                        </button>
+                    </div>
+                </div>
+
+                <div class="rel-nav-cluster-divider"></div>
+
+                <!-- Grupo 2: Inteligência Comercial & Eficiência -->
+                <div class="rel-nav-cluster-row">
+                    <span class="rel-nav-cluster-label">
+                        <span>⚖️</span> Confronto & Clientes
+                    </span>
+                    <div class="rel-nav-cluster-tabs rel-fluid-tabs-bar">
+                        <button type="button" class="rel-tab-nav-btn" data-tab="frequencia-cnpj" onclick="mudarSubAbaRelatorio('frequencia-cnpj')">
+                            <span class="rel-tab-icon">⚖️</span> Orçamentos x Pedidos
+                        </button>
+                        <button type="button" class="rel-tab-nav-btn destaque-novo" data-tab="matriz-esforco" onclick="mudarSubAbaRelatorio('matriz-esforco')">
+                            <span class="rel-tab-icon">🎯</span> Matriz Esforço x Retorno
+                            <span class="rel-tab-badge-tag">Cotador x VIP</span>
+                        </button>
+                        <button type="button" class="rel-tab-nav-btn destaque-novo" data-tab="ciclo-fechamento" onclick="mudarSubAbaRelatorio('ciclo-fechamento')">
+                            <span class="rel-tab-icon">⏱️</span> Ciclo Médio Fechamento
+                            <span class="rel-tab-badge-tag">Aging</span>
+                        </button>
+                        <button type="button" class="rel-tab-nav-btn" data-tab="carteira-saude" onclick="mudarSubAbaRelatorio('carteira-saude')">
+                            <span class="rel-tab-icon">🩺</span> Saúde da Carteira
+                        </button>
+                    </div>
+                </div>
+
+                <div class="rel-nav-cluster-divider"></div>
+
+                <!-- Grupo 3: Produtos & Monitoramento Operacional -->
+                <div class="rel-nav-cluster-row">
+                    <span class="rel-nav-cluster-label">
+                        <span>📦</span> Produtos & Operação
+                    </span>
+                    <div class="rel-nav-cluster-tabs rel-fluid-tabs-bar">
+                        <button type="button" class="rel-tab-nav-btn" data-tab="curva-abc" onclick="mudarSubAbaRelatorio('curva-abc')">
+                            <span class="rel-tab-icon">📈</span> Curva ABC (Pareto)
+                        </button>
+                        <button type="button" class="rel-tab-nav-btn" data-tab="produtos" onclick="mudarSubAbaRelatorio('produtos')">
+                            <span class="rel-tab-icon">📦</span> Produtos Mais Vendidos
+                        </button>
+                        <button type="button" class="rel-tab-nav-btn" data-tab="orcamentos-abertos" onclick="mudarSubAbaRelatorio('orcamentos-abertos')">
+                            <span class="rel-tab-icon">⏳</span> Propostas em Aberto
+                        </button>
+                        <button type="button" class="rel-tab-nav-btn" data-tab="orcamentos-perdidos" onclick="mudarSubAbaRelatorio('orcamentos-perdidos')">
+                            <span class="rel-tab-icon">📉</span> Motivos de Perda
+                        </button>
+                        <button type="button" class="rel-tab-nav-btn" data-tab="visao-completa" onclick="mudarSubAbaRelatorio('visao-completa')" style="margin-left:auto;">
+                            <span class="rel-tab-icon">📑</span> Visão Completa
+                        </button>
+                    </div>
+                </div>
+            </div>
 
             <!-- CONTEÚDOS DAS SUB-ABAS -->
 
@@ -2816,6 +2848,10 @@
                         <div class="pdf-meta-box">
                             <div class="meta-lbl">Vendedor</div>
                             <div class="meta-val" id="pdfExtVendedor">-</div>
+                        </div>
+                        <div class="pdf-meta-box">
+                            <div class="meta-lbl">Frete Detectado</div>
+                            <div class="meta-val" id="pdfExtFrete" style="color:#10b981;font-weight:700;">-</div>
                         </div>
                     </div>
 
