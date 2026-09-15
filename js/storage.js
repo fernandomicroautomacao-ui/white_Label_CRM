@@ -277,7 +277,56 @@ async function carregarDados() {
     }
 }
 
+let salvarDadosTimeout = null;
+let salvandoDadosEmExecucao = false;
+let salvarNovamenteAoTerminar = false;
+
+function salvarDadosDebounced(delay = 350) {
+    // Salva imediatamente no localStorage para garantir persistência local instantânea
+    try {
+        localStorage.setItem('ploomesLeadsCache', JSON.stringify(leads || []));
+        localStorage.setItem('ploomesLeadsV5', JSON.stringify({
+            modelos,
+            campanhas,
+            emailLog,
+            modelosWhatsapp,
+            whatsappLog,
+            whatsappCampanhas,
+            whatsappOptOut,
+            whatsappConsentimentos,
+            whatsappFilaAtual,
+            perdidos,
+            metas,
+            coletorListas,
+            coletorListaAtivaId,
+            segmentosBusca
+        }));
+    } catch (e) {}
+
+    if (salvarDadosTimeout) clearTimeout(salvarDadosTimeout);
+    salvarDadosTimeout = setTimeout(() => {
+        salvarDados();
+    }, delay);
+}
+
 async function salvarDados() {
+    if (salvandoDadosEmExecucao) {
+        salvarNovamenteAoTerminar = true;
+        return;
+    }
+    salvandoDadosEmExecucao = true;
+    try {
+        await executarSalvarDadosInterno();
+    } finally {
+        salvandoDadosEmExecucao = false;
+        if (salvarNovamenteAoTerminar) {
+            salvarNovamenteAoTerminar = false;
+            salvarDados();
+        }
+    }
+}
+
+async function executarSalvarDadosInterno() {
     try {
         localStorage.setItem('ploomesLeadsCache', JSON.stringify(leads || []));
     } catch (e) {}

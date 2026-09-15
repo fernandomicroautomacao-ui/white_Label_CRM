@@ -532,51 +532,148 @@ function whatsappFilaRenderizarCandidatos() {
         container.innerHTML = '<div class="empty-state compact"><p>Nenhum contato com telefone/WhatsApp encontrado para os filtros atuais.</p></div>';
         return;
     }
-    const visiveis = leadsSegmento.slice(0, 100);
+
+    const wrapAnterior = container.querySelector('.w-fila-table-wrap');
+    const scrollAnterior = wrapAnterior ? wrapAnterior.scrollTop : null;
+
+    const limiteExibir = window.wFilaVerTodos ? leadsSegmento.length : Math.min(leadsSegmento.length, 300);
+    const visiveis = leadsSegmento.slice(0, limiteExibir);
     const usuarioMap = new Map(usuarios.map(u => [u.id, u.nome]));
+
+    const totalCandidatos = leadsSegmento.length;
+    const totalAutorizados = leadsSegmento.filter(l => whatsappTemConsentimento(l.id)).length;
+    const todosMarcados = totalCandidatos > 0 && totalAutorizados === totalCandidatos;
+    const algumMarcado = totalAutorizados > 0 && totalAutorizados < totalCandidatos;
+
     container.innerHTML = `
-        <div class="flex flex-between flex-wrap gap-8 mb-8">
-            <span class="text-xs text-muted">${leadsSegmento.length} contato(s) com telefone; ${visiveis.length} exibido(s)</span>
-            <span class="text-xs text-muted">Somente contatos autorizados entram na fila.</span>
+        <div class="w-fila-controles-selecao">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <label style="display:inline-flex;align-items:center;gap:7px;cursor:pointer;font-weight:600;font-size:13px;margin:0;user-select:none;">
+                    <input type="checkbox" id="wFilaMasterCheckbox" class="w-fila-master-check" onchange="whatsappFilaToggleTodosCandidatos(this.checked)" ${todosMarcados ? 'checked' : ''}>
+                    <span>Selecionar Todos da Lista</span>
+                </label>
+                <button type="button" class="btn btn-primary btn-xs" onclick="whatsappFilaToggleTodosCandidatos(true)" title="Seleciona todos os contatos filtrados de uma única vez">
+                    ☑️ Selecionar Todos (${totalCandidatos})
+                </button>
+                <button type="button" class="btn btn-outline btn-xs" onclick="whatsappFilaToggleTodosCandidatos(false)" title="Desmarca todos os contatos da lista">
+                    ⬜ Desmarcar Todos
+                </button>
+                ${totalCandidatos > 300 ? `
+                    <button type="button" class="btn btn-outline btn-xs" onclick="window.wFilaVerTodos = !window.wFilaVerTodos; whatsappFilaRenderizarCandidatos();">
+                        ${window.wFilaVerTodos ? 'Mostrar primeiros 300' : `Exibir todos (${totalCandidatos})`}
+                    </button>
+                ` : ''}
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <span class="badge ${totalAutorizados > 0 ? 'badge-success' : 'badge-secondary'}" style="font-size:12px;padding:5px 12px;font-weight:600;">
+                    ${totalAutorizados > 0 ? `✓ ${totalAutorizados} de ${totalCandidatos} selecionados para a campanha` : `Nenhum contato selecionado (${totalCandidatos} disponíveis)`}
+                </span>
+            </div>
         </div>
-        <div class="table-wrapper w-fila-table-wrap"><table class="w-fila-table"><thead><tr><th>Empresa</th><th>Contato</th><th>Segmento</th><th>Consentimento</th><th>Ação</th></tr></thead><tbody>
+        <div class="table-wrapper w-fila-table-wrap"><table class="w-fila-table"><thead><tr>
+            <th class="w-fila-check-col" title="Marcar ou desmarcar todos"><input type="checkbox" id="wFilaHeaderCheck" class="w-fila-master-check" onchange="whatsappFilaToggleTodosCandidatos(this.checked)" ${todosMarcados ? 'checked' : ''}></th>
+            <th>Empresa</th>
+            <th>Contato</th>
+            <th>Segmento</th>
+            <th>Campanha</th>
+            <th>Ação</th>
+        </tr></thead><tbody>
             ${visiveis.map(lead => {
                 const consentiu = whatsappTemConsentimento(lead.id);
                 const classifTexto = typeof CLASSIFICACAO_NOMES !== 'undefined' && CLASSIFICACAO_NOMES[lead.classificacao] ? CLASSIFICACAO_NOMES[lead.classificacao] : (lead.classificacao || 'Outros');
-                return `<tr>
+                return `<tr class="${consentiu ? 'w-fila-row-autorizado' : ''}">
+                    <td class="w-fila-check-col">
+                        <input type="checkbox" class="w-fila-check-lead" data-lead-id="${whatsappEscapar(lead.id)}" 
+                            ${consentiu ? 'checked' : ''} 
+                            onchange="whatsappFilaToggleContato('${whatsappEscapar(lead.id)}', this.checked)"
+                            title="${consentiu ? 'Clique para desmarcar da campanha' : 'Clique para selecionar para a campanha'}">
+                    </td>
                     <td><strong>${whatsappEscapar(lead.empresa)}</strong><div class="text-xs text-muted">${whatsappEscapar(lead.cidade || '—')}/${whatsappEscapar(lead.estado || '—')}</div></td>
                     <td>${whatsappEscapar(lead.decisor || '—')}<div class="text-xs text-muted">${whatsappEscapar(lead.whatsapp || lead.telefone)}</div></td>
                     <td>${whatsappEscapar(ETAPA_NOMES[lead.etapa] || lead.etapa)} • <span class="badge-classificacao badge-classificacao-${whatsappEscapar(lead.classificacao || 'outros')}">${whatsappEscapar(classifTexto)}</span><div class="text-xs text-muted">Potencial ${whatsappEscapar(lead.potencial || '—')} • ${whatsappEscapar(usuarioMap.get(lead.usuarioId) || 'Sem responsável')}</div></td>
-                    <td><span class="w-consent-badge ${consentiu ? 'ok' : 'pendente'}">${consentiu ? 'Autorizado' : 'Não autorizado'}</span></td>
+                    <td><span class="w-consent-badge ${consentiu ? 'ok' : 'pendente'}">${consentiu ? '✓ Selecionado' : 'Não selecionado'}</span></td>
                     <td>${consentiu
-                        ? `<button class="btn btn-outline btn-xs" onclick="whatsappRemoverConsentimento('${whatsappEscapar(lead.id)}')">Remover</button>`
-                        : `<button class="btn btn-success btn-xs" onclick="whatsappAutorizarContato('${whatsappEscapar(lead.id)}')">Autorizar</button>`}</td>
+                        ? `<button type="button" class="btn btn-outline btn-xs" onclick="whatsappFilaToggleContato('${whatsappEscapar(lead.id)}', false)">Desmarcar</button>`
+                        : `<button type="button" class="btn btn-success btn-xs" onclick="whatsappFilaToggleContato('${whatsappEscapar(lead.id)}', true)">Selecionar</button>`}</td>
                 </tr>`;
             }).join('')}
         </tbody></table></div>
     `;
+
+    // Atualiza estado intermediário (tri-state) dos checkboxes mestres se parte da lista estiver selecionada
+    const masterCheck = document.getElementById('wFilaMasterCheckbox');
+    const headerCheck = document.getElementById('wFilaHeaderCheck');
+    if (masterCheck) masterCheck.indeterminate = algumMarcado;
+    if (headerCheck) headerCheck.indeterminate = algumMarcado;
+
+    // Restaura a rolagem para que a navegação do usuário permaneça suave e contínua
+    if (scrollAnterior !== null) {
+        const novoWrap = container.querySelector('.w-fila-table-wrap');
+        if (novoWrap) novoWrap.scrollTop = scrollAnterior;
+    }
+}
+
+function whatsappFilaToggleTodosCandidatos(selecionar) {
+    const filtros = whatsappFiltrosFila();
+    const leadsSegmento = whatsappLeadsSegmento(filtros, true);
+    if (!leadsSegmento.length) {
+        showToast('Nenhum contato disponível com os filtros atuais.', 'warning');
+        return;
+    }
+
+    if (selecionar) {
+        let count = 0;
+        leadsSegmento.forEach(lead => {
+            if (!whatsappTemOptOut(lead.id)) {
+                whatsappConsentimentos[lead.id] = true;
+                count++;
+            }
+        });
+        showToast(`${count} contato(s) selecionados para a campanha.`, 'success');
+    } else {
+        leadsSegmento.forEach(lead => {
+            delete whatsappConsentimentos[lead.id];
+        });
+        showToast('Todos os contatos foram desmarcados.', 'info');
+    }
+
+    salvarDadosDebounced(300);
+    whatsappFilaRenderizarCandidatos();
+}
+
+function whatsappFilaToggleContato(leadId, selecionar) {
+    const lead = leads.find(l => l.id === leadId);
+    if (!lead) return;
+
+    if (selecionar) {
+        if (whatsappTemOptOut(leadId)) {
+            showToast('Este contato possui solicitação de Não Contatar (opt-out).', 'warning');
+            whatsappFilaRenderizarCandidatos();
+            return;
+        }
+        whatsappConsentimentos[leadId] = true;
+        showToast(`${lead.empresa} selecionado para a campanha.`);
+    } else {
+        delete whatsappConsentimentos[leadId];
+        showToast(`${lead.empresa} desmarcado da campanha.`);
+    }
+
+    salvarDadosDebounced(300);
+    whatsappFilaRenderizarCandidatos();
 }
 
 function whatsappAutorizarContato(leadId) {
-    const lead = leads.find(l => l.id === leadId);
-    if (!lead || whatsappTemOptOut(leadId)) return;
-    whatsappConsentimentos[leadId] = true;
-    salvarDados();
-    whatsappFilaRenderizarCandidatos();
-    showToast(`Contato autorizado para a fila: ${lead.empresa}.`, 'success');
+    whatsappFilaToggleContato(leadId, true);
 }
 
 function whatsappRemoverConsentimento(leadId) {
-    delete whatsappConsentimentos[leadId];
-    salvarDados();
-    whatsappFilaRenderizarCandidatos();
-    showToast('Consentimento removido. O contato não entrará em novas filas.', 'warning');
+    whatsappFilaToggleContato(leadId, false);
 }
 
 function whatsappMarcarOptOut(leadId) {
     if (!whatsappOptOut.includes(leadId)) whatsappOptOut.push(leadId);
     delete whatsappConsentimentos[leadId];
-    salvarDados();
+    salvarDadosDebounced(300);
     whatsappFilaRenderizarCandidatos();
 }
 
@@ -608,7 +705,7 @@ function whatsappFilaCriar() {
         return;
     }
     if (!candidatos.length) {
-        showToast('Nenhum contato autorizado corresponde aos filtros. Autorize os contatos na prévia.', 'warning');
+        showToast('Nenhum contato selecionado para a campanha. Marque as caixas de seleção dos contatos desejados ou clique em "Selecionar Todos".', 'warning');
         return;
     }
     const fila = {

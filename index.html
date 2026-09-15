@@ -645,8 +645,8 @@
                     <div class="form-group"><label>Variação V3</label><select id="wFilaModeloV3"><option value="">Selecionar modelo</option></select></div>
                 </div>
                 <div class="form-group"><label>Mensagem personalizada opcional</label><textarea id="wFilaPersonalizada" rows="3" placeholder="Se preenchida, entra como uma variação adicional. Use {{empresa}}, {{decisor}}, {{cidade}} e outras tags disponíveis."></textarea></div>
-                <div class="w-fila-acoes-config"><button class="btn btn-outline btn-sm" onclick="whatsappFilaRenderizarCandidatos()">Atualizar contatos</button><button class="btn btn-primary btn-sm" onclick="whatsappFilaCriar()">Montar fila com autorizados</button></div>
-                <div class="w-fila-consentimento-nota"><strong>Consentimento:</strong> contatos entram na fila somente depois de serem marcados como autorizados na prévia abaixo. Use “Não contatar” quando houver pedido de opt-out.</div>
+                <div class="w-fila-acoes-config"><button class="btn btn-outline btn-sm" onclick="whatsappFilaRenderizarCandidatos()">Atualizar contatos</button><button class="btn btn-primary btn-sm" onclick="whatsappFilaCriar()">Montar fila com selecionados</button></div>
+                <div class="w-fila-consentimento-nota"><strong>Seleção de Contatos:</strong> Utilize as caixas de seleção (checkbox) para escolher quais contatos participarão da campanha. Você pode marcar a caixa <strong>"Selecionar Todos"</strong> de uma única vez e depois desmarcar aqueles que não tiver interesse.</div>
                 <div id="wFilaCandidatos" class="mt-12"></div>
                 <div class="w-fila-divider"></div>
                 <div class="card-header" style="padding:0 0 10px;"><div><h3>Fila atual</h3><p class="text-xs text-muted" style="margin:3px 0 0;">Abra, confirme, pule ou marque como não contatar.</p></div><div id="wFilaCampanhas"></div></div>
