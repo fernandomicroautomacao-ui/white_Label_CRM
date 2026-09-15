@@ -15,7 +15,7 @@ function renderizarAll() {
     renderizarPerdidos();
     if (typeof renderizarCentral === 'function') renderizarCentral();
     if (typeof renderizarFinanceiro === 'function') renderizarFinanceiro();
-    if (typeof renderizarCadencias === 'function') renderizarCadencias();
+    if (typeof renderizarMergulhoProfundo === 'function') renderizarMergulhoProfundo();
     atualizarContadores();
 }
 

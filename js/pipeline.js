@@ -91,6 +91,9 @@ function renderizarPipeline() {
                         : '';
                     const classifObj = CLASSIFICACOES_LEAD.find(c => c.id === (lead.classificacao || 'outros')) || CLASSIFICACOES_LEAD[4];
                     const classifBadge = `<span class="card-classif-badge" style="color:${classifObj.cor};background:${classifObj.bg};border:1px solid ${classifObj.cor}33;cursor:pointer;" onclick="alterarClassificacaoRapida(event, '${lead.id}')" title="Classificação: ${classifObj.label} (clique para alterar)">${classifObj.label} ▾</span>`;
+                    
+                    const mergulhoDados = (typeof mergulhoObterDados === 'function') ? mergulhoObterDados(lead) : (lead.mergulho || {});
+                    const diagRespondido = mergulhoDados && mergulhoDados.questionario && mergulhoDados.questionario.respondido;
                     return `
                     <div class="pipeline-card ${lead.etapa}"
                          draggable="true"
@@ -107,6 +110,7 @@ function renderizarPipeline() {
                         </div>
                         ${lead.codigoUnico ? `<div class="card-badge info-badge-copiavel" onclick="copiarCodigoUnico(event, '${lead.codigoUnico}')" title="Clique para copiar o Código Único" style="cursor:pointer;">${lead.codigoUnico} <span style="opacity:0.6;font-size:9px;">📋</span></div>` : ''}
                         ${lead.autorizacaoPedidoStatus === 'assinado' ? `<div class="card-assinado-badge" title="Pedido assinado pelo cliente">✓ Pedido assinado</div>` : ''}
+                        ${diagRespondido ? `<div class="card-badge" onclick="event.stopPropagation();abrirMergulhoProfundoLead('${lead.id}', 'abaQuestionario')" title="Diagnóstico técnico respondido pelo cliente. Clique para abrir." style="cursor:pointer;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;font-weight:600;font-size:10px;padding:2px 6px;border-radius:4px;display:inline-flex;align-items:center;gap:3px;margin-top:3px;">📋 Diagnóstico Respondido</div>` : ''}
                         <div class="card-data-row">
                             <span>Nesta etapa desde ${formatarData(lead.dataEntradaEtapa || lead.dataCriacao)}</span>
                             ${lead.cardObs ? `<span class="card-obs-tag">${lead.cardObs}</span>` : ''}
@@ -125,6 +129,7 @@ function renderizarPipeline() {
                                 <div class="card-menu-wrap">
                                     <button class="btn btn-outline btn-xs" onclick="toggleCardMenu(event, '${lead.id}')" title="Mais ações">⋮</button>
                                     <div class="card-menu" id="cardMenu-${lead.id}">
+                                        <button onclick="fecharCardMenus();abrirMergulhoProfundoLead('${lead.id}', 'abaQuestionario')">📋 Ver Questionário / Diagnóstico</button>
                                         <button onclick="fecharCardMenus();abrirEnvioEmail('${lead.id}')">Enviar Email</button>
                                         <button onclick="fecharCardMenus();abrirEnvioWhatsApp('${lead.id}')">Enviar WhatsApp</button>
                                         ${showItens ? `<button onclick="fecharCardMenus();abrirItens('${lead.id}','${lead.etapa}')">Itens/Orçamento</button>` : ''}

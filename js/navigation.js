@@ -37,7 +37,7 @@ function navegarPara(section) {
         historico: 'Histórico',
         importar: 'Importar',
         exportar: 'Exportar',
-        automacao: 'Automação e IA',
+        mergulho: 'Mergulho Profundo',
         admin: 'Administração'
     };
     document.getElementById('pageTitle').innerHTML =
@@ -61,7 +61,7 @@ function navegarPara(section) {
     if (section === 'financeiro' && typeof renderizarFinanceiro === 'function') renderizarFinanceiro();
     if (section === 'historico') renderizarHistorico();
     if (section === 'admin') renderizarAdmin();
-    if (section === 'automacao' && typeof renderizarCadencias === 'function') renderizarCadencias();
+    if (section === 'mergulho' && typeof renderizarMergulhoProfundo === 'function') renderizarMergulhoProfundo();
 }
 
 // ============================================

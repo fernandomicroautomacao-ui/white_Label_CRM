@@ -32,13 +32,27 @@ function abrirModalLead(leadId) {
         document.getElementById('fEstado').value = lead.estado || '';
         document.getElementById('fEtapa').value = lead.etapa || 'leads';
         document.getElementById('fObservacoes').value = lead.observacoes || '';
+        const btnMerg = document.getElementById('btnLeadModalMergulho');
+        if (btnMerg) btnMerg.style.display = 'inline-flex';
     } else {
         document.getElementById('modalTitle').textContent = 'Novo Lead';
         const cnpjField = document.getElementById('fCnpj');
         if (cnpjField) cnpjField.value = '';
+        const btnMerg = document.getElementById('btnLeadModalMergulho');
+        if (btnMerg) btnMerg.style.display = 'none';
     }
 
     abrirModal('leadModal');
+}
+
+function abrirMergulhoDoLeadAtualModal() {
+    const leadId = document.getElementById('leadId')?.value;
+    if (leadId) {
+        fecharModal('leadModal');
+        if (typeof abrirMergulhoProfundoLead === 'function') {
+            abrirMergulhoProfundoLead(leadId);
+        }
+    }
 }
 
 function salvarLead(event) {

@@ -88,6 +88,10 @@
                 <span class="label">Coletor de Leads</span>
                 <span class="badge" id="coletorCount">0</span>
             </a>
+            <a data-section="mergulho" id="navItemMergulho" title="Mergulho Profundo & Dossiê do Lead">
+                <span class="icon" data-icone="busca"></span>
+                <span class="label">Mergulho Profundo</span>
+            </a>
             <a data-section="calendario">
                 <span class="icon" data-icone="calendario"></span>
                 <span class="label">Calendário</span>
@@ -128,10 +132,6 @@
             <a data-section="exportar">
                 <span class="icon" data-icone="exportar"></span>
                 <span class="label">Exportar</span>
-            </a>
-            <a data-section="automacao">
-                <span class="icon" data-icone="marketing"></span>
-                <span class="label">Automação e IA</span>
             </a>
             <div class="nav-section-title nav-admin-group" id="navAdminGroup" style="display:none;">Administração</div>
             <a data-section="admin" id="navAdmin" style="display:none;">
@@ -1907,10 +1907,9 @@
             </div>
         </section>
 
-        <!-- ============ AUTOMAÇÃO ============ -->
-        <section class="section" id="section-automacao">
-            <div class="section-heading-row"><div><h3>Automação e IA</h3><p class="text-muted">Cadências, recomendações de próxima ação e modelos de abordagem para o vendedor.</p></div></div>
-            <div class="automation-grid"><div class="marketing-card"><div class="card-header"><h3>Nova cadência</h3></div><input id="cadenceName" placeholder="Nome da cadência"><textarea id="cadenceSteps" rows="4" placeholder="Uma etapa por linha. Ex.:&#10;Enviar apresentação&#10;Retornar em 2 dias&#10;Confirmar proposta"></textarea><button class="btn btn-primary" onclick="salvarCadencia()">Salvar cadência</button></div><div class="marketing-card"><div class="card-header"><h3>Cadências salvas</h3></div><div id="cadenceList"></div></div><div class="marketing-card"><div class="card-header"><h3>Assistente comercial</h3></div><p class="text-muted text-sm">Selecione uma oportunidade na Central 360º para gerar uma recomendação baseada no estágio, potencial e última atividade.</p><div id="aiRecommendation" class="ai-recommendation">Nenhuma empresa selecionada.</div></div></div>
+        <!-- ============ MERGULHO PROFUNDO ============ -->
+        <section class="section" id="section-mergulho">
+            <!-- Conteúdo dinâmico renderizado por js/mergulho-profundo.js -->
         </section>
 
         <!-- ============ IMPORTAR ============ -->
@@ -2210,9 +2209,14 @@
                     <label>Observações</label>
                     <textarea id="fObservacoes" rows="2"></textarea>
                 </div>
-                <div class="form-actions">
-                    <button type="button" class="btn btn-outline" onclick="fecharModal('leadModal')">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Salvar</button>
+                <div class="form-actions" style="display:flex;justify-content:space-between;align-items:center;">
+                    <button type="button" class="btn btn-outline" id="btnLeadModalMergulho" onclick="abrirMergulhoDoLeadAtualModal()" style="display:none;" title="Ver Dossiê e Mergulho Profundo deste lead">
+                        🔍 Mergulho Profundo
+                    </button>
+                    <div style="display:flex;gap:8px;margin-left:auto;">
+                        <button type="button" class="btn btn-outline" onclick="fecharModal('leadModal')">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -3316,6 +3320,7 @@ npx @open-wa/wa-automate -p 8080 --popup
     <script src="js/categorias-produtos.js"></script>
     <script src="js/relatorios-avancados.js"></script>
     <script src="js/advanced-features.js"></script>
+    <script src="js/mergulho-profundo.js"></script>
     <script src="js/init.js"></script>
 </body>
 </html>
