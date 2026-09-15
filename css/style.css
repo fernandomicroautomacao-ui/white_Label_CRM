@@ -43,6 +43,22 @@
     --task-concluida: #2f7d5b;
     --task-adiada: #3c6e91;
     --task-cancelada: #b3413a;
+
+    /* ============================================
+       TOKENS DE FORMULÁRIO (padronização de inputs)
+       Override de white-label: defina --accent-color para repintar a marca.
+       ============================================ */
+    --accent-color: var(--brand);
+    --bg-input: color-mix(in srgb, var(--text-primary) 4%, transparent);
+    --input-bg: var(--bg-card);
+    --input-border: 1px solid var(--border-color);
+    --input-radius: var(--radius-sm);
+    --input-padding: 8px 12px;
+    --input-font-size: 13px;
+    --input-text: var(--text-primary);
+    --input-placeholder: var(--text-muted);
+    --input-focus-border: var(--accent-color);
+    --input-focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent-color) 20%, transparent);
 }
 
 [data-theme="dark"] {
@@ -70,6 +86,15 @@
     --stage-orcamento: #ab7c58;
     --stage-pedido: #4f9c78;
     --stage-marketing: #8f6a8c;
+
+    /* Tokens de formulário (dark) — repinta foco e fundo dos inputs no tema escuro */
+    --accent-color: var(--brand);
+    --bg-input: color-mix(in srgb, var(--text-primary) 6%, transparent);
+    --input-bg: var(--bg-card);
+    --input-text: var(--text-primary);
+    --input-placeholder: var(--text-muted);
+    --input-focus-border: var(--accent-color);
+    --input-focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent-color) 22%, transparent);
 }
 
 body {
@@ -80,6 +105,34 @@ body {
     min-height: 100vh;
     transition: var(--transition);
     -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================
+   BASE DE FORMULÁRIO (:where = 0 especificidade)
+   Garante que todo input/select/textarea órfão herde o padrão visual da marca,
+   sem sobrescrever regras específicas já definidas abaixo.
+   ============================================ */
+:where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="image"])),
+:where(select),
+:where(textarea) {
+    border: var(--input-border);
+    border-radius: var(--input-radius);
+    background: var(--input-bg);
+    color: var(--input-text);
+    font: inherit;
+    font-size: var(--input-font-size);
+    transition: var(--transition);
+}
+:where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="image"])):focus,
+:where(select):focus,
+:where(textarea):focus {
+    outline: none;
+    border-color: var(--input-focus-border);
+    box-shadow: var(--input-focus-ring);
+}
+:where(input)::placeholder,
+:where(textarea)::placeholder {
+    color: var(--input-placeholder);
 }
 
 ::-webkit-scrollbar {
@@ -1141,12 +1194,12 @@ body {
 .modal .form-group select,
 .modal .form-group textarea {
     width: 100%;
-    padding: 8px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    background: var(--bg-card);
-    color: var(--text-primary);
-    font-size: 13px;
+    padding: var(--input-padding);
+    border: var(--input-border);
+    border-radius: var(--input-radius);
+    background: var(--input-bg);
+    color: var(--input-text);
+    font-size: var(--input-font-size);
     transition: var(--transition);
     font-family: inherit;
 }
@@ -1158,8 +1211,8 @@ body {
 .modal .form-group select:focus,
 .modal .form-group textarea:focus {
     outline: none;
-    border-color: var(--stage-leads);
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+    border-color: var(--input-focus-border);
+    box-shadow: var(--input-focus-ring);
 }
 
 .modal .form-row {
@@ -1565,9 +1618,9 @@ body {
     transition: 0.2s;
 }
 .login-box .form-group input:focus {
-    border-color: var(--stage-leads);
+    border-color: var(--input-focus-border);
     background: rgba(255,255,255,0.12);
-    box-shadow: 0 0 0 3px rgba(45,72,99,0.2);
+    box-shadow: var(--input-focus-ring);
 }
 .login-box .form-group input::placeholder {
     color: rgba(255,255,255,0.3);
@@ -1740,20 +1793,20 @@ body {
 #adminUserForm .form-group input,
 #adminUserForm .form-group select {
     width: 100%;
-    padding: 10px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    font-size: 13.5px;
+    padding: var(--input-padding);
+    border: var(--input-border);
+    border-radius: var(--input-radius);
+    background: var(--input-bg);
+    color: var(--input-text);
+    font-size: var(--input-font-size);
     transition: var(--transition);
     font-family: inherit;
 }
 #adminUserForm .form-group input:focus,
 #adminUserForm .form-group select:focus {
     outline: none;
-    border-color: var(--stage-leads);
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+    border-color: var(--input-focus-border);
+    box-shadow: var(--input-focus-ring);
 }
 #adminUserForm button[type="submit"] {
     margin-top: 4px;
@@ -1768,8 +1821,14 @@ body {
 }
 .meta-input {
     width: 110px; padding: 6px 8px; font-size: 12px;
-    border: 1px solid var(--border-color); border-radius: 4px;
-    background: var(--bg-primary); color: var(--text-primary);
+    border: var(--input-border); border-radius: var(--input-radius);
+    background: var(--input-bg); color: var(--input-text);
+    transition: var(--transition);
+}
+.meta-input:focus {
+    outline: none;
+    border-color: var(--input-focus-border);
+    box-shadow: var(--input-focus-ring);
 }
 .meta-pct { font-weight: 700; font-size: 12px; }
 .meta-pct.ok { color: #215a41; }
@@ -2070,19 +2129,19 @@ body {
 }
 .filters input,
 .filters select {
-    padding: 8px 14px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    background: var(--bg-card);
-    color: var(--text-primary);
-    font-size: 13px;
+    padding: var(--input-padding);
+    border: var(--input-border);
+    border-radius: var(--input-radius);
+    background: var(--input-bg);
+    color: var(--input-text);
+    font-size: var(--input-font-size);
     transition: var(--transition);
 }
 .filters input:focus,
 .filters select:focus {
     outline: none;
-    border-color: var(--stage-leads);
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+    border-color: var(--input-focus-border);
+    box-shadow: var(--input-focus-ring);
 }
 .filters input {
     flex: 1;
@@ -2191,19 +2250,19 @@ table tr.clickable {
     position: relative;
 }
 .global-search-wrap input {
-    padding: 8px 14px;
-    border: 1px solid var(--border-color);
-    border-radius: 20px;
-    background: var(--bg-card);
-    color: var(--text-primary);
-    font-size: 13px;
+    padding: var(--input-padding);
+    border: var(--input-border);
+    border-radius: 20px; /* pill — exceção intencional para busca no topo */
+    background: var(--input-bg);
+    color: var(--input-text);
+    font-size: var(--input-font-size);
     width: 220px;
     transition: var(--transition);
 }
 .global-search-wrap input:focus {
     outline: none;
-    border-color: var(--stage-leads);
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+    border-color: var(--input-focus-border);
+    box-shadow: var(--input-focus-ring);
     width: 260px;
 }
 .global-search-results {
@@ -2343,15 +2402,17 @@ tr.tratado-row td {
     width: 100%;
     min-width: 100px;
     padding: 6px 8px;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    background: var(--bg-card);
-    color: var(--text-primary);
+    border: var(--input-border);
+    border-radius: var(--input-radius);
+    background: var(--input-bg);
+    color: var(--input-text);
     font-size: 12px;
+    transition: var(--transition);
 }
 #coletorTableBody input[type="text"]:focus {
     outline: none;
-    border-color: var(--stage-leads);
+    border-color: var(--input-focus-border);
+    box-shadow: var(--input-focus-ring);
 }
 #dataTableColetorWrapper {
     max-height: 65vh;
@@ -2494,7 +2555,8 @@ tr.tratado-row td {
 .toolbar-card { display:flex; gap:10px; flex-wrap:wrap; padding:14px; margin-bottom:16px; background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius); box-shadow:var(--shadow); }
 .toolbar-card input { flex:1 1 280px; }
 .toolbar-card select { min-width:160px; }
-.toolbar-card input, .toolbar-card select, .inline-form input, .automation-grid input, .automation-grid textarea { border:1px solid var(--border-color); background:var(--bg-secondary); color:var(--text-primary); border-radius:var(--radius-sm); padding:10px 12px; font:inherit; }
+.toolbar-card input, .toolbar-card select, .inline-form input, .automation-grid input, .automation-grid textarea { border: var(--input-border); background: var(--input-bg); color: var(--input-text); border-radius: var(--input-radius); padding: var(--input-padding); font: inherit; transition: var(--transition); }
+.toolbar-card input:focus, .toolbar-card select:focus, .inline-form input:focus, .automation-grid input:focus, .automation-grid textarea:focus { outline: none; border-color: var(--input-focus-border); box-shadow: var(--input-focus-ring); }
 .central-layout { display:grid; grid-template-columns:minmax(250px, .8fr) minmax(0, 1.8fr); gap:16px; align-items:start; }
 .central-company-list, .central-company-detail { min-height:300px; background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius); box-shadow:var(--shadow); }
 .central-company-list { padding:8px; max-height:650px; overflow-y:auto; }
@@ -2543,7 +2605,8 @@ tr.tratado-row td {
 
 .finance-alert { margin:0 0 14px; padding:12px 14px; border-left:4px solid var(--warning); background:color-mix(in srgb, var(--warning) 12%, transparent); color:var(--text-primary); border-radius:var(--radius-sm); font-size:13px; }
 .commission-edit, .payment-edit { display:flex; flex-direction:column; gap:4px; min-width:110px; }
-.commission-edit input, .payment-edit input { width:110px; padding:6px 7px; border:1px solid var(--border-color); border-radius:var(--radius-sm); background:var(--bg-secondary); color:var(--text-primary); font-size:11px; }
+.commission-edit input, .payment-edit input { width:110px; padding:6px 7px; border:var(--input-border); border-radius:var(--input-radius); background:var(--input-bg); color:var(--input-text); font-size:11px; transition: var(--transition); }
+.commission-edit input:focus, .payment-edit input:focus { outline:none; border-color: var(--input-focus-border); box-shadow: var(--input-focus-ring); }
 .commission-edit small { color:var(--warning); font-size:10px; }
 .payment-edit { margin-top:6px; }
 .status-parcial { color:var(--warning); background:color-mix(in srgb, var(--warning) 12%, transparent); }
@@ -2551,7 +2614,8 @@ tr.tratado-row td {
 .status-pendente { color:var(--danger); background:color-mix(in srgb, var(--danger) 12%, transparent); }
 .table-wrapper td { vertical-align:top; }
 
-.pipeline-filter-select { margin-left:4px; padding:6px 8px; border:1px solid var(--border-color); border-radius:var(--radius-sm); background:var(--bg-card); color:var(--text-primary); font-size:12px; }
+.pipeline-filter-select { margin-left:4px; padding:6px 8px; border:var(--input-border); border-radius:var(--input-radius); background:var(--input-bg); color:var(--input-text); font-size:12px; transition: var(--transition); }
+.pipeline-filter-select:focus { outline:none; border-color: var(--input-focus-border); box-shadow: var(--input-focus-ring); }
 @media (max-width: 700px) { .pipeline-toolbar { width:100%; order:3; } .pipeline-toolbar label { flex:1; } .pipeline-filter-select { width:100%; margin:3px 0 0; } }
 
 
@@ -3260,12 +3324,21 @@ tr.tratado-row td {
 .whatsapp-fila-card textarea {
     width: 100%;
     box-sizing: border-box;
-    padding: 8px 10px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    color: var(--text-primary);
-    background: var(--bg-card);
-    font-size: 12px;
+    padding: var(--input-padding);
+    border: var(--input-border);
+    border-radius: var(--input-radius);
+    color: var(--input-text);
+    background: var(--input-bg);
+    font-size: var(--input-font-size);
+    transition: var(--transition);
+    font-family: inherit;
+}
+.w-fila-config-grid input:focus,
+.w-fila-config-grid select:focus,
+.whatsapp-fila-card textarea:focus {
+    outline: none;
+    border-color: var(--input-focus-border);
+    box-shadow: var(--input-focus-ring);
 }
 
 .w-fila-acoes-config {
@@ -3822,20 +3895,26 @@ tr.tratado-row td {
 }
 
 .rel-date-field input {
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
+    border: var(--input-border);
+    border-radius: var(--input-radius);
     padding: 4px 8px;
-    background: var(--bg-card);
-    color: var(--text-primary);
+    background: var(--input-bg);
+    color: var(--input-text);
     font-size: 12px;
+    transition: var(--transition);
+}
+.rel-date-field input:focus {
+    outline: none;
+    border-color: var(--input-focus-border);
+    box-shadow: var(--input-focus-ring);
 }
 
 .rel-select-vendedor {
     padding: 6px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: 999px;
-    background: var(--bg-primary);
-    color: var(--text-primary);
+    border: var(--input-border);
+    border-radius: 999px; /* pill — exceção intencional (filtro de vendedor) */
+    background: var(--input-bg);
+    color: var(--input-text);
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
@@ -3843,7 +3922,8 @@ tr.tratado-row td {
 }
 
 .rel-select-vendedor:focus {
-    border-color: var(--accent-color, #2d4863);
+    border-color: var(--input-focus-border);
+    box-shadow: var(--input-focus-ring);
     outline: none;
 }
 
@@ -4166,21 +4246,33 @@ tr.tratado-row td {
 
 .rel-panel-search-input {
     padding: 7px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    background: var(--bg-primary);
-    color: var(--text-primary);
+    border: var(--input-border);
+    border-radius: var(--input-radius);
+    background: var(--input-bg);
+    color: var(--input-text);
     font-size: 12px;
     min-width: 200px;
+    transition: var(--transition);
+}
+.rel-panel-search-input:focus {
+    outline: none;
+    border-color: var(--input-focus-border);
+    box-shadow: var(--input-focus-ring);
 }
 
 .rel-panel-select {
     padding: 7px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    background: var(--bg-primary);
-    color: var(--text-primary);
+    border: var(--input-border);
+    border-radius: var(--input-radius);
+    background: var(--input-bg);
+    color: var(--input-text);
     font-size: 12px;
+    transition: var(--transition);
+}
+.rel-panel-select:focus {
+    outline: none;
+    border-color: var(--input-focus-border);
+    box-shadow: var(--input-focus-ring);
 }
 
 /* Faixas de Dias em Orçamento (Aging) */
