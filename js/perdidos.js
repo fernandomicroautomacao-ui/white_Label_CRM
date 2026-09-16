@@ -16,6 +16,8 @@ function abrirModalMotivo(leadId) {
     document.getElementById('motivoEmpresaNome').textContent = lead.empresa;
     document.getElementById('motivoSelect').value = 'Perdido por preço';
     document.getElementById('motivoDetalhe').value = '';
+    const concorrenteInput = document.getElementById('motivoConcorrente');
+    if (concorrenteInput) concorrenteInput.value = lead.concorrente || lead.concorrencia || '';
     document.getElementById('motivoOutroWrap').style.display = 'none';
     abrirModal('motivoModal');
 }
@@ -38,12 +40,14 @@ function confirmarExclusaoLead(event) {
 
     const motivoSel = document.getElementById('motivoSelect').value;
     const motivoDetalhe = document.getElementById('motivoDetalhe').value.trim();
+    const concorrenteSel = document.getElementById('motivoConcorrente')?.value.trim() || lead.concorrente || '';
 
     perdidos.unshift({
         ...lead,
         etapaOrigem: lead.etapa,
         motivo: motivoSel,
         motivoDetalhe,
+        concorrente: concorrenteSel,
         dataExclusao: new Date().toISOString(),
         usuarioId: lead.usuarioId
     });

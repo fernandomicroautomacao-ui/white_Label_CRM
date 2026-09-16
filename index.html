@@ -1065,6 +1065,9 @@
                     <button class="btn btn-danger btn-sm rel-btn-action" onclick="mudarSubAbaRelatorio('orcamentos-perdidos')" title="Visualizar relatório detalhado de orçamentos perdidos e motivos por período">
                         <span class="rel-btn-icon">📉</span> Orçamentos Perdidos
                     </button>
+                    <button class="btn btn-primary btn-sm rel-btn-action" onclick="abrirModalExportacaoXlsPersonalizado()" title="Exportar Planilhas Oficiais de Orçamentos e Perdidos em XLS / Excel">
+                        <span class="rel-btn-icon">📊</span> Exportar XLS (Orçamentos & Perdidos)
+                    </button>
                 </div>
             </div>
 
@@ -1256,6 +1259,9 @@
                         </select>
                     </div>
                     <div class="rel-panel-filter-group">
+                        <button type="button" class="btn btn-success btn-sm" onclick="exportarXlsOrcamentos()" title="Exportar no formato XLS oficial (Vendedor, Cliente, Valor, Nro. Orçamento, Probabilidade, Comentários)">
+                            📊 Exportar XLS
+                        </button>
                         <button type="button" class="btn btn-outline btn-sm" onclick="exportarCsvOrcamentosAbertos()" title="Exportar orçamentos em aberto para CSV">
                             📥 Exportar CSV
                         </button>
@@ -1326,6 +1332,9 @@
                     </div>
 
                     <div class="rel-panel-filter-group">
+                        <button type="button" class="btn btn-danger btn-sm" onclick="exportarXlsPerdidos()" title="Exportar no formato XLS oficial (Vendedor, Cliente, Valor, Nro. Orçamento, Concorrente, Comentários, Motivo)">
+                            📊 Exportar XLS
+                        </button>
                         <button type="button" class="btn btn-outline btn-sm" onclick="exportarCsvPerdidosMotivos()" title="Exportar orçamentos perdidos em CSV">
                             📥 Exportar CSV
                         </button>
@@ -1421,6 +1430,7 @@
                             <select id="perdidosFiltroMotivo" onchange="mudarFiltroPerdidos()" aria-label="Motivo dos cards perdidos" style="padding:8px 12px;border:1px solid var(--border-color);border-radius:var(--radius-sm);background:var(--bg-card);color:var(--text-primary);">
                                 <option value="">Todos os motivos</option>
                             </select>
+                            <button class="btn btn-success btn-sm" onclick="exportarXlsPerdidos()" title="Exportar cards perdidos no formato XLS oficial">📊 Exportar XLS</button>
                             <button class="btn btn-info btn-sm" onclick="imprimirRelatorioPerdidos()" title="Gerar PDF do relatório filtrado">Gerar Relatório</button>
                         </div>
                     </div>
@@ -3034,6 +3044,10 @@
                         <option value="Outro">Outro</option>
                     </select>
                 </div>
+                <div class="form-group">
+                    <label>Concorrente (opcional)</label>
+                    <input type="text" id="motivoConcorrente" placeholder="Ex.: Festo, SMC, Parker, etc.">
+                </div>
                 <div class="form-group" id="motivoOutroWrap" style="display:none;">
                     <label>Descreva o motivo</label>
                     <textarea id="motivoDetalhe" rows="2" placeholder="Explique o motivo..."></textarea>
@@ -3630,6 +3644,7 @@ npx @open-wa/wa-automate -p 8080 --popup
     <!-- ============ SCRIPTS ============ -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
         if (window.pdfjsLib) {
             window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -3671,6 +3686,7 @@ npx @open-wa/wa-automate -p 8080 --popup
     <script src="js/comunicacao.js"></script>
     <script src="js/relatorios.js"></script>
     <script src="js/relatorios-detalhados.js"></script>
+    <script src="js/relatorio-excel-orcamentos-perdidos.js"></script>
     <script src="js/relatorio-produtos.js"></script>
     <script src="js/relatorio-curva-abc.js"></script>
     <script src="js/relatorio-frequencia-cnpj.js"></script>
