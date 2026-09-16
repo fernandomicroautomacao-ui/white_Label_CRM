@@ -1600,8 +1600,11 @@ function mergulhoExibirRelatorioModal(leadId) {
                     <button type="button" class="btn btn-outline btn-sm" onclick="mergulhoCopiarResumoTexto('${lead.id}')" style="color:#fff;border-color:#475569;background:rgba(255,255,255,0.08);" title="Copiar resumo textual para WhatsApp ou E-mail">
                         📋 Copiar Resumo
                     </button>
+                    <button type="button" class="btn btn-success btn-sm" onclick="mergulhoBaixarFichaLeadPDF('${lead.id}')" title="Baixar arquivo PDF direto deste lead">
+                        📥 Baixar PDF
+                    </button>
                     <button type="button" class="btn btn-primary btn-sm" onclick="mergulhoImprimirDossie('${lead.id}')" title="Imprimir ou salvar em PDF">
-                        🖨️ Imprimir / PDF
+                        🖨️ Imprimir
                     </button>
                     <button type="button" class="modal-close" onclick="fecharModal('mergulhoRelatorioModalOverlay')" style="color:#94a3b8;font-size:20px;line-height:1;margin-left:8px;background:none;border:none;cursor:pointer;" title="Fechar">✕</button>
                 </div>
@@ -1760,6 +1763,7 @@ function mergulhoExibirRelatorioModal(leadId) {
                 <span style="font-size:12px;color:#64748b;">Feitosa CRM · Micro Automação Pneumática</span>
                 <div style="display:flex;gap:8px;">
                     <button type="button" class="btn btn-outline" onclick="fecharModal('mergulhoRelatorioModalOverlay')">Fechar</button>
+                    <button type="button" class="btn btn-success" onclick="mergulhoBaixarFichaLeadPDF('${lead.id}')">📥 Baixar PDF (.pdf)</button>
                     <button type="button" class="btn btn-primary" onclick="mergulhoImprimirDossie('${lead.id}')">🖨️ Imprimir / Salvar PDF</button>
                 </div>
             </div>
@@ -1894,42 +1898,76 @@ function mergulhoGerarHTMLDossieParaImpressao(lead) {
     `;
 }
 
-// Dispara impressão segura usando iframe oculto (evita bloqueador de popups em qualquer navegador ou iframe)
+// Dispara impressão segura de dossiê do lead
 function mergulhoImprimirDossie(leadId) {
     const id = leadId || mergulhoLeadAtualId;
     const lead = (typeof leads !== 'undefined' ? leads : []).find(l => l.id === id);
-    if (!lead) return;
-
-    let iframe = document.getElementById('mergulhoPrintIframe');
-    if (!iframe) {
-        iframe = document.createElement('iframe');
-        iframe.id = 'mergulhoPrintIframe';
-        iframe.style.position = 'fixed';
-        iframe.style.right = '0';
-        iframe.style.bottom = '0';
-        iframe.style.width = '0';
-        iframe.style.height = '0';
-        iframe.style.border = '0';
-        iframe.style.opacity = '0';
-        document.body.appendChild(iframe);
+    if (!lead) {
+        if (typeof showToast === 'function') showToast('Lead não encontrado para impressão.', 'warning');
+        return;
     }
 
     const html = mergulhoGerarHTMLDossieParaImpressao(lead);
-    try {
-        iframe.contentWindow.document.open();
-        iframe.contentWindow.document.write(html);
-        iframe.contentWindow.document.close();
-        setTimeout(() => {
-            try {
-                iframe.contentWindow.focus();
-                iframe.contentWindow.print();
-            } catch (err) {
-                window.print();
-            }
-        }, 250);
-    } catch (e) {
-        window.print();
+    if (typeof imprimirRelatorioHtmlSeguro === 'function') {
+        imprimirRelatorioHtmlSeguro(html, `Dossiê Técnico - ${lead.empresa}`);
+    } else {
+        mergulhoExecutarImpressaoIframe(html);
     }
+}
+
+// Gera e baixa diretamente o arquivo .PDF da ficha individual do lead
+function mergulhoBaixarFichaLeadPDF(leadId) {
+    const id = leadId || mergulhoLeadAtualId;
+    const lead = (typeof leads !== 'undefined' ? leads : []).find(l => l.id === id);
+    if (!lead) {
+        if (typeof showToast === 'function') showToast('Lead não encontrado para gerar PDF.', 'warning');
+        return;
+    }
+
+    if (typeof showToast === 'function') {
+        showToast(`Gerando PDF de ${lead.empresa}...`, 'info');
+    }
+
+    const html = mergulhoGerarHTMLDossieParaImpressao(lead);
+
+    if (window.html2pdf) {
+        const container = document.createElement('div');
+        container.style.position = 'fixed';
+        container.style.left = '-9999px';
+        container.style.top = '0';
+        container.style.width = '840px';
+        container.style.background = '#ffffff';
+        container.innerHTML = html;
+        document.body.appendChild(container);
+
+        const dataHoje = (typeof hoje === 'function') ? hoje() : new Date().toISOString().slice(0, 10);
+        const nomeEmpresa = (lead.empresa || 'empresa').toLowerCase().replace(/[^a-z0-9]/g, '_');
+        const opt = {
+            margin: [8, 10, 8, 10],
+            filename: `dossie_diagnostico_${nomeEmpresa}_${dataHoje}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, logging: false },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdf().set(opt).from(container).save().then(() => {
+            if (container.parentNode) container.parentNode.removeChild(container);
+            if (typeof showToast === 'function') {
+                showToast('📥 Arquivo PDF baixado com sucesso!', 'success');
+            }
+        }).catch(err => {
+            console.warn('Fallback impressão após html2pdf:', err);
+            if (container.parentNode) container.parentNode.removeChild(container);
+            mergulhoImprimirDossie(id);
+        });
+    } else {
+        mergulhoImprimirDossie(id);
+    }
+}
+
+// Exporta o Dossiê completo do lead em PDF
+function mergulhoExportarDossiePDF(leadId) {
+    mergulhoBaixarFichaLeadPDF(leadId || mergulhoLeadAtualId);
 }
 
 // Copia resumo em texto do questionário e dados principais para WhatsApp ou Email
@@ -2193,8 +2231,11 @@ function mergulhoAbrirRelatorioRespondentesModal() {
                     <p>Controle visual e exportação em PDF de decisores e clientes que já responderam à sondagem de automação pneumática.</p>
                 </div>
                 <div class="mergulho-resp-top-actions">
-                    <button type="button" class="btn btn-primary btn-sm" onclick="mergulhoImprimirRelatorioRespondentesPDF()" title="Imprimir ou gerar arquivo PDF deste relatório">
-                        🖨️ Imprimir / Salvar PDF
+                    <button type="button" class="btn btn-success btn-sm" onclick="mergulhoBaixarRelatorioRespondentesPDF()" title="Baixar relatório oficial em formato PDF">
+                        📥 Baixar PDF
+                    </button>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="mergulhoImprimirRelatorioRespondentesPDF()" title="Imprimir ou visualizar para impressão">
+                        🖨️ Imprimir
                     </button>
                     <button type="button" class="btn btn-outline btn-sm" style="color:#ffffff;border-color:rgba(255,255,255,0.3);" onclick="mergulhoExportarRespondentesCSV()" title="Exportar tabela de respondentes em planilha CSV">
                         📥 Exportar CSV
@@ -2276,8 +2317,11 @@ function mergulhoAbrirRelatorioRespondentesModal() {
                     Exibindo questionários respondidos.
                 </div>
                 <div style="display:flex;gap:8px;">
+                    <button type="button" class="btn btn-success btn-sm" onclick="mergulhoBaixarRelatorioRespondentesPDF()">
+                        📥 Baixar Relatório PDF (.pdf)
+                    </button>
                     <button type="button" class="btn btn-primary btn-sm" onclick="mergulhoImprimirRelatorioRespondentesPDF()">
-                        🖨️ Gerar PDF / Imprimir
+                        🖨️ Imprimir / Visualizar Impressão
                     </button>
                     <button type="button" class="btn btn-secondary btn-sm" onclick="mergulhoFecharRelatorioRespondentesModal()">
                         Fechar
@@ -2287,7 +2331,9 @@ function mergulhoAbrirRelatorioRespondentesModal() {
         </div>
     `;
 
+    modalOverlay.classList.add('open');
     modalOverlay.classList.add('active');
+    modalOverlay.style.display = 'flex';
     mergulhoFiltrarTabelaRespondentes();
 
     // Fecha ao clicar fora da janela
@@ -2298,7 +2344,11 @@ function mergulhoAbrirRelatorioRespondentesModal() {
 
 function mergulhoFecharRelatorioRespondentesModal() {
     const modal = document.getElementById('mergulhoRelatorioRespondentesOverlay');
-    if (modal) modal.classList.remove('active');
+    if (modal) {
+        modal.classList.remove('open');
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+    }
 }
 
 function mergulhoLimparFiltrosRespondentes() {
@@ -2468,8 +2518,11 @@ function mergulhoFiltrarTabelaRespondentes() {
                         <button type="button" class="btn btn-outline btn-xs" onclick="mergulhoFecharRelatorioRespondentesModal(); mergulhoSelecionarLead('${item.leadId}');" title="Ver Dossiê e diagnóstico completo deste lead">
                             🔍 Dossiê
                         </button>
-                        <button type="button" class="btn btn-primary btn-xs" onclick="mergulhoExibirRelatorioModal('${item.leadId}')" title="Imprimir ficha individual deste respondente em PDF">
+                        <button type="button" class="btn btn-primary btn-xs" onclick="mergulhoExibirRelatorioModal('${item.leadId}')" title="Visualizar ficha individual deste respondente">
                             📄 Ficha
+                        </button>
+                        <button type="button" class="btn btn-success btn-xs" onclick="mergulhoBaixarFichaLeadPDF('${item.leadId}')" title="Baixar arquivo PDF desta ficha individual">
+                            📥 PDF
                         </button>
                     </div>
                 </td>
@@ -2479,10 +2532,9 @@ function mergulhoFiltrarTabelaRespondentes() {
 }
 
 /**
- * Gera e dispara a Impressão / PDF do Relatório Completo de Respondentes
- * Formatado para papel A4 em Orientação Paisagem (Landscape)
+ * Gera o documento HTML oficial do Relatório de Respondentes do Questionário
  */
-function mergulhoImprimirRelatorioRespondentesPDF(filtroCustom = null) {
+function mergulhoGerarHTMLRelatorioRespondentes(filtroCustom = null) {
     const busca = document.getElementById('filtroRespBusca')?.value || '';
     const periodo = document.getElementById('filtroRespPeriodo')?.value || 'todos';
     const origem = document.getElementById('filtroRespOrigem')?.value || 'todos';
@@ -2503,7 +2555,7 @@ function mergulhoImprimirRelatorioRespondentesPDF(filtroCustom = null) {
     const mapaDesafio = { 'prazo': 'Prazo Longo', 'preco': 'Preço Elevado', 'suporte': 'Falta Suporte', 'estoque': 'Falta Estoque' };
     const mapaAmostra = { 'sim_amostra': 'Deseja Amostra', 'sim_cotacao': 'Deseja Cotação', 'nao': 'Apenas Contato' };
 
-    const html = `<!DOCTYPE html>
+    return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -2758,8 +2810,69 @@ function mergulhoImprimirRelatorioRespondentesPDF(filtroCustom = null) {
     </div>
 </body>
 </html>`;
+}
 
-    // Disparo seguro via iframe de impressão
+/**
+ * Gera e baixa diretamente o arquivo PDF (.pdf) com o Relatório de Respondentes
+ */
+function mergulhoBaixarRelatorioRespondentesPDF(filtroCustom = null) {
+    const html = mergulhoGerarHTMLRelatorioRespondentes(filtroCustom);
+
+    if (typeof showToast === 'function') {
+        showToast('Gerando arquivo PDF dos respondentes...', 'info');
+    }
+
+    if (window.html2pdf) {
+        const container = document.createElement('div');
+        container.style.position = 'fixed';
+        container.style.left = '-9999px';
+        container.style.top = '0';
+        container.style.width = '1120px';
+        container.style.background = '#ffffff';
+        container.innerHTML = html;
+        document.body.appendChild(container);
+
+        const dataHoje = (typeof hoje === 'function') ? hoje() : new Date().toISOString().slice(0, 10);
+        const opt = {
+            margin: [6, 8, 6, 8],
+            filename: `relatorio_respondentes_questionario_${dataHoje}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, logging: false },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+        };
+
+        html2pdf().set(opt).from(container).save().then(() => {
+            if (container.parentNode) container.parentNode.removeChild(container);
+            if (typeof showToast === 'function') {
+                showToast('📥 Relatório PDF gerado e baixado com sucesso!', 'success');
+            }
+        }).catch(err => {
+            console.warn('Fallback impressão após html2pdf:', err);
+            if (container.parentNode) container.parentNode.removeChild(container);
+            mergulhoImprimirRelatorioRespondentesPDF(filtroCustom);
+        });
+    } else {
+        mergulhoImprimirRelatorioRespondentesPDF(filtroCustom);
+    }
+}
+
+/**
+ * Dispara visualização ou impressão formatada do Relatório Completo de Respondentes
+ */
+function mergulhoImprimirRelatorioRespondentesPDF(filtroCustom = null) {
+    const html = mergulhoGerarHTMLRelatorioRespondentes(filtroCustom);
+
+    if (typeof imprimirRelatorioHtmlSeguro === 'function') {
+        imprimirRelatorioHtmlSeguro(html, 'Relatório de Respondentes do Questionário de Diagnóstico Técnico');
+    } else {
+        mergulhoExecutarImpressaoIframe(html);
+    }
+}
+
+/**
+ * Helper de impressão de fallback em iframe isolado com tratamento seguro
+ */
+function mergulhoExecutarImpressaoIframe(html) {
     let iframe = document.getElementById('mergulhoPrintIframe');
     if (!iframe) {
         iframe = document.createElement('iframe');
@@ -2770,6 +2883,7 @@ function mergulhoImprimirRelatorioRespondentesPDF(filtroCustom = null) {
         iframe.style.width = '0';
         iframe.style.height = '0';
         iframe.style.border = '0';
+        iframe.style.opacity = '0';
         document.body.appendChild(iframe);
     }
 
@@ -2780,18 +2894,30 @@ function mergulhoImprimirRelatorioRespondentesPDF(filtroCustom = null) {
         doc.close();
 
         setTimeout(() => {
-            iframe.contentWindow.focus();
-            iframe.contentWindow.print();
+            try {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+            } catch (errIframe) {
+                console.warn('Erro print iframe:', errIframe);
+                try {
+                    window.print();
+                } catch (errWin) {
+                    console.error('Erro window.print:', errWin);
+                }
+            }
         }, 350);
     } catch (e) {
-        // Fallback abrindo popup se iframe não estiver acessível
-        const w = window.open('', '_blank');
-        if (w) {
-            w.document.write(html);
-            w.document.close();
-            setTimeout(() => { w.focus(); w.print(); }, 350);
-        } else {
-            alert('Por favor, permita pop-ups para imprimir o relatório em PDF.');
+        try {
+            const w = window.open('', '_blank');
+            if (w) {
+                w.document.write(html);
+                w.document.close();
+                setTimeout(() => {
+                    try { w.focus(); w.print(); } catch (err) {}
+                }, 350);
+            }
+        } catch (popupErr) {
+            console.error('Popup bloqueado:', popupErr);
         }
     }
 }
