@@ -536,6 +536,11 @@ function mudarSubAbaRelatorio(tabId) {
             renderizarRelatorioCicloFechamento();
         }
     }
+    if (tabId === 'atividades-vendas' || tabId === 'visao-completa') {
+        if (typeof renderizarRelatorioAtividades === 'function') {
+            renderizarRelatorioAtividades();
+        }
+    }
 }
 
 function inicializarSubAbasRelatorio() {
@@ -675,6 +680,12 @@ function renderizarRelatorios() {
     }
     if (typeof renderizarRelatorioFrequenciaCnpj === 'function') {
         renderizarRelatorioFrequenciaCnpj();
+    }
+    if (typeof renderizarRelatorioAtividades === 'function') {
+        const paneAtiv = document.getElementById('rel-pane-atividades-vendas');
+        if (paneAtiv && paneAtiv.classList.contains('active')) {
+            renderizarRelatorioAtividades();
+        }
     }
 }
 

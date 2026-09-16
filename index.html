@@ -1041,6 +1041,9 @@
                     <p class="rel-header-subtitle">Acompanhe métricas em tempo real, conversão de funil, saúde da carteira e previsibilidade de vendas.</p>
                 </div>
                 <div class="rel-header-actions">
+                    <button class="btn btn-primary btn-sm rel-btn-action" onclick="mudarSubAbaRelatorio('atividades-vendas')" title="Visualizar Relatório de Atividades de Vendas com filtro para dia e exportação TXT/PDF">
+                        <span class="rel-btn-icon">📋</span> Atividades de Vendas (TXT/PDF)
+                    </button>
                     <button class="btn btn-outline btn-sm rel-btn-action" onclick="exportarRelatorioCsv()" title="Exportar dados de vendas em CSV">
                         <span class="rel-btn-icon">📥</span> Exportar CSV
                     </button>
@@ -1128,6 +1131,10 @@
                         </button>
                         <button type="button" class="rel-tab-nav-btn" data-tab="gestao-comercial" onclick="mudarSubAbaRelatorio('gestao-comercial')">
                             <span class="rel-tab-icon">💡</span> Indicadores de Gestão
+                        </button>
+                        <button type="button" class="rel-tab-nav-btn destaque-novo" data-tab="atividades-vendas" onclick="mudarSubAbaRelatorio('atividades-vendas')">
+                            <span class="rel-tab-icon">📋</span> Atividades de Vendas
+                            <span class="rel-tab-badge-tag">TXT / PDF</span>
                         </button>
                     </div>
                 </div>
@@ -1878,6 +1885,123 @@
                 </div>
             </div>
 
+            <!-- Aba: Relatório de Atividades de Vendas (Filtro para Dia, Outros, TXT e PDF) -->
+            <div id="rel-pane-atividades-vendas" class="rel-tab-pane">
+                <div class="rel-painel-detalhado mb-16">
+                    <!-- Cabeçalho com Título, Explicação e Ações de Exportação e Nova Atividade -->
+                    <div class="rel-painel-detalhado-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border-color);">
+                        <div>
+                            <h3 style="margin:0;font-size:18px;display:flex;align-items:center;gap:8px;color:var(--text-primary);">
+                                <span>📋 Relatório de Atividades de Vendas</span>
+                                <span class="rel-badge-status status-concluida" id="relAtivPeriodoBadge" style="font-size:11px;">Dia: Hoje</span>
+                            </h3>
+                            <p class="text-xs text-muted" style="margin:4px 0 0 0;">
+                                Controle e extração diária de atendimentos, tarefas, orçamentos e pedidos com campos compatíveis com a ficha de vendas.
+                            </p>
+                        </div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button type="button" class="btn btn-outline btn-sm" onclick="exportarAtividadesTxt()" title="Gerar e baixar relatório completo em arquivo .TXT estruturado">
+                                📄 Gerar Saída em TXT
+                            </button>
+                            <button type="button" class="btn btn-primary btn-sm" onclick="gerarAtividadesPdf()" title="Gerar relatório diagramado para Impressão / Salvar PDF (A4)">
+                                📑 Gerar Saída em PDF
+                            </button>
+                            <button type="button" class="btn btn-success btn-sm" onclick="abrirModalAlteraAtividadeVendas()" title="Cadastrar nova atividade no padrão do formulário anexo">
+                                ➕ Nova Atividade
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- BARRA DE FILTROS ESPECÍFICOS PARA DIA E OUTROS -->
+                    <div class="rel-ativ-filtros-card mb-16">
+                        <!-- Linha 1: Seleção Rápida de Dia e Período -->
+                        <div class="rel-ativ-periodo-bar mb-12">
+                            <div class="rel-ativ-pills">
+                                <span class="rel-ativ-filter-title">📅 Filtro de Dia:</span>
+                                <button type="button" class="rel-ativ-pill-periodo active" data-periodo="dia" onclick="mudarModoDataAtividades('dia')">Dia Específico</button>
+                                <button type="button" class="rel-ativ-pill-periodo" data-periodo="hoje" onclick="mudarModoDataAtividades('hoje')">Hoje</button>
+                                <button type="button" class="rel-ativ-pill-periodo" data-periodo="ontem" onclick="mudarModoDataAtividades('ontem')">Ontem</button>
+                                <button type="button" class="rel-ativ-pill-periodo" data-periodo="semana" onclick="mudarModoDataAtividades('semana')">Últimos 7 dias</button>
+                                <button type="button" class="rel-ativ-pill-periodo" data-periodo="mes" onclick="mudarModoDataAtividades('mes')">Este Mês</button>
+                                <button type="button" class="rel-ativ-pill-periodo" data-periodo="todos" onclick="mudarModoDataAtividades('todos')">Todo o Histórico</button>
+                                <button type="button" class="rel-ativ-pill-periodo" data-periodo="personalizado" onclick="mudarModoDataAtividades('personalizado')">Personalizado</button>
+                            </div>
+
+                            <div class="rel-ativ-date-controls">
+                                <!-- Seletor de Dia Específico -->
+                                <input type="date" id="relAtivDiaEspecifico" class="form-control rel-input-dia" onchange="mudarDiaEspecificoAtividades(this.value)" title="Escolha qualquer dia para filtrar o relatório">
+                                
+                                <!-- Intervalo personalizado -->
+                                <div id="relAtivRangeWrap" class="rel-dates-range" style="display:none;align-items:center;gap:6px;">
+                                    <label class="text-xs">De: <input type="date" id="relAtivDataInicio" class="form-control rel-input-dia"></label>
+                                    <label class="text-xs">Até: <input type="date" id="relAtivDataFim" class="form-control rel-input-dia"></label>
+                                    <button type="button" class="btn btn-outline btn-xs" onclick="aplicarRangeAtividades()">Filtrar</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Linha 2: Outros Filtros (Vendedor, Cliente/Busca, Tipo de Atividade, Status Tarefa, Vínculos) -->
+                        <div class="rel-ativ-filtros-grid">
+                            <div>
+                                <label class="text-xs text-muted font-semibold block mb-4">Vendedor / Responsável</label>
+                                <select id="relAtivVendedor" class="form-control" onchange="mudarFiltrosAvancadosAtividades()">
+                                    <option value="">Todos os vendedores</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="text-xs text-muted font-semibold block mb-4">Tipo de Atividade</label>
+                                <select id="relAtivTipo" class="form-control" onchange="mudarFiltrosAvancadosAtividades()">
+                                    <option value="">Todas as atividades</option>
+                                    <option value="1 Apresentação">1 Apresentação (primeiro contato)</option>
+                                    <option value="Proposta">2 Proposta / Orçamento</option>
+                                    <option value="Negociação">3 Negociação Comercial</option>
+                                    <option value="Follow-up">4 Follow-up / Retorno</option>
+                                    <option value="Reunião">5 Reunião Comercial</option>
+                                    <option value="Ligação">6 Ligação Telefônica</option>
+                                    <option value="Visita">7 Visita Presencial</option>
+                                    <option value="WhatsApp">8 WhatsApp / Mensagem</option>
+                                    <option value="Pedido">9 Fechamento / Pedido</option>
+                                    <option value="Pós-Venda">10 Pós-Venda / Suporte</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="text-xs text-muted font-semibold block mb-4">Status da Tarefa</label>
+                                <select id="relAtivStatusTarefa" class="form-control" onchange="mudarFiltrosAvancadosAtividades()">
+                                    <option value="">Todos os status</option>
+                                    <option value="em-aberto">⏳ 1 Em Aberto (Pendentes)</option>
+                                    <option value="concluida">✅ 2 Concluída</option>
+                                    <option value="cancelada">❌ 3 Cancelada</option>
+                                    <option value="sem-tarefa">⚪ Sem Tarefa</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="text-xs text-muted font-semibold block mb-4">Vínculo com Documento</label>
+                                <select id="relAtivVinculo" class="form-control" onchange="mudarFiltrosAvancadosAtividades()">
+                                    <option value="">Todos os vínculos</option>
+                                    <option value="orcamento">📑 Com Orçamento Vinculado</option>
+                                    <option value="pedido">📦 Com Pedido Vinculado</option>
+                                    <option value="nota">🧾 Com Nota Fiscal</option>
+                                </select>
+                            </div>
+
+                            <div style="grid-column: span 2;">
+                                <label class="text-xs text-muted font-semibold block mb-4">Buscar Cliente / Código / Contato / Obs</label>
+                                <div style="display:flex;gap:6px;">
+                                    <input type="text" id="relAtivBusca" class="form-control" placeholder="Digite nome, código, contato, telefone, e-mail, nº orçamento..." oninput="filtrarAtividadesPorBusca(this.value)">
+                                    <button type="button" class="btn btn-outline btn-sm" onclick="limparFiltrosAtividades()" title="Limpar todos os filtros">Limpar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CONTAINER ONDE A TABELA E FICHAS SÃO RENDERIZADAS -->
+                    <div id="relAtividadesContainer"></div>
+                </div>
+            </div>
+
             <!-- Elementos técnicos invisíveis para compatibilidade e integridade de queries JS -->
             <div style="display:none;" aria-hidden="true">
                 <div id="relAvanPainel"></div>
@@ -1891,11 +2015,21 @@
 
         <!-- ============ HISTÓRICO ============ -->
         <section class="section" id="section-historico">
-            <div class="flex flex-between flex-wrap gap-8 mb-16">
-                <h3 style="font-size:18px;font-weight:700;">Histórico de Atividades</h3>
-                <select id="historicoFiltroCliente" onchange="renderizarHistorico()" style="padding:8px 14px;border:1px solid var(--border-color);border-radius:var(--radius-sm);background:var(--bg-card);color:var(--text-primary);">
-                    <option value="">Todos os clientes</option>
-                </select>
+            <div class="flex flex-between flex-wrap gap-8 mb-16" style="align-items:center;">
+                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                    <h3 style="font-size:18px;font-weight:700;margin:0;">Histórico de Atividades</h3>
+                    <button type="button" class="btn btn-outline btn-xs" onclick="mudarSubAbaRelatorio('atividades-vendas'); alternarSecao('relatorios');" title="Abrir relatório analítico de atividades com filtros de dia e exportação TXT/PDF">
+                        📋 Ver Relatório Completo (TXT / PDF)
+                    </button>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="abrirModalAlteraAtividadeVendas()" title="Nova Atividade no padrão do formulário de vendas">
+                        ➕ Nova Atividade
+                    </button>
+                    <select id="historicoFiltroCliente" onchange="renderizarHistorico()" style="padding:8px 14px;border:1px solid var(--border-color);border-radius:var(--radius-sm);background:var(--bg-card);color:var(--text-primary);">
+                        <option value="">Todos os clientes</option>
+                    </select>
+                </div>
             </div>
             <div style="background:var(--bg-card);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);border:1px solid var(--border-color);">
                 <div id="historicoList" class="historico-timeline">
@@ -2549,6 +2683,228 @@
                     <button type="submit" class="btn btn-primary">Salvar</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL COMPLETO: ALTERA A ATIVIDADE DE VENDAS (MODELO DO FORMULÁRIO ANEXO) -->
+    <div class="modal-overlay" id="modalAlteraAtividadeVendas">
+        <div class="modal modal-altera-atividade-container" style="max-width:850px;width:95%;">
+            <!-- BARRA SUPERIOR DE AÇÕES NO FORMATO DO FORMULÁRIO -->
+            <div class="modal-altera-header">
+                <div class="modal-altera-title">
+                    <span class="icon-sm">📋</span> Altera a Atividade de Vendas
+                </div>
+                <div class="modal-altera-top-actions">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="salvarAlteraAtividadeVendas(event)" title="Gravar e salvar atividade">
+                        💾 Gravar
+                    </button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="fecharModal('modalAlteraAtividadeVendas')" title="Fechar janela">
+                        ✕ Fechar
+                    </button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="modalAtividadeAcaoHistorico()" title="Ver histórico completo do cliente">
+                        📜 Histórico
+                    </button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="modalAtividadeAcaoPosCliente()" title="Ver posição / dossiê do cliente">
+                        🔍 Pos.Cliente
+                    </button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="modalAtividadeAcaoImpOrcamento()" title="Imprimir orçamento do cliente">
+                        🖨️ Imp.Orçamento
+                    </button>
+                </div>
+            </div>
+
+            <!-- ABAS DO FORMULÁRIO -->
+            <div class="modal-altera-tabs-nav">
+                <button type="button" class="modal-altera-tab-btn active" data-tab="atividade" onclick="trocarAbaModalAtividade('atividade')">
+                    📝 Atividade
+                </button>
+                <button type="button" class="modal-altera-tab-btn" data-tab="precos" onclick="trocarAbaModalAtividade('precos')">
+                    🏷️ Consulta de Preços
+                </button>
+            </div>
+
+            <!-- ABA 1: CAMPOS DA ATIVIDADE -->
+            <div id="paneModalAtividade" class="modal-altera-pane active">
+                <form id="formAlteraAtividadeVendas" onsubmit="salvarAlteraAtividadeVendas(event)">
+                    <!-- Datalist para autocomplete de empresas cadastradas -->
+                    <datalist id="dlClientesAtividade"></datalist>
+
+                    <div class="modal-altera-form-body">
+                        <!-- Linha: ATIVIDADE -->
+                        <div class="modal-altera-row">
+                            <label class="modal-altera-label" for="fAtivTipo">ATIVIDADE......:</label>
+                            <div class="modal-altera-field-wrap">
+                                <select id="fAtivTipo" class="modal-altera-input">
+                                    <option value="1 Apresentação (primeiro contato)">1 Apresentação (primeiro contato)</option>
+                                    <option value="2 Proposta / Orçamento">2 Proposta / Orçamento</option>
+                                    <option value="3 Negociação Comercial">3 Negociação Comercial</option>
+                                    <option value="4 Follow-up / Retorno">4 Follow-up / Retorno</option>
+                                    <option value="5 Reunião Comercial">5 Reunião Comercial</option>
+                                    <option value="6 Ligação Telefônica">6 Ligação Telefônica</option>
+                                    <option value="7 Visita Presencial">7 Visita Presencial</option>
+                                    <option value="8 WhatsApp / Mensagem">8 WhatsApp / Mensagem</option>
+                                    <option value="9 Fechamento / Pedido">9 Fechamento / Pedido</option>
+                                    <option value="10 Pós-Venda / Suporte">10 Pós-Venda / Suporte</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Linha: CÓDIGO CLIENTE -->
+                        <div class="modal-altera-row">
+                            <label class="modal-altera-label" for="fAtivCodigoCliente">CÓDIGO CLIENTE.:</label>
+                            <div class="modal-altera-field-wrap flex-row gap-6">
+                                <input type="text" id="fAtivCodigoCliente" class="modal-altera-input font-mono" style="max-width:180px;" placeholder="Ex: 27072450">
+                                <button type="button" class="btn btn-outline btn-xs" onclick="document.getElementById('fAtivNomeCliente').focus()" title="Localizar cliente pelo nome">?</button>
+                                <input type="text" id="fAtivCodigoComplementar" class="modal-altera-input font-mono" style="max-width:120px;" placeholder="Complemento">
+                            </div>
+                        </div>
+
+                        <!-- Linha: NOME CLIENTE -->
+                        <div class="modal-altera-row">
+                            <label class="modal-altera-label" for="fAtivNomeCliente">NOME CLIENTE...:</label>
+                            <div class="modal-altera-field-wrap">
+                                <input type="text" id="fAtivNomeCliente" list="dlClientesAtividade" class="modal-altera-input font-bold" placeholder="Digite o nome da empresa ou selecione..." onchange="selecionarClienteAtividadePorNome(this.value)" required>
+                            </div>
+                        </div>
+
+                        <!-- Linha: CONTATO -->
+                        <div class="modal-altera-row">
+                            <label class="modal-altera-label" for="fAtivContato">CONTATO........:</label>
+                            <div class="modal-altera-field-wrap">
+                                <input type="text" id="fAtivContato" class="modal-altera-input" placeholder="Nome da pessoa / decisor">
+                            </div>
+                        </div>
+
+                        <!-- Linha: TELEFONE -->
+                        <div class="modal-altera-row">
+                            <label class="modal-altera-label" for="fAtivTelefone">TELEFONE.......:</label>
+                            <div class="modal-altera-field-wrap">
+                                <input type="text" id="fAtivTelefone" class="modal-altera-input" placeholder="(00) 00000-0000">
+                            </div>
+                        </div>
+
+                        <!-- Linha: EMAIL -->
+                        <div class="modal-altera-row">
+                            <label class="modal-altera-label" for="fAtivEmail">EMAIL..........:</label>
+                            <div class="modal-altera-field-wrap">
+                                <input type="email" id="fAtivEmail" class="modal-altera-input" placeholder="contato@empresa.com.br">
+                            </div>
+                        </div>
+
+                        <!-- Linha: Ativ. Cliente -->
+                        <div class="modal-altera-row">
+                            <label class="modal-altera-label" for="fAtivAtivCliente">Ativ. Cliente..:</label>
+                            <div class="modal-altera-field-wrap">
+                                <textarea id="fAtivAtivCliente" class="modal-altera-textarea" rows="2" placeholder="Ramo de atividade, CNAE, segmento de atuação do cliente..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Linha: OBSERVACAO -->
+                        <div class="modal-altera-row">
+                            <label class="modal-altera-label" for="fAtivObservacao">OBSERVACAO.....:</label>
+                            <div class="modal-altera-field-wrap">
+                                <textarea id="fAtivObservacao" class="modal-altera-textarea" rows="3" placeholder="Anotações comerciais da conversa (ex: (Cliente Novo) - Apresentação de catálogo e propostas...)"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- SEÇÃO TAREFA -->
+                        <div class="modal-altera-subgroup">
+                            <!-- Linha: TAREFA -->
+                            <div class="modal-altera-row">
+                                <label class="modal-altera-label" for="fAtivTarefa">TAREFA.........:</label>
+                                <div class="modal-altera-field-wrap">
+                                    <select id="fAtivTarefa" class="modal-altera-input">
+                                        <option value="1 Sem tarefa">1 Sem tarefa</option>
+                                        <option value="2 Retorno">2 Retorno</option>
+                                        <option value="3 Visita">3 Visita</option>
+                                        <option value="4 Reunião">4 Reunião</option>
+                                        <option value="5 Enviar Proposta">5 Enviar Proposta</option>
+                                        <option value="6 Cobrança">6 Cobrança</option>
+                                        <option value="7 Follow-up">7 Follow-up</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Linha: DATA TAREFA e HORA -->
+                            <div class="modal-altera-row">
+                                <label class="modal-altera-label" for="fAtivDataTarefa">DATA TAREFA....:</label>
+                                <div class="modal-altera-field-wrap flex-row gap-12" style="align-items:center;">
+                                    <input type="date" id="fAtivDataTarefa" class="modal-altera-input" style="max-width:180px;">
+                                    <label class="font-semibold text-xs text-muted" for="fAtivHoraTarefa">HORA:</label>
+                                    <input type="time" id="fAtivHoraTarefa" class="modal-altera-input" style="max-width:130px;">
+                                </div>
+                            </div>
+
+                            <!-- Linha: OBS. TAREFA -->
+                            <div class="modal-altera-row">
+                                <label class="modal-altera-label" for="fAtivObsTarefa">OBS. TAREFA....:</label>
+                                <div class="modal-altera-field-wrap">
+                                    <textarea id="fAtivObsTarefa" class="modal-altera-textarea" rows="2" placeholder="Detalhes do que deve ser feito no retorno agendado..."></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Linha: CONCLUI TAREFA -->
+                            <div class="modal-altera-row">
+                                <label class="modal-altera-label" for="fAtivConcluiTarefa">CONCLUI TAREFA.:</label>
+                                <div class="modal-altera-field-wrap">
+                                    <select id="fAtivConcluiTarefa" class="modal-altera-input" style="max-width:220px;">
+                                        <option value="1 Em Aberto">1 Em Aberto</option>
+                                        <option value="2 Concluída">2 Concluída</option>
+                                        <option value="3 Cancelada">3 Cancelada</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SEÇÃO DOCUMENTOS (ORÇAMENTO, PEDIDO, NOTA) -->
+                        <div class="modal-altera-row docs-row">
+                            <div class="modal-altera-doc-col">
+                                <label class="font-semibold text-xs" for="fAtivOrcamento">ORÇAMENTO:</label>
+                                <input type="text" id="fAtivOrcamento" class="modal-altera-input font-mono" placeholder="Ex: 077939">
+                            </div>
+                            <div class="modal-altera-doc-col">
+                                <label class="font-semibold text-xs" for="fAtivPedido">PEDIDO:</label>
+                                <input type="text" id="fAtivPedido" class="modal-altera-input font-mono" placeholder="Nº Pedido">
+                            </div>
+                            <div class="modal-altera-doc-col">
+                                <label class="font-semibold text-xs" for="fAtivNota">NOTA:</label>
+                                <input type="text" id="fAtivNota" class="modal-altera-input font-mono" placeholder="Nº NF">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- ABA 2: CONSULTA DE PREÇOS -->
+            <div id="paneModalConsultaPrecos" class="modal-altera-pane" style="display:none;">
+                <div style="margin-bottom:12px;">
+                    <p class="text-xs text-muted" style="margin:0 0 8px 0;">Consulte produtos, descrições técnicas e preços de tabela para apoio imediato à conversa comercial.</p>
+                </div>
+                <div id="consultaPrecosContainer" style="max-height:350px;overflow-y:auto;border:1px solid var(--border-color);border-radius:6px;padding:8px;background:var(--bg-main);"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PREVIEW TXT (COM BOTÃO DE COPIAR E BAIXAR) -->
+    <div class="modal-overlay" id="modalPreviewAtividadesTxt">
+        <div class="modal" style="max-width:750px;width:95%;">
+            <div class="modal-header">
+                <h2><span>📄</span> Prévia do Relatório TXT</h2>
+                <button class="modal-close" onclick="fecharModal('modalPreviewAtividadesTxt')">✕</button>
+            </div>
+            <div style="padding:16px;">
+                <div class="flex flex-between flex-wrap gap-8 mb-12" style="align-items:center;">
+                    <span class="text-xs text-muted" id="previewTxtNomeArquivo">relatorio_atividades.txt</span>
+                    <button type="button" class="btn btn-success btn-sm" onclick="copiarConteudoTxtPreview()">
+                        📋 Copiar Conteúdo TXT
+                    </button>
+                </div>
+                <textarea id="previewTxtConteudo" readonly style="width:100%;height:320px;font-family:monospace;font-size:11.5px;padding:12px;background:var(--bg-main);color:var(--text-primary);border:1px solid var(--border-color);border-radius:6px;resize:vertical;line-height:1.4;white-space:pre;"></textarea>
+                <div class="form-actions" style="margin-top:14px;justify-content:space-between;">
+                    <button type="button" class="btn btn-outline" onclick="fecharModal('modalPreviewAtividadesTxt')">Fechar</button>
+                    <button type="button" class="btn btn-primary" onclick="exportarAtividadesTxt()">💾 Baixar Novamente .txt</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -3319,6 +3675,7 @@ npx @open-wa/wa-automate -p 8080 --popup
     <script src="js/import-export.js"></script>
     <script src="js/categorias-produtos.js"></script>
     <script src="js/relatorios-avancados.js"></script>
+    <script src="js/relatorio-atividades.js"></script>
     <script src="js/advanced-features.js"></script>
     <script src="js/mergulho-profundo.js"></script>
     <script src="js/init.js"></script>
