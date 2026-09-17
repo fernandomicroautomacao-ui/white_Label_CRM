@@ -2173,6 +2173,82 @@
                 </div>
             </div>
 
+            <h3 class="admin-section-title">Checkpoints de Comunicação (Etapa Orçamento)</h3>
+            <div class="admin-card" style="width:100%; margin-bottom:24px;">
+                <div class="admin-card-header flex flex-between" style="align-items:center;">
+                    <span>Fluxo de Dias dos 4 Checkpoints</span>
+                    <span class="badge" style="background:var(--stage-orcamento);color:#fff;font-size:11px;padding:3px 8px;border-radius:12px;">Pipeline • Orçamento</span>
+                </div>
+                <p class="text-sm text-muted mb-16">
+                    Personalize o fluxo de dias para os 4 círculos de checkpoint exibidos nos cards da etapa <strong>Orçamento</strong>. Quando o tempo de permanência do card na etapa atinge a quantidade de dias definida em cada fase, o círculo correspondente começa a piscar em vermelho vivo no pipeline para alertar sobre o contato com o cliente.
+                </p>
+
+                <form id="formConfigCheckpoints" onsubmit="salvarConfiguracaoCheckpointsAdmin(event)">
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:16px;">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label for="cfgCheckpoint1" style="font-size:12.5px; font-weight:600; color:var(--text-secondary); display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                                <span class="checkpoint-circulo normal" style="width:22px;height:22px;min-width:22px;min-height:22px;font-size:10px;cursor:default;">1</span>
+                                1º Checkpoint (dias)
+                            </label>
+                            <input type="number" id="cfgCheckpoint1" class="form-control" min="1" max="365" step="1" required placeholder="Ex.: 1 ou 2" oninput="atualizarPreviewCheckpointsAdmin()">
+                            <span class="text-xs text-muted" style="margin-top:4px;display:block;">Ex.: 1º contato pós-envio</span>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label for="cfgCheckpoint2" style="font-size:12.5px; font-weight:600; color:var(--text-secondary); display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                                <span class="checkpoint-circulo normal" style="width:22px;height:22px;min-width:22px;min-height:22px;font-size:10px;cursor:default;">2</span>
+                                2º Checkpoint (dias)
+                            </label>
+                            <input type="number" id="cfgCheckpoint2" class="form-control" min="1" max="365" step="1" required placeholder="Ex.: 3 ou 5" oninput="atualizarPreviewCheckpointsAdmin()">
+                            <span class="text-xs text-muted" style="margin-top:4px;display:block;">Ex.: Follow-up de alinhamento</span>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label for="cfgCheckpoint3" style="font-size:12.5px; font-weight:600; color:var(--text-secondary); display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                                <span class="checkpoint-circulo normal" style="width:22px;height:22px;min-width:22px;min-height:22px;font-size:10px;cursor:default;">3</span>
+                                3º Checkpoint (dias)
+                            </label>
+                            <input type="number" id="cfgCheckpoint3" class="form-control" min="1" max="365" step="1" required placeholder="Ex.: 9 ou 12" oninput="atualizarPreviewCheckpointsAdmin()">
+                            <span class="text-xs text-muted" style="margin-top:4px;display:block;">Ex.: Negociação e condições</span>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label for="cfgCheckpoint4" style="font-size:12.5px; font-weight:600; color:var(--text-secondary); display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                                <span class="checkpoint-circulo normal" style="width:22px;height:22px;min-width:22px;min-height:22px;font-size:10px;cursor:default;">4</span>
+                                4º Checkpoint (dias)
+                            </label>
+                            <input type="number" id="cfgCheckpoint4" class="form-control" min="1" max="365" step="1" required placeholder="Ex.: 14 ou 20" oninput="atualizarPreviewCheckpointsAdmin()">
+                            <span class="text-xs text-muted" style="margin-top:4px;display:block;">Ex.: Fechamento decisivo</span>
+                        </div>
+                    </div>
+
+                    <!-- Pré-visualização ao vivo dos 4 círculos -->
+                    <div style="background:var(--bg-primary); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:12px 16px; margin-bottom:16px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                            <div>
+                                <div style="font-size:11px; font-weight:700; color:var(--text-primary); text-transform:uppercase; letter-spacing:0.5px;">Pré-visualização nos cards do Pipeline</div>
+                                <div class="text-xs text-muted">Como os círculos aparecerão no rodapé dos cards de orçamento:</div>
+                            </div>
+                            <div style="display:inline-flex; align-items:center; gap:18px; flex-wrap:wrap;">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <span class="text-xs text-muted" style="font-weight:600;">Normal:</span>
+                                    <div class="card-checkpoints-orcamento" id="previewCheckpointsNormal"></div>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <span class="text-xs text-muted" style="font-weight:600;">Em Alerta:</span>
+                                    <div class="card-checkpoints-orcamento" id="previewCheckpointsAlerta"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions" style="display:flex; justify-content:flex-end; gap:8px;">
+                        <button type="button" class="btn btn-outline btn-sm" onclick="restaurarCheckpointsPadraoAdmin()">Restaurar padrão (2, 5, 9, 14)</button>
+                        <button type="submit" class="btn btn-primary btn-sm">Salvar Configuração de Checkpoints</button>
+                    </div>
+                </form>
+            </div>
+
             <h3 class="admin-section-title">Metas (Vendas e Orçamento)</h3>
             <div class="admin-card" style="width:100%;">
                 <div class="admin-card-header flex flex-between" style="align-items:center;">
@@ -3055,6 +3131,43 @@
                 <div class="form-actions">
                     <button type="button" class="btn btn-outline" onclick="fecharModal('motivoModal')">Cancelar</button>
                     <button type="submit" class="btn btn-danger">Excluir Card</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL CONFIRMAÇÃO CHECKPOINT COMUNICAÇÃO (ORÇAMENTO) -->
+    <div class="modal-overlay" id="modalConfirmarCheckpoint">
+        <div class="modal" style="max-width: 440px;">
+            <div class="modal-header">
+                <h2>Confirmar Comunicação de Orçamento</h2>
+                <button class="modal-close" onclick="fecharModal('modalConfirmarCheckpoint')">✕</button>
+            </div>
+            <form id="formConfirmarCheckpoint" onsubmit="executarConfirmacaoCheckpoint(event)">
+                <input type="hidden" id="checkpointLeadId">
+                <input type="hidden" id="checkpointFase">
+                <input type="hidden" id="checkpointSlotIndex">
+                
+                <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 12px;">
+                    <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 600;">Cliente</div>
+                    <div id="checkpointEmpresaNome" style="font-size: 14px; font-weight: 700; color: var(--text-primary); margin-top: 2px;"></div>
+                    <div id="checkpointFaseBadge" style="margin-top: 6px;"></div>
+                </div>
+
+                <p id="checkpointMensagemExplicativa" class="text-sm" style="color: var(--text-secondary); line-height: 1.5; margin-bottom: 14px;">
+                    Confirmar a realização da comunicação com o cliente sobre este orçamento.
+                </p>
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                    <label style="font-size: 12px; font-weight: 600;">Observação da comunicação (opcional)</label>
+                    <input type="text" id="checkpointObservacao" class="form-control" placeholder="Ex.: Mensagem no WhatsApp enviada / Ligação realizada...">
+                </div>
+
+                <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 8px;">
+                    <button type="button" class="btn btn-outline" onclick="fecharModal('modalConfirmarCheckpoint')">Cancelar</button>
+                    <button type="submit" class="btn btn-success" id="btnConfirmarCheckpointAcao">
+                        ✓ Confirmar e Ocultar Círculo
+                    </button>
                 </div>
             </form>
         </div>

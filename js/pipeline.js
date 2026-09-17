@@ -82,7 +82,10 @@ function renderizarPipeline() {
                 ${items.map(lead => {
                     const showItens = ['oportunidades', 'orcamento', 'pedido'].includes(lead.etapa);
                     const isLeadEtapa = lead.etapa === 'leads';
+                    const isOrcamento = lead.etapa === 'orcamento';
                     const contadorOrcamentoHtml = renderizarContadorOrcamento(lead);
+                    const checkpointsOrcamentoHtml = isOrcamento ? renderizarCheckpointsComunicacaoOrcamento(lead) : '';
+                    const temAlertaCheckpoint = isOrcamento && verificarSeLeadTemAlertaCheckpoint(lead);
                     // Botão de editar só aparece na etapa leads
                     const editarBtn = isLeadEtapa ? `<button class="btn btn-warning btn-xs" onclick="abrirModalLead('${lead.id}')" title="Editar"><span data-icone="editar"></span></button>` : '';
                     const vendedor = usuarios.find(u => u.id === lead.usuarioId);
@@ -95,7 +98,7 @@ function renderizarPipeline() {
                     const mergulhoDados = (typeof mergulhoObterDados === 'function') ? mergulhoObterDados(lead) : (lead.mergulho || {});
                     const diagRespondido = mergulhoDados && mergulhoDados.questionario && mergulhoDados.questionario.respondido;
                     return `
-                    <div class="pipeline-card ${lead.etapa}"
+                    <div class="pipeline-card ${lead.etapa} ${temAlertaCheckpoint ? 'com-alerta-checkpoint' : ''}"
                          draggable="true"
                          ondragstart="iniciarDrag(event, '${lead.id}')"
                          ondragend="finalizarDrag(event)">
@@ -118,28 +121,34 @@ function renderizarPipeline() {
                         ${contadorOrcamentoHtml}
                         ${lead.proximaData ? `<div style="font-size:10px;color:#8a5a3c;margin-top:4px;">${formatarData(lead.proximaData)}</div>` : ''}
                         <div class="card-actions">
-                            ${isLeadEtapa ? `
-                                <button class="btn btn-info btn-xs" onclick="abrirPesquisa('${lead.id}')" title="Pesquisar"><span data-icone="busca"></span></button>
-                                ${editarBtn}
-                                <button class="btn btn-outline btn-xs" onclick="editarObsCard('${lead.id}')" title="Observação rápida"><span data-icone="nota"></span></button>
-                                <button class="btn btn-danger btn-xs" onclick="abrirModalMotivo('${lead.id}')" title="Excluir"><span data-icone="excluir"></span></button>
-                            ` : `
-                                <button class="btn btn-primary btn-xs" onclick="abrirAtividade('${lead.id}')" title="Atividade"><span data-icone="nota"></span></button>
-                                <button class="btn btn-success btn-xs" onclick="abrirModalCliente('${lead.id}')" title="Perfil"><span data-icone="perfil"></span></button>
-                                <div class="card-menu-wrap">
-                                    <button class="btn btn-outline btn-xs" onclick="toggleCardMenu(event, '${lead.id}')" title="Mais ações">⋮</button>
-                                    <div class="card-menu" id="cardMenu-${lead.id}">
-                                        <button onclick="fecharCardMenus();abrirMergulhoProfundoLead('${lead.id}', 'abaQuestionario')">📋 Ver Questionário / Diagnóstico</button>
-                                        <button onclick="fecharCardMenus();abrirEnvioEmail('${lead.id}')">Enviar Email</button>
-                                        <button onclick="fecharCardMenus();abrirEnvioWhatsApp('${lead.id}')">Enviar WhatsApp</button>
-                                        ${showItens ? `<button onclick="fecharCardMenus();abrirItens('${lead.id}','${lead.etapa}')">Itens/Orçamento</button>` : ''}
-                                        <button onclick="fecharCardMenus();alterarClassificacaoRapida(null, '${lead.id}')">Alterar Classificação</button>
-                                        <button onclick="fecharCardMenus();editarObsCard('${lead.id}')">Observação rápida</button>
-                                        ${lead.etapa === 'orcamento' ? `<button onclick="fecharCardMenus();resetarContagemOrcamento('${lead.id}')">Resetar contagem Orçamento</button>` : ''}
-                                        <button onclick="fecharCardMenus();abrirModalMotivo('${lead.id}')" class="danger">Excluir</button>
+                            <div class="card-actions-left">
+                                ${isLeadEtapa ? `
+                                    <button class="btn btn-info btn-xs" onclick="abrirPesquisa('${lead.id}')" title="Pesquisar"><span data-icone="busca"></span></button>
+                                    ${editarBtn}
+                                    <button class="btn btn-outline btn-xs" onclick="editarObsCard('${lead.id}')" title="Observação rápida"><span data-icone="nota"></span></button>
+                                    <button class="btn btn-danger btn-xs" onclick="abrirModalMotivo('${lead.id}')" title="Excluir"><span data-icone="excluir"></span></button>
+                                ` : `
+                                    <button class="btn btn-primary btn-xs" onclick="abrirAtividade('${lead.id}')" title="Atividade"><span data-icone="nota"></span></button>
+                                    <button class="btn btn-success btn-xs" onclick="abrirModalCliente('${lead.id}')" title="Perfil"><span data-icone="perfil"></span></button>
+                                    <div class="card-menu-wrap">
+                                        <button class="btn btn-outline btn-xs" onclick="toggleCardMenu(event, '${lead.id}')" title="Mais ações">⋮</button>
+                                        <div class="card-menu" id="cardMenu-${lead.id}">
+                                            <button onclick="fecharCardMenus();abrirMergulhoProfundoLead('${lead.id}', 'abaQuestionario')">📋 Ver Questionário / Diagnóstico</button>
+                                            <button onclick="fecharCardMenus();abrirEnvioEmail('${lead.id}')">Enviar Email</button>
+                                            <button onclick="fecharCardMenus();abrirEnvioWhatsApp('${lead.id}')">Enviar WhatsApp</button>
+                                            ${showItens ? `<button onclick="fecharCardMenus();abrirItens('${lead.id}','${lead.etapa}')">Itens/Orçamento</button>` : ''}
+                                            <button onclick="fecharCardMenus();alterarClassificacaoRapida(null, '${lead.id}')">Alterar Classificação</button>
+                                            <button onclick="fecharCardMenus();editarObsCard('${lead.id}')">Observação rápida</button>
+                                            ${lead.etapa === 'orcamento' ? `
+                                                <button onclick="fecharCardMenus();resetarContagemOrcamento('${lead.id}')">Resetar contagem Orçamento</button>
+                                                <button onclick="fecharCardMenus();restaurarCheckpointsComunicacao('${lead.id}')">Restaurar círculos (${(typeof obterFasesCheckpointOrcamento === 'function' ? obterFasesCheckpointOrcamento() : [2, 5, 9, 14]).join(', ')})</button>
+                                            ` : ''}
+                                            <button onclick="fecharCardMenus();abrirModalMotivo('${lead.id}')" class="danger">Excluir</button>
+                                        </div>
                                     </div>
-                                </div>
-                            `}
+                                `}
+                            </div>
+                            ${checkpointsOrcamentoHtml}
                         </div>
                     </div>
                     `;
@@ -207,15 +216,269 @@ function resetarContagemOrcamento(leadId) {
         return;
     }
     lead.orcamentoResetEm = new Date().toISOString();
+    lead.checkpointsComunicacao = {};
+    if (lead.tarefas && typeof lead.tarefas === 'object') {
+        lead.tarefas.checkpointsComunicacao = {};
+    }
     if (!Array.isArray(lead.historico)) lead.historico = [];
     lead.historico.push({
         tipo: 'registro',
         data: new Date().toISOString(),
-        descricao: `Contagem de dias na etapa Orçamento resetada manualmente por ${usuarioAtual.nome || usuarioAtual.email}`
+        descricao: `Contagem de dias na etapa Orçamento e alertas de comunicação resetados manualmente por ${usuarioAtual.nome || usuarioAtual.email}`
     });
     salvarDados();
     renderizarAll();
     showToast('Contagem de dias do orçamento resetada.', 'success');
+}
+
+// ============================================
+// CHECKPOINTS DE COMUNICAÇÃO (ETAPA ORÇAMENTO)
+// 4 fases configuráveis (padrão: 2, 5, 9 e 14 dias)
+// ============================================
+function obterCheckpointsLead(lead) {
+    if (!lead) return {};
+    return lead.checkpointsComunicacao || (lead.tarefas && lead.tarefas.checkpointsComunicacao) || {};
+}
+
+function isCheckpointConcluido(checkpoints, fase, idx) {
+    if (!checkpoints) return false;
+
+    // 1. Verificação por slot (ex: 'slot_1', 'slot_2', 'slot_3', 'slot_4')
+    const slotKey = `slot_${idx + 1}`;
+    if (checkpoints[slotKey] && (checkpoints[slotKey] === true || checkpoints[slotKey].concluido === true)) {
+        return true;
+    }
+
+    // 2. Verificação direta pelo valor numérico da fase atual (ex: 1, 3, 12)
+    if (checkpoints[fase] && (checkpoints[fase] === true || checkpoints[fase].concluido === true)) {
+        return true;
+    }
+
+    // 3. Compatibilidade retroativa com padrão antigo caso o slot ainda não tenha sido sobrescrito
+    const padroes = (typeof CHECKPOINTS_ORCAMENTO_PADRAO !== 'undefined') ? CHECKPOINTS_ORCAMENTO_PADRAO : [2, 5, 9, 14];
+    const padraoFase = padroes[idx];
+    if (padraoFase && checkpoints[padraoFase] && (checkpoints[padraoFase] === true || checkpoints[padraoFase].concluido === true)) {
+        return true;
+    }
+
+    return false;
+}
+
+function verificarSeLeadTemAlertaCheckpoint(lead) {
+    if (!lead || lead.etapa !== 'orcamento') return false;
+    const { dias } = calcularDiasOrcamento(lead);
+    const checkpoints = obterCheckpointsLead(lead);
+    const fases = typeof obterFasesCheckpointOrcamento === 'function' ? obterFasesCheckpointOrcamento() : [2, 5, 9, 14];
+
+    return fases.some((fase, idx) => {
+        const concluido = isCheckpointConcluido(checkpoints, fase, idx);
+        return !concluido && dias >= fase;
+    });
+}
+
+function renderizarCheckpointsComunicacaoOrcamento(lead) {
+    if (!lead || lead.etapa !== 'orcamento') return '';
+    const { dias } = calcularDiasOrcamento(lead);
+    const checkpoints = obterCheckpointsLead(lead);
+    const fases = typeof obterFasesCheckpointOrcamento === 'function' ? obterFasesCheckpointOrcamento() : [2, 5, 9, 14];
+
+    const circulosHtml = fases.map((fase, idx) => {
+        const concluido = isCheckpointConcluido(checkpoints, fase, idx);
+
+        // Se o checkpoint foi confirmado e desabilitado pelo usuário, oculta o círculo
+        if (concluido) {
+            return '';
+        }
+
+        const emAlerta = dias >= fase;
+
+        if (emAlerta) {
+            return `
+                <div class="checkpoint-circulo alerta-pulsante"
+                     id="chkOrcamento-${lead.id}-${fase}"
+                     draggable="false"
+                     onclick="event.stopPropagation();abrirModalConfirmacaoCheckpoint('${lead.id}', ${fase}, ${idx})"
+                     title="⚠️ Checkpoint de ${fase} dias atingido (${dias} ${dias === 1 ? 'dia' : 'dias'} em orçamento)! Clique para registrar comunicação e desabilitar alerta.">
+                    ${fase}
+                </div>
+            `;
+        } else {
+            return `
+                <div class="checkpoint-circulo normal"
+                     id="chkOrcamento-${lead.id}-${fase}"
+                     draggable="false"
+                     onclick="event.stopPropagation();abrirModalConfirmacaoCheckpoint('${lead.id}', ${fase}, ${idx})"
+                     title="Checkpoint de ${fase} dias (${fase - dias} ${fase - dias === 1 ? 'dia restante' : 'dias restantes'}). Clique para registrar comunicação antecipada.">
+                    ${fase}
+                </div>
+            `;
+        }
+    }).filter(Boolean).join('');
+
+    if (!circulosHtml) return '';
+
+    return `
+        <div class="card-checkpoints-orcamento" onclick="event.stopPropagation();">
+            ${circulosHtml}
+        </div>
+    `;
+}
+
+function abrirModalConfirmacaoCheckpoint(leadId, fase, slotIndex = 0) {
+    const lead = leads.find(l => l.id === leadId);
+    if (!lead) return;
+
+    const modal = document.getElementById('modalConfirmarCheckpoint');
+    if (!modal) {
+        if (confirm(`Confirmar realização da comunicação de ${fase} dias sobre o orçamento de "${lead.empresa}"?\n\nO alerta pulsante será desativado e o círculo será ocultado.`)) {
+            concluirCheckpointDireto(leadId, fase, slotIndex);
+        }
+        return;
+    }
+
+    const { dias } = calcularDiasOrcamento(lead);
+    const emAlerta = dias >= fase;
+
+    const leadIdInput = document.getElementById('checkpointLeadId');
+    const faseInput = document.getElementById('checkpointFase');
+    const slotInput = document.getElementById('checkpointSlotIndex');
+    const empresaNome = document.getElementById('checkpointEmpresaNome');
+    const faseBadge = document.getElementById('checkpointFaseBadge');
+    const msgExplicativa = document.getElementById('checkpointMensagemExplicativa');
+    const obsInput = document.getElementById('checkpointObservacao');
+
+    if (leadIdInput) leadIdInput.value = leadId;
+    if (faseInput) faseInput.value = String(fase);
+    if (slotInput) slotInput.value = String(slotIndex);
+    if (empresaNome) empresaNome.textContent = lead.empresa || 'Cliente';
+
+    if (faseBadge) {
+        faseBadge.innerHTML = `
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;${emAlerta ? 'background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;' : 'background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;'}">
+                ${emAlerta ? '🚨 ALERTA ATIVO' : 'ℹ️ CHECKPOINT PENDENTE'}: ${slotIndex + 1}º Checkpoint • ${fase} dias (${dias} ${dias === 1 ? 'dia' : 'dias'} na etapa)
+            </span>
+        `;
+    }
+
+    if (msgExplicativa) {
+        if (emAlerta) {
+            msgExplicativa.innerHTML = `
+                Este orçamento atingiu a fase de <strong>${fase} dias</strong> (${slotIndex + 1}º Checkpoint) e gerou um alerta visual pulsante solicitando contato com o cliente.
+                <br><br>
+                Deseja confirmar que a comunicação foi realizada? Ao confirmar, o <strong>alerta pulsante será desabilitado</strong> e o <strong>círculo com o número ${fase} será ocultado</strong> deste card.
+            `;
+        } else {
+            msgExplicativa.innerHTML = `
+                Este orçamento está há <strong>${dias} ${dias === 1 ? 'dia' : 'dias'}</strong> na etapa. O alerta oficial de ${fase} dias (${slotIndex + 1}º Checkpoint) será acionado quando completar este prazo.
+                <br><br>
+                Deseja confirmar a comunicação antecipadamente e <strong>ocultar o círculo ${fase}</strong>?
+            `;
+        }
+    }
+
+    if (obsInput) {
+        obsInput.value = '';
+        setTimeout(() => obsInput.focus(), 150);
+    }
+
+    abrirModal('modalConfirmarCheckpoint');
+}
+
+function executarConfirmacaoCheckpoint(event) {
+    if (event) event.preventDefault();
+
+    const leadId = document.getElementById('checkpointLeadId')?.value;
+    const faseStr = document.getElementById('checkpointFase')?.value;
+    const slotStr = document.getElementById('checkpointSlotIndex')?.value;
+    const fase = parseInt(faseStr, 10);
+    const slotIndex = parseInt(slotStr, 10) || 0;
+    const obs = document.getElementById('checkpointObservacao')?.value?.trim() || '';
+
+    if (!leadId || isNaN(fase)) {
+        fecharModal('modalConfirmarCheckpoint');
+        return;
+    }
+
+    concluirCheckpointDireto(leadId, fase, slotIndex, obs);
+    fecharModal('modalConfirmarCheckpoint');
+}
+
+function concluirCheckpointDireto(leadId, fase, slotIndex = 0, obs = '') {
+    const lead = leads.find(l => l.id === leadId);
+    if (!lead) return;
+
+    if (!lead.checkpointsComunicacao || typeof lead.checkpointsComunicacao !== 'object') {
+        lead.checkpointsComunicacao = {};
+    }
+
+    const nomeUsuario = (typeof usuarioAtual !== 'undefined' && usuarioAtual && (usuarioAtual.nome || usuarioAtual.email)) || 'Usuário';
+
+    const registro = {
+        concluido: true,
+        fase: fase,
+        slot: slotIndex + 1,
+        data: new Date().toISOString(),
+        usuario: nomeUsuario,
+        obs: obs
+    };
+
+    lead.checkpointsComunicacao[fase] = registro;
+    lead.checkpointsComunicacao[`slot_${slotIndex + 1}`] = registro;
+
+    if (!lead.tarefas || typeof lead.tarefas !== 'object') {
+        lead.tarefas = {};
+    }
+    lead.tarefas.checkpointsComunicacao = lead.checkpointsComunicacao;
+
+    if (!Array.isArray(lead.historico)) lead.historico = [];
+    const obsTexto = obs ? ` — Obs: "${obs}"` : '';
+    lead.historico.push({
+        data: typeof hoje === 'function' ? hoje() : new Date().toISOString().split('T')[0],
+        hora: new Date().toTimeString().slice(0, 5),
+        tipo: 'Comunicação',
+        descricao: `Comunicação de orçamento (${slotIndex + 1}º Checkpoint - ${fase} dias) confirmada por ${nomeUsuario}${obsTexto}`
+    });
+
+    if (typeof salvarDados === 'function') salvarDados();
+    if (typeof renderizarPipeline === 'function') renderizarPipeline();
+    if (typeof renderizarHistorico === 'function' && document.getElementById('historicoLeadId')?.value === leadId) {
+        renderizarHistorico(leadId);
+    }
+
+    if (typeof showToast === 'function') {
+        showToast(`Comunicação de ${fase} dias confirmada! Círculo ocultado.`, 'success');
+    }
+}
+
+function restaurarCheckpointsComunicacao(leadId) {
+    const lead = leads.find(l => l.id === leadId);
+    if (!lead || lead.etapa !== 'orcamento') return;
+
+    const fases = typeof obterFasesCheckpointOrcamento === 'function' ? obterFasesCheckpointOrcamento() : [2, 5, 9, 14];
+    if (!confirm(`Deseja restaurar todos os 4 círculos de checkpoint (${fases.join(', ')} dias) para o orçamento de "${lead.empresa}"?`)) {
+        return;
+    }
+
+    lead.checkpointsComunicacao = {};
+    if (lead.tarefas && typeof lead.tarefas === 'object') {
+        lead.tarefas.checkpointsComunicacao = {};
+    }
+
+    const nomeUsuario = (typeof usuarioAtual !== 'undefined' && usuarioAtual && (usuarioAtual.nome || usuarioAtual.email)) || 'Usuário';
+
+    if (!Array.isArray(lead.historico)) lead.historico = [];
+    lead.historico.push({
+        data: typeof hoje === 'function' ? hoje() : new Date().toISOString().split('T')[0],
+        hora: new Date().toTimeString().slice(0, 5),
+        tipo: 'Registro',
+        descricao: `Círculos de checkpoint de comunicação (${fases.join(', ')} dias) restaurados por ${nomeUsuario}`
+    });
+
+    if (typeof salvarDados === 'function') salvarDados();
+    if (typeof renderizarPipeline === 'function') renderizarPipeline();
+    if (typeof showToast === 'function') {
+        showToast('Círculos de checkpoint restaurados com sucesso!', 'success');
+    }
 }
 
 // ============================================

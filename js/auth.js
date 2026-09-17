@@ -11,38 +11,49 @@ function alternarVisibilidadeSenha() {
 }
 
 async function carregarUsuarios() {
-    const { data, error } = await supabaseClient.from('profiles').select('id, nome, email, papel');
-    if (error) {
-        console.error('Erro ao carregar usuários do Supabase:', error);
+    try {
+        const { data, error } = await supabaseClient.from('profiles').select('id, nome, email, papel');
+        if (error) {
+            console.warn('Aviso ao carregar usuários do Supabase:', error);
+            usuarios = [];
+            return;
+        }
+        usuarios = data || [];
+    } catch (e) {
+        console.warn('Exceção ao carregar usuários do Supabase:', e);
         usuarios = [];
-        return;
     }
-    usuarios = data || [];
 }
 
 async function verificarLogin() {
-    const { data, error } = await supabaseClient.auth.getSession();
-    const session = data && data.session;
-    if (error || !session) {
-        document.getElementById('loginScreen').style.display = 'flex';
-        document.getElementById('appWrapper').style.display = 'none';
-        return;
-    }
+    try {
+        const { data, error } = await supabaseClient.auth.getSession();
+        const session = data && data.session;
+        if (error || !session) {
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('appWrapper').style.display = 'none';
+            return;
+        }
 
-    // Só agora, com sessão confirmada, é que dá pra buscar profiles/leads (RLS exige autenticação)
-    await carregarUsuarios();
-    const perfil = usuarios.find(u => u.id === session.user.id);
-    if (!perfil) {
-        // Sessão do Supabase existe mas o profile ainda não foi encontrado (ex: acabou de ser criado)
-        await supabaseClient.auth.signOut();
+        // Só agora, com sessão confirmada, é que dá pra buscar profiles/leads (RLS exige autenticação)
+        await carregarUsuarios();
+        const perfil = usuarios.find(u => u.id === session.user.id);
+        if (!perfil) {
+            // Sessão do Supabase existe mas o profile ainda não foi encontrado (ex: acabou de ser criado)
+            await supabaseClient.auth.signOut();
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('appWrapper').style.display = 'none';
+            return;
+        }
+        await carregarDados();
+        usuarioAtual = perfil;
+        if (typeof carregarDadosEmpresa === 'function') await carregarDadosEmpresa();
+        mostrarApp();
+    } catch (err) {
+        console.warn('Exceção ao verificar sessão com Supabase:', err);
         document.getElementById('loginScreen').style.display = 'flex';
         document.getElementById('appWrapper').style.display = 'none';
-        return;
     }
-    await carregarDados();
-    usuarioAtual = perfil;
-    if (typeof carregarDadosEmpresa === 'function') await carregarDadosEmpresa();
-    mostrarApp();
 }
 
 async function fazerLogin(event) {
@@ -51,32 +62,38 @@ async function fazerLogin(event) {
     const senha = document.getElementById('loginSenha').value;
     const errEl = document.getElementById('loginError');
 
-    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: senha });
+    try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: senha });
 
-    if (error || !data.session) {
-        errEl.textContent = 'E-mail ou senha inválidos.';
+        if (error || !data.session) {
+            errEl.textContent = 'E-mail ou senha inválidos.';
+            errEl.style.display = 'block';
+            const card = document.getElementById('loginCard');
+            card.classList.remove('shake');
+            void card.offsetWidth; // reinicia a animação mesmo em tentativas seguidas
+            card.classList.add('shake');
+            return;
+        }
+
+        await carregarUsuarios();
+        const perfil = usuarios.find(u => u.id === data.session.user.id);
+        if (!perfil) {
+            errEl.textContent = 'Login válido, mas não encontramos seu perfil. Fale com um administrador.';
+            errEl.style.display = 'block';
+            await supabaseClient.auth.signOut();
+            return;
+        }
+        await carregarDados();
+
+        errEl.style.display = 'none';
+        usuarioAtual = perfil;
+        if (typeof carregarDadosEmpresa === 'function') await carregarDadosEmpresa();
+        mostrarApp();
+    } catch (errNet) {
+        console.warn('Erro de conexão ao tentar fazer login:', errNet);
+        errEl.textContent = 'Falha de conexão com o servidor de autenticação. Verifique sua internet.';
         errEl.style.display = 'block';
-        const card = document.getElementById('loginCard');
-        card.classList.remove('shake');
-        void card.offsetWidth; // reinicia a animação mesmo em tentativas seguidas
-        card.classList.add('shake');
-        return;
     }
-
-    await carregarUsuarios();
-    const perfil = usuarios.find(u => u.id === data.session.user.id);
-    if (!perfil) {
-        errEl.textContent = 'Login válido, mas não encontramos seu perfil. Fale com um administrador.';
-        errEl.style.display = 'block';
-        await supabaseClient.auth.signOut();
-        return;
-    }
-    await carregarDados();
-
-    errEl.style.display = 'none';
-    usuarioAtual = perfil;
-    if (typeof carregarDadosEmpresa === 'function') await carregarDadosEmpresa();
-    mostrarApp();
 }
 
 async function logout() {

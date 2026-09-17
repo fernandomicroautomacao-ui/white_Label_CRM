@@ -90,3 +90,40 @@ const CSV_MAP = {
     'observacoes': 'observacoes',
     'observacao': 'observacoes'
 };
+
+// ============================================
+// CONFIGURAÇÃO DOS CHECKPOINTS (ETAPA ORÇAMENTO)
+// Padrão: 2, 5, 9 e 14 dias (customizável no painel de administração)
+// ============================================
+const CHECKPOINTS_ORCAMENTO_PADRAO = [2, 5, 9, 14];
+const STORAGE_KEY_CHECKPOINTS_ORCAMENTO = 'crm_checkpoints_orcamento_dias';
+
+function obterFasesCheckpointOrcamento() {
+    try {
+        const salvo = localStorage.getItem(STORAGE_KEY_CHECKPOINTS_ORCAMENTO);
+        if (salvo) {
+            const parsed = JSON.parse(salvo);
+            if (Array.isArray(parsed) && parsed.length === 4) {
+                const nums = parsed.map(v => parseInt(v, 10)).filter(n => !isNaN(n) && n > 0);
+                if (nums.length === 4) return nums;
+            }
+        }
+    } catch (e) {
+        console.warn('Erro ao ler configuração de checkpoints:', e);
+    }
+    return [...CHECKPOINTS_ORCAMENTO_PADRAO];
+}
+
+function salvarFasesCheckpointOrcamento(fasesArray) {
+    if (!Array.isArray(fasesArray) || fasesArray.length !== 4) return false;
+    const nums = fasesArray.map(v => parseInt(v, 10)).filter(n => !isNaN(n) && n > 0);
+    if (nums.length !== 4) return false;
+    try {
+        localStorage.setItem(STORAGE_KEY_CHECKPOINTS_ORCAMENTO, JSON.stringify(nums));
+        return true;
+    } catch (e) {
+        console.error('Erro ao salvar configuração de checkpoints:', e);
+        return false;
+    }
+}
+

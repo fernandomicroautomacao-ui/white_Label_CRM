@@ -9,6 +9,7 @@ function renderizarAdmin() {
     }
     renderizarUsuariosAdmin();
     if (typeof renderizarEmpresaAdmin === 'function') renderizarEmpresaAdmin();
+    renderizarCheckpointsAdmin();
     popularAnoMetas();
     renderizarMetasAdmin();
     popularMesMetasVendedor();
@@ -119,3 +120,115 @@ async function excluirUsuario(id) {
     renderizarUsuariosAdmin();
     showToast(`Usuário "${usuario.nome}" removido.`);
 }
+
+// ============================================
+// CONFIGURAÇÃO DOS CHECKPOINTS DE COMUNICAÇÃO (ORÇAMENTO)
+// ============================================
+function renderizarCheckpointsAdmin() {
+    const fases = typeof obterFasesCheckpointOrcamento === 'function' 
+        ? obterFasesCheckpointOrcamento() 
+        : [2, 5, 9, 14];
+
+    const input1 = document.getElementById('cfgCheckpoint1');
+    const input2 = document.getElementById('cfgCheckpoint2');
+    const input3 = document.getElementById('cfgCheckpoint3');
+    const input4 = document.getElementById('cfgCheckpoint4');
+
+    if (input1) input1.value = fases[0] || 2;
+    if (input2) input2.value = fases[1] || 5;
+    if (input3) input3.value = fases[2] || 9;
+    if (input4) input4.value = fases[3] || 14;
+
+    atualizarPreviewCheckpointsAdmin();
+}
+
+function atualizarPreviewCheckpointsAdmin() {
+    const v1 = parseInt(document.getElementById('cfgCheckpoint1')?.value, 10) || 2;
+    const v2 = parseInt(document.getElementById('cfgCheckpoint2')?.value, 10) || 5;
+    const v3 = parseInt(document.getElementById('cfgCheckpoint3')?.value, 10) || 9;
+    const v4 = parseInt(document.getElementById('cfgCheckpoint4')?.value, 10) || 14;
+
+    const normalContainer = document.getElementById('previewCheckpointsNormal');
+    const alertaContainer = document.getElementById('previewCheckpointsAlerta');
+
+    if (normalContainer) {
+        normalContainer.innerHTML = [v1, v2, v3, v4].map(val => `
+            <div class="checkpoint-circulo normal" style="cursor:default;" title="${val} dias">${val}</div>
+        `).join('');
+    }
+
+    if (alertaContainer) {
+        alertaContainer.innerHTML = [v1, v2, v3, v4].map(val => `
+            <div class="checkpoint-circulo alerta-pulsante" style="cursor:default;" title="Alerta de ${val} dias">${val}</div>
+        `).join('');
+    }
+}
+
+function salvarConfiguracaoCheckpointsAdmin(event) {
+    if (event) event.preventDefault();
+
+    const v1 = parseInt(document.getElementById('cfgCheckpoint1')?.value, 10);
+    const v2 = parseInt(document.getElementById('cfgCheckpoint2')?.value, 10);
+    const v3 = parseInt(document.getElementById('cfgCheckpoint3')?.value, 10);
+    const v4 = parseInt(document.getElementById('cfgCheckpoint4')?.value, 10);
+
+    if (isNaN(v1) || v1 <= 0 || isNaN(v2) || v2 <= 0 || isNaN(v3) || v3 <= 0 || isNaN(v4) || v4 <= 0) {
+        showToast('Todos os 4 checkpoints devem ser números inteiros maiores que zero.', 'error');
+        return;
+    }
+
+    if (v1 >= v2 || v2 >= v3 || v3 >= v4) {
+        if (!confirm(`Atenção: Os dias informados (${v1}, ${v2}, ${v3}, ${v4}) não estão em ordem crescente. Deseja salvar mesmo assim?`)) {
+            return;
+        }
+    }
+
+    const novasFases = [v1, v2, v3, v4];
+    if (typeof salvarFasesCheckpointOrcamento === 'function') {
+        salvarFasesCheckpointOrcamento(novasFases);
+    } else {
+        localStorage.setItem('crm_checkpoints_orcamento_dias', JSON.stringify(novasFases));
+    }
+
+    if (typeof registrarAuditoriaLocal === 'function') {
+        registrarAuditoriaLocal('Alteração de Checkpoints', 'Orçamento', '', `Checkpoints alterados para: ${novasFases.join(', ')} dias`);
+    }
+
+    atualizarPreviewCheckpointsAdmin();
+    if (typeof renderizarPipeline === 'function') {
+        renderizarPipeline();
+    }
+
+    showToast(`Configuração dos checkpoints de orçamento atualizada (${novasFases.join(', ')} dias)!`, 'success');
+}
+
+function restaurarCheckpointsPadraoAdmin() {
+    if (!confirm('Deseja restaurar a configuração padrão dos checkpoints (2, 5, 9 e 14 dias)?')) {
+        return;
+    }
+
+    const padrao = [2, 5, 9, 14];
+    if (typeof salvarFasesCheckpointOrcamento === 'function') {
+        salvarFasesCheckpointOrcamento(padrao);
+    } else {
+        localStorage.setItem('crm_checkpoints_orcamento_dias', JSON.stringify(padrao));
+    }
+
+    const input1 = document.getElementById('cfgCheckpoint1');
+    const input2 = document.getElementById('cfgCheckpoint2');
+    const input3 = document.getElementById('cfgCheckpoint3');
+    const input4 = document.getElementById('cfgCheckpoint4');
+
+    if (input1) input1.value = 2;
+    if (input2) input2.value = 5;
+    if (input3) input3.value = 9;
+    if (input4) input4.value = 14;
+
+    atualizarPreviewCheckpointsAdmin();
+    if (typeof renderizarPipeline === 'function') {
+        renderizarPipeline();
+    }
+
+    showToast('Checkpoints restaurados para o padrão (2, 5, 9 e 14 dias).', 'info');
+}
+

@@ -167,13 +167,32 @@ async function carregarDados() {
         }
     }
 
-    const { data: linhas, error } = await supabaseClient.from('leads').select('*');
-    if (error) {
-        console.error('Erro ao carregar leads do Supabase:', error);
-        showToast('Não foi possível carregar os leads do banco de dados.', 'error');
-        leads = [];
-    } else {
-        leads = (linhas || []).map(linhaSupabaseParaLead);
+    try {
+        const { data: linhas, error } = await supabaseClient.from('leads').select('*');
+        if (error) {
+            console.warn('Aviso ao carregar leads do Supabase (utilizando cache local se disponível):', error);
+            // Se houver falha de rede/fetch, tenta restaurar do cache local de leads
+            let cacheLeads = [];
+            try {
+                const rawCache = localStorage.getItem('ploomesLeadsCache');
+                if (rawCache) cacheLeads = JSON.parse(rawCache);
+            } catch (e) {}
+            if (cacheLeads.length > 0) {
+                leads = cacheLeads;
+            } else {
+                leads = [];
+            }
+        } else {
+            leads = (linhas || []).map(linhaSupabaseParaLead);
+        }
+    } catch (errRede) {
+        console.warn('Exceção de rede ao carregar leads do Supabase:', errRede);
+        let cacheLeads = [];
+        try {
+            const rawCache = localStorage.getItem('ploomesLeadsCache');
+            if (rawCache) cacheLeads = JSON.parse(rawCache);
+        } catch (e) {}
+        leads = cacheLeads.length > 0 ? cacheLeads : [];
     }
     leadsIdsCarregados = new Set(leads.map(l => l.id));
 
@@ -356,39 +375,45 @@ async function executarSalvarDadosInterno() {
     const idsParaExcluir = [...leadsIdsCarregados].filter(id => !idsAtuais.has(id));
     leadsIdsCarregados = idsAtuais;
 
-    if (leads.length > 0) {
-        const linhas = leads.map(leadParaLinhaSupabase);
-        let { error } = await supabaseClient.from('leads').upsert(linhas, { onConflict: 'id' });
-        if (error) {
-            console.error('Erro ao salvar leads no Supabase:', error);
-            const msg = (error.message || '') + ' ' + (error.details || '') + ' ' + (error.code || '');
-            if (/PGRST204|cnpj|classificacao|orcamento|column .* does not exist|schema cache/i.test(msg)) {
-                // Identifica dinamicamente coluna ausente ou limpa as colunas mais recentes para não travar a aplicação
-                const linhasCompatibilidade = linhas.map(linha => {
-                    const clone = { ...linha };
-                    delete clone.cnpj;
-                    delete clone.classificacao;
-                    delete clone.orcamento_pdf_principal;
-                    delete clone.orcamento_modo;
-                    delete clone.orcamento_reset_em;
-                    return clone;
-                });
-                const retry = await supabaseClient.from('leads').upsert(linhasCompatibilidade, { onConflict: 'id' });
-                if (retry.error) {
-                    console.error('Erro no fallback do Supabase:', retry.error);
+    try {
+        if (leads.length > 0) {
+            const linhas = leads.map(leadParaLinhaSupabase);
+            let { error } = await supabaseClient.from('leads').upsert(linhas, { onConflict: 'id' });
+            if (error) {
+                console.error('Erro ao salvar leads no Supabase:', error);
+                const msg = (error.message || '') + ' ' + (error.details || '') + ' ' + (error.code || '');
+                if (/PGRST204|cnpj|classificacao|orcamento|column .* does not exist|schema cache/i.test(msg)) {
+                    // Identifica dinamicamente coluna ausente ou limpa as colunas mais recentes para não travar a aplicação
+                    const linhasCompatibilidade = linhas.map(linha => {
+                        const clone = { ...linha };
+                        delete clone.cnpj;
+                        delete clone.classificacao;
+                        delete clone.orcamento_pdf_principal;
+                        delete clone.orcamento_modo;
+                        delete clone.orcamento_reset_em;
+                        return clone;
+                    });
+                    const retry = await supabaseClient.from('leads').upsert(linhasCompatibilidade, { onConflict: 'id' });
+                    if (retry.error) {
+                        console.error('Erro no fallback do Supabase:', retry.error);
+                    } else {
+                        console.info('Leads salvos com fallback de compatibilidade do Supabase.');
+                    }
+                } else if (/failed to fetch|networkerror|conex|offline/i.test(msg)) {
+                    console.warn('Conexão instável com o banco de dados. Dados preservados com segurança no armazenamento local.');
                 } else {
-                    console.info('Leads salvos com fallback de compatibilidade do Supabase.');
+                    showToast('Erro ao salvar no banco de dados: ' + error.message, 'error');
                 }
-            } else {
-                showToast('Erro ao salvar no banco de dados: ' + error.message, 'error');
             }
         }
-    }
-    if (idsParaExcluir.length > 0) {
-        const { error } = await supabaseClient.from('leads').delete().in('id', idsParaExcluir);
-        if (error) {
-            console.error('Erro ao excluir leads no Supabase:', error);
+        if (idsParaExcluir.length > 0) {
+            const { error } = await supabaseClient.from('leads').delete().in('id', idsParaExcluir);
+            if (error) {
+                console.error('Erro ao excluir leads no Supabase:', error);
+            }
         }
+    } catch (errSupabase) {
+        console.warn('Falha de rede ao sincronizar leads com Supabase (salvo localmente):', errSupabase);
     }
 
     // Sincronizar Pessoas com Supabase (com detecção graciosa de erros se tabela ainda não criada)

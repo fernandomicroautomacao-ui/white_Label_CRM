@@ -786,6 +786,14 @@ body {
     gap: 4px;
     margin-top: 8px;
     flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+}
+.pipeline-card .card-actions-left {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
 }
 .card-data-row {
     display: flex;
@@ -2995,6 +3003,111 @@ tr.tratado-row td {
     .orcamento-contador .orcamento-aviso {
         font-size: 9px;
     }
+}
+
+/* ============================================
+   CHECKPOINTS DE COMUNICAÇÃO (ETAPA ORÇAMENTO)
+   Fases: 2, 5, 9, 14 dias
+   Círculos inferiores nos cards de Orçamento
+   ============================================ */
+.card-checkpoints-orcamento {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: auto;
+    flex-shrink: 0;
+    user-select: none;
+}
+
+.checkpoint-circulo {
+    width: 25px;
+    height: 25px;
+    min-width: 25px;
+    min-height: 25px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: transform 0.15s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Estado normal: borda circular fina, número escuro interno, fundo limpo */
+.checkpoint-circulo.normal {
+    border: 1.5px solid #1f2937;
+    background-color: #ffffff;
+    color: #111827;
+}
+
+.checkpoint-circulo.normal:hover {
+    background-color: #f3f4f6;
+    transform: scale(1.1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+/* Suporte a modo escuro */
+body.dark-mode .checkpoint-circulo.normal,
+[data-theme="dark"] .checkpoint-circulo.normal {
+    border-color: #cbd5e1;
+    background-color: #1e293b;
+    color: #f8fafc;
+}
+
+body.dark-mode .checkpoint-circulo.normal:hover,
+[data-theme="dark"] .checkpoint-circulo.normal:hover {
+    background-color: #334155;
+}
+
+/* Estado de alerta pulsante: piscando em vermelho vivo quando completou a fase */
+.checkpoint-circulo.alerta-pulsante {
+    border: 2px solid #dc2626;
+    background-color: #fff1f2;
+    color: #b91c1c;
+    font-weight: 800;
+    animation: checkpointPulsarVermelho 1.15s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    cursor: pointer;
+}
+
+.checkpoint-circulo.alerta-pulsante:hover {
+    animation-play-state: paused;
+    transform: scale(1.15);
+    background-color: #dc2626;
+    color: #ffffff;
+    border-color: #991b1b;
+}
+
+@keyframes checkpointPulsarVermelho {
+    0% {
+        transform: scale(1);
+        border-color: #dc2626;
+        color: #b91c1c;
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.12);
+        border-color: #ef4444;
+        color: #ef4444;
+        box-shadow: 0 0 0 6px rgba(220, 38, 38, 0);
+        opacity: 0.85;
+    }
+    100% {
+        transform: scale(1);
+        border-color: #dc2626;
+        color: #b91c1c;
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+        opacity: 1;
+    }
+}
+
+/* Card na etapa orçamento com alerta de checkpoint ativo */
+.pipeline-card.orcamento.com-alerta-checkpoint {
+    border-left-color: #dc2626 !important;
 }
 
 
