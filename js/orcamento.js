@@ -120,7 +120,10 @@ function renderizarDadosExtraidosNaTela(extraidos) {
     setVal('pdfExtData', extraidos.data);
     setVal('pdfExtValidade', extraidos.dataValidade);
     setVal('pdfExtCondicoes', extraidos.condicoesPagamento);
-    setVal('pdfExtCliente', extraidos.cliente ? `${extraidos.cliente} ${extraidos.clienteCnpj ? `(${extraidos.clienteCnpj})` : ''}` : '-');
+    const clienteTexto = extraidos.cliente
+        ? `${extraidos.cliente} ${extraidos.clienteCnpj ? `(${extraidos.clienteCnpj})` : ''}`
+        : (extraidos.clienteCnpj ? `CNPJ/CPF: ${extraidos.clienteCnpj}` : '-');
+    setVal('pdfExtCliente', clienteTexto);
     setVal('pdfExtVendedor', extraidos.vendedor);
     setVal('pdfExtFrete', extraidos.frete && extraidos.frete > 0 ? formatarMoeda(extraidos.frete) : 'Sem frete adicional (R$ 0,00)');
 
@@ -236,12 +239,27 @@ function processarPdfVisualOrcamento(file) {
             if (freteDetectado > 0 && valorFinal > freteDetectado) {
                 subtotalProdutos = valorFinal - freteDetectado;
             }
+            // Sincroniza automaticamente o CNPJ/CPF do cliente no Lead atual se não preenchido ou se possuía o da Micro Automação
+            const leadAtual = leads.find(l => l.id === itensEditLeadId);
+            if (leadAtual && dadosExtraidos.clienteCnpj) {
+                const cnpjsIgnorar = obterCnpjsEmissorParaIgnorar(textoCompleto);
+                const digLead = (leadAtual.cnpj || '').replace(/\D/g, '');
+                const digCod = (leadAtual.codigoUnico || '').replace(/\D/g, '');
+                if (!leadAtual.cnpj || cnpjsIgnorar.has(digLead)) {
+                    leadAtual.cnpj = dadosExtraidos.clienteCnpj;
+                }
+                if (!leadAtual.codigoUnico || cnpjsIgnorar.has(digCod)) {
+                    leadAtual.codigoUnico = dadosExtraidos.clienteCnpj;
+                }
+            }
+
+            const infoCnpjMsg = dadosExtraidos.clienteCnpj ? ` | CNPJ/CPF: ${dadosExtraidos.clienteCnpj}` : '';
             if (valorFinal > 0) {
                 if (campoValorDireto) campoValorDireto.value = subtotalProdutos.toFixed(2);
                 const infoFreteMsg = freteDetectado > 0 ? ` (Produtos: ${formatarMoeda(subtotalProdutos)} + Frete: ${formatarMoeda(freteDetectado)})` : '';
-                showToast(`PDF carregado! Total: ${formatarMoeda(valorFinal)}${infoFreteMsg} e ${dadosExtraidos.itens?.length || 0} item(ns) extraídos.`, 'success');
+                showToast(`PDF carregado! Total: ${formatarMoeda(valorFinal)}${infoFreteMsg}${infoCnpjMsg} e ${dadosExtraidos.itens?.length || 0} item(ns) extraídos.`, 'success');
             } else {
-                showToast('PDF carregado com sucesso no visualizador.', 'success');
+                showToast(`PDF carregado com sucesso no visualizador.${infoCnpjMsg}`, 'success');
             }
 
             renderizarVisualizadorPdfOrcamento();
@@ -252,6 +270,47 @@ function processarPdfVisualOrcamento(file) {
     leitorArray.readAsArrayBuffer(file);
     const input = document.getElementById('orcPdfInput');
     if (input) input.value = '';
+}
+
+// ============================================
+// AUXILIAR: IDENTIFICAR CNPJS DO EMISSOR (MICRO AUTOMAÇÃO / WHITE LABEL)
+// ============================================
+function obterCnpjsEmissorParaIgnorar(texto) {
+    const ignorar = new Set();
+
+    // 1. CNPJ das configurações de empresa (White Label)
+    if (typeof empresaAtual !== 'undefined' && empresaAtual && empresaAtual.cnpj) {
+        const dig = String(empresaAtual.cnpj).replace(/\D/g, '');
+        if (dig) ignorar.add(dig);
+    }
+
+    if (!texto) return ignorar;
+
+    // 2. Procura no cabeçalho menção a Micro Automação associada a CNPJ
+    const mMicro = texto.match(/micro\s*automa[çc][ãa]o[^\n\r]*?CNPJ[\s\:\.\-]*([0-9\.\/\-]{14,20})/i)
+        || texto.match(/CNPJ[\s\:\.\-]*([0-9\.\/\-]{14,20})[^\n\r]*?micro\s*automa[çc][ãa]o/i);
+    if (mMicro) {
+        const dig = mMicro[1].replace(/\D/g, '');
+        if (dig.length === 14) ignorar.add(dig);
+    }
+
+    // 3. Procura no cabeçalho antes de "Orçamento [0-9]+" se houver menção a Micro Automação
+    const idxOrc = texto.search(/Or[çc]amento\s+[0-9]+/i);
+    if (idxOrc > 0) {
+        const cabecalho = texto.slice(0, idxOrc);
+        if (/micro\s*automa/i.test(cabecalho)) {
+            const mCab = cabecalho.match(/CNPJ[\s\:\.\-]*([0-9\.\/\-]{14,20})/i);
+            if (mCab) {
+                const dig = mCab[1].replace(/\D/g, '');
+                if (dig.length === 14) ignorar.add(dig);
+            }
+        }
+    }
+
+    return ignorar;
+}
+if (typeof window !== 'undefined') {
+    window.obterCnpjsEmissorParaIgnorar = obterCnpjsEmissorParaIgnorar;
 }
 
 // ============================================
@@ -292,14 +351,82 @@ function extrairDadosCompletosPdf(texto) {
     const matchValidade = texto.match(/Data\s+de\s+validade:\s*([0-9]{2}\/[0-9]{2}\/[0-9]{4})/i);
     if (matchValidade) dados.dataValidade = matchValidade[1];
 
-    // 2. Destinatário / Cliente
-    const matchCliente = texto.match(/LTDA\s+([A-Z0-9\.\s\-\/]{5,60}?)\s+CNPJ(?:\/CPF)?:\s*([0-9\.\/\-]+)/i);
-    if (matchCliente) {
-        dados.cliente = matchCliente[1].trim();
-        dados.clienteCnpj = matchCliente[2].trim();
-    } else {
-        const matchCnpj = texto.match(/CNPJ\/CPF:\s*([0-9\.\/\-]+)/i);
-        if (matchCnpj) dados.clienteCnpj = matchCnpj[1].trim();
+    // 2. Destinatário / Cliente e CNPJ/CPF do Cliente
+    // REGRA FUNDAMENTAL: O PDF da Micro Automação traz no cabeçalho o CNPJ da própria Micro Automação,
+    // enquanto o documento do cliente destinatário é explicitamente identificado pelo campo
+    // "CNPJ/CPF: 12.983.989/0001-80" (ou variações como "CNPJ / CPF:", "CPF/CNPJ:", etc.).
+    const cnpjsIgnorar = obterCnpjsEmissorParaIgnorar(texto);
+
+    // 2.1 Varredura direcionada ao rótulo exato "CNPJ/CPF:" do cliente
+    const regexCnpjCpfGlobal = /(?:CNPJ\s*[\/\-]\s*CPF|CPF\s*[\/\-]\s*CNPJ|C\.?N\.?P\.?J\.?\s*[\/\-]\s*C\.?P\.?F\.?|CNPJ\s*[\/\-]\s*MF)[\s\:\.\-\=]*([0-9]{2}\.[0-9]{3}\.[0-9]{3}\/[0-9]{4}\-[0-9]{2}|[0-9]{3}\.[0-9]{3}\.[0-9]{3}\-[0-9]{2}|[0-9]{14}|[0-9]{11}|[0-9\.\/\-\s]{11,25})/gi;
+
+    let matchCnpjCpf;
+    while ((matchCnpjCpf = regexCnpjCpfGlobal.exec(texto)) !== null) {
+        const bruto = matchCnpjCpf[1].trim();
+        const digitos = bruto.replace(/\D/g, '');
+        if (digitos.length === 14 || digitos.length === 11) {
+            if (!cnpjsIgnorar.has(digitos)) {
+                if (digitos.length === 14) {
+                    dados.clienteCnpj = `${digitos.slice(0, 2)}.${digitos.slice(2, 5)}.${digitos.slice(5, 8)}/${digitos.slice(8, 12)}-${digitos.slice(12, 14)}`;
+                } else {
+                    dados.clienteCnpj = `${digitos.slice(0, 3)}.${digitos.slice(3, 6)}.${digitos.slice(6, 9)}-${digitos.slice(9, 11)}`;
+                }
+
+                // Tenta extrair o nome do cliente que antecede o campo CNPJ/CPF
+                const matchIndex = matchCnpjCpf.index;
+                const textoAnterior = texto.slice(Math.max(0, matchIndex - 140), matchIndex);
+
+                // Caso A: Rótulo formal "Cliente: ...", "Razão Social: ...", "Destinatário: ..."
+                const mNomeRotulado = textoAnterior.match(/(?:Cliente|Destinat[áa]rio|Raz[ãa]o\s+Social|Nome(?:\s*\/\s*Raz[ãa]o\s+Social)?)[\s\:\.\-\=]+([^\n\r\t]+?)$/i);
+                if (mNomeRotulado && mNomeRotulado[1]) {
+                    dados.cliente = mNomeRotulado[1].trim();
+                } else {
+                    // Caso B: Linha ou fragmento anterior ao CNPJ/CPF
+                    const pedacos = textoAnterior.split(/[\n\r]/).map(p => p.trim()).filter(Boolean);
+                    if (pedacos.length > 0) {
+                        let cand = pedacos[pedacos.length - 1];
+                        cand = cand.replace(/^.*?(?:Data(?:\s+de\s+validade)?[\s\:\.\-]*[0-9]{2}\/[0-9]{2}\/[0-9]{4}|Or[çc]amento\s+[0-9]+)\s*/i, '').trim();
+                        if (cand.length >= 3 && !/micro\s*automa|validade/i.test(cand)) {
+                            dados.cliente = cand.replace(/^(?:Cliente|Destinat[áa]rio|Raz[ãa]o\s+Social)[\s\:\.\-]*/i, '').trim();
+                        }
+                    }
+                }
+                break;
+            }
+        }
+    }
+
+    // 2.2 Fallback para CNPJ caso o PDF utilize outro padrão de rótulo (excluindo sempre o emissor)
+    if (!dados.clienteCnpj) {
+        const todosCnpjs = [...texto.matchAll(/([0-9]{2}\.[0-9]{3}\.[0-9]{3}\/[0-9]{4}\-[0-9]{2}|[0-9]{3}\.[0-9]{3}\.[0-9]{3}\-[0-9]{2})/g)];
+        for (const m of todosCnpjs) {
+            const dig = m[1].replace(/\D/g, '');
+            if (!cnpjsIgnorar.has(dig) && (dig.length === 14 || dig.length === 11)) {
+                dados.clienteCnpj = m[1];
+                break;
+            }
+        }
+    }
+
+    // 2.3 Fallback para Nome do Cliente se ainda não preenchido
+    if (!dados.cliente) {
+        const mClienteRotulo = texto.match(/(?:Cliente|Destinat[áa]rio|Raz[ãa]o\s+Social|Nome(?:\s*\/\s*Raz[ãa]o\s+Social)?)[\s\:\.\-\=]+([A-Z0-9\.\,\&\-\s]{4,80}?)(?=(?:\s+(?:CNPJ|CPF|Endere[çc]o|Telefone|Fone|Data|Inscri[çc][ãa]o|Bairro|Cidade|UF|CEP)|[\n\r]|$))/i);
+        if (mClienteRotulo && mClienteRotulo[1]) {
+            const cand = mClienteRotulo[1].trim();
+            if (!/micro\s*automa/i.test(cand)) {
+                dados.cliente = cand;
+            }
+        }
+    }
+
+    // Sanitize do nome do cliente para não conter prefixos/sufixos indesejados
+    if (dados.cliente) {
+        dados.cliente = dados.cliente
+            .replace(/^[\:\-\.\,\s]+|[\:\-\.\,\s]+$/g, '')
+            .replace(/\s+/g, ' ');
+        if (/micro\s*automa/i.test(dados.cliente)) {
+            dados.cliente = '';
+        }
     }
 
     // 3. Vendedor & Contato
@@ -424,14 +551,15 @@ function aplicarDadosPdfAoLead() {
     const ex = itensEditPdfPrincipal.dadosExtraidos;
     let atualizacoes = [];
 
-    if (ex.cliente && ex.cliente.length > 3) {
+    if (ex.cliente && ex.cliente.length > 3 && !/micro\s*automa/i.test(ex.cliente)) {
         lead.empresa = ex.cliente;
         document.getElementById('itensEmpresaNome').textContent = ex.cliente;
         atualizacoes.push('Empresa');
     }
     if (ex.clienteCnpj) {
         lead.codigoUnico = ex.clienteCnpj;
-        atualizacoes.push('CNPJ');
+        lead.cnpj = ex.clienteCnpj;
+        atualizacoes.push(`CNPJ/CPF (${ex.clienteCnpj})`);
     }
     if (ex.clienteTelefone && !lead.telefone) {
         lead.telefone = ex.clienteTelefone;
@@ -689,6 +817,21 @@ function salvarItensOrcamento() {
     // Se extraiu o número do pedido/orçamento, salva no lead
     if (itensEditPdfPrincipal?.dadosExtraidos?.numero && !lead.numeroPedido) {
         lead.numeroPedido = itensEditPdfPrincipal.dadosExtraidos.numero;
+    }
+
+    // Se o PDF extraiu CNPJ/CPF do cliente, atualiza o lead caso não possua ou possua o CNPJ da Micro Automação
+    if (itensEditPdfPrincipal?.dadosExtraidos?.clienteCnpj) {
+        const cnpjsIgnorar = obterCnpjsEmissorParaIgnorar();
+        const docExtraido = itensEditPdfPrincipal.dadosExtraidos.clienteCnpj;
+        const cnpjLeadDigitos = (lead.cnpj || '').replace(/\D/g, '');
+        const codigoLeadDigitos = (lead.codigoUnico || '').replace(/\D/g, '');
+
+        if (!lead.cnpj || cnpjsIgnorar.has(cnpjLeadDigitos)) {
+            lead.cnpj = docExtraido;
+        }
+        if (!lead.codigoUnico || cnpjsIgnorar.has(codigoLeadDigitos)) {
+            lead.codigoUnico = docExtraido;
+        }
     }
 
     const subtotal = parseFloat(document.getElementById('itemValorDiretoPdf').value) || 0;

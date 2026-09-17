@@ -19,12 +19,33 @@ let relMatrizCache = null;
 
 function extrairCnpjMatriz(item) {
     if (!item) return '';
-    if (item.cnpj) return item.cnpj;
-    if (item.empresa) {
-        const m = item.empresa.match(/\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}/);
-        if (m) return m[0];
+    const cnpjsIgnorar = typeof obterCnpjsEmissorParaIgnorar === 'function' ? obterCnpjsEmissorParaIgnorar() : new Set();
+
+    let val = item.cnpj || '';
+    let dig = val.replace(/\D/g, '');
+    if (dig && cnpjsIgnorar.has(dig)) {
+        val = '';
+        dig = '';
     }
-    return '';
+
+    if (!val && item.orcamentoPdfPrincipal?.dadosExtraidos?.clienteCnpj) {
+        const cPdf = item.orcamentoPdfPrincipal.dadosExtraidos.clienteCnpj;
+        const dPdf = cPdf.replace(/\D/g, '');
+        if (!cnpjsIgnorar.has(dPdf)) {
+            val = cPdf;
+        }
+    }
+    if (!val && item.codigoUnico) {
+        const dCod = String(item.codigoUnico).replace(/\D/g, '');
+        if ((dCod.length === 14 || dCod.length === 11) && !cnpjsIgnorar.has(dCod)) {
+            val = item.codigoUnico;
+        }
+    }
+    if (!val && item.empresa) {
+        const m = item.empresa.match(/\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}/);
+        if (m && !cnpjsIgnorar.has(m[0].replace(/\D/g, ''))) return m[0];
+    }
+    return val;
 }
 
 function processarDadosMatrizEsforco() {

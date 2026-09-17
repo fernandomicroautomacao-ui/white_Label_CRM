@@ -22,13 +22,26 @@ let relConfrontoDetalheChave = null;
 // --------------------------------------------------------------------------
 function extrairCnpjDeLead(lead) {
     if (!lead) return '';
+    const cnpjsIgnorar = typeof obterCnpjsEmissorParaIgnorar === 'function' ? obterCnpjsEmissorParaIgnorar() : new Set();
+
     let val = lead.cnpj || '';
+    let valDig = apenasDigitosCnpj(val);
+    if (valDig && cnpjsIgnorar.has(valDig)) {
+        val = '';
+        valDig = '';
+    }
+
     if (!val && lead.orcamentoPdfPrincipal?.dadosExtraidos?.clienteCnpj) {
-        val = lead.orcamentoPdfPrincipal.dadosExtraidos.clienteCnpj;
+        const cPdf = lead.orcamentoPdfPrincipal.dadosExtraidos.clienteCnpj;
+        const cPdfDig = apenasDigitosCnpj(cPdf);
+        if (!cnpjsIgnorar.has(cPdfDig)) {
+            val = cPdf;
+            valDig = cPdfDig;
+        }
     }
     if (!val && lead.codigoUnico) {
         const apenasNum = String(lead.codigoUnico).replace(/\D/g, '');
-        if (apenasNum.length === 14 || apenasNum.length === 11) {
+        if ((apenasNum.length === 14 || apenasNum.length === 11) && !cnpjsIgnorar.has(apenasNum)) {
             val = lead.codigoUnico;
         }
     }

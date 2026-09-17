@@ -244,6 +244,39 @@ async function carregarDados() {
         }
         return l;
     });
+
+    // Auto-correção para leads legados que possam ter gravado o CNPJ da Micro Automação ao importar PDF antigamente
+    if (typeof obterCnpjsEmissorParaIgnorar === 'function' && Array.isArray(leads)) {
+        const cnpjsIgnorar = obterCnpjsEmissorParaIgnorar();
+        leads.forEach(l => {
+            const digCnpj = (l.cnpj || '').replace(/\D/g, '');
+            const digCod = (l.codigoUnico || '').replace(/\D/g, '');
+            const digPdf = (l.orcamentoPdfPrincipal?.dadosExtraidos?.clienteCnpj || '').replace(/\D/g, '');
+
+            if (cnpjsIgnorar.has(digCnpj) || cnpjsIgnorar.has(digCod) || cnpjsIgnorar.has(digPdf)) {
+                if (l.orcamentoPdfPrincipal && l.orcamentoPdfPrincipal.textoCompleto && typeof extrairDadosCompletosPdf === 'function') {
+                    try {
+                        const corrigidos = extrairDadosCompletosPdf(l.orcamentoPdfPrincipal.textoCompleto);
+                        if (corrigidos && corrigidos.clienteCnpj) {
+                            l.orcamentoPdfPrincipal.dadosExtraidos.clienteCnpj = corrigidos.clienteCnpj;
+                            l.cnpj = corrigidos.clienteCnpj;
+                            l.codigoUnico = corrigidos.clienteCnpj;
+                        } else {
+                            if (cnpjsIgnorar.has(digCnpj)) l.cnpj = '';
+                            if (cnpjsIgnorar.has(digCod)) l.codigoUnico = '';
+                            if (l.orcamentoPdfPrincipal.dadosExtraidos) l.orcamentoPdfPrincipal.dadosExtraidos.clienteCnpj = '';
+                        }
+                    } catch (e) {
+                        console.warn('Erro ao reparar CNPJ de lead legado:', e);
+                    }
+                } else {
+                    if (cnpjsIgnorar.has(digCnpj)) l.cnpj = '';
+                    if (cnpjsIgnorar.has(digCod)) l.codigoUnico = '';
+                    if (l.orcamentoPdfPrincipal?.dadosExtraidos) l.orcamentoPdfPrincipal.dadosExtraidos.clienteCnpj = '';
+                }
+            }
+        });
+    }
     perdidos = perdidos.map(p => {
         if (!p.usuarioId) {
             const admin = usuarios.find(u => u.papel === 'admin');
