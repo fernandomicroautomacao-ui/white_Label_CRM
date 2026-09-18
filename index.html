@@ -2547,15 +2547,129 @@
                         <span class="text-xs text-muted">Ctrl para múltiplos (vazio = todas)</span>
                     </div>
                 </div>
+                <div class="form-group" id="cMetodoEnvioGroup">
+                    <label for="cMetodoEnvio">Método de Envio da Campanha <span class="required">*</span></label>
+                    <select id="cMetodoEnvio" onchange="atualizarOpcoesMetodoCampanha()">
+                        <option value="copia_oculta" selected>Envio em Massa via Cópia Oculta (BCC / Cco) — Recomendado</option>
+                        <option value="api">Envio Individual 1 a 1 (via API Gmail / Outlook)</option>
+                    </select>
+                </div>
+
+                <div id="cPainelCopiaOculta" style="background:var(--bg-primary);border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:14px;margin-bottom:14px;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                        <span style="font-size:16px;">✉️</span>
+                        <strong style="font-size:13px;">Configuração de Envio em Massa (Cópia Oculta / BCC)</strong>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex:2;">
+                            <label for="cEmailPrincipal">E-mail Principal (Para / To) <span class="required">*</span></label>
+                            <input type="text" id="cEmailPrincipal" value="vendas4.cps@microautomacao.com.br" placeholder="vendas4.cps@microautomacao.com.br">
+                            <span class="text-xs text-muted">E-mail que receberá a mensagem principal. Os contatos serão colocados em Cópia Oculta (Cco/Bcc).</span>
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label for="cLimitePorLote">Máx. E-mails por Grupo</label>
+                            <input type="number" id="cLimitePorLote" value="100" min="5" max="500" step="1" oninput="atualizarPreviaContatosCampanha()">
+                            <span class="text-xs text-muted">Padrão 100 (gera Parte 1, Parte 2, etc. se exceder).</span>
+                        </div>
+                    </div>
+                    <div id="cPreviaContatosInfo" style="margin-top:8px;padding:8px 12px;background:var(--bg-card);border-radius:4px;font-size:12px;color:var(--text-muted);border:1px dashed var(--border-color);">
+                        Carregando contatos qualificados...
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label>Descrição</label>
                     <textarea id="cDescricao" rows="2" placeholder="Descrição da campanha"></textarea>
                 </div>
-                <div class="form-actions">
-                    <button type="button" class="btn btn-outline" onclick="fecharModal('campanhaModal')">Cancelar</button>
-                    <button type="submit" class="btn btn-pink">Salvar Campanha</button>
+                <div class="form-actions" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <button type="button" class="btn btn-outline" id="btnCancelarCampanha" onclick="fecharModal('campanhaModal')">Cancelar</button>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                        <button type="submit" class="btn btn-pink" id="btnSalvarCampanha">Salvar Campanha</button>
+                        <button type="button" class="btn btn-primary" id="btnSalvarEAbrirEnvioMassa" onclick="salvarEAbrirEnvioMassa(event)">Salvar e Abrir Envio em Massa 🚀</button>
+                    </div>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL ENVIO EM MASSA POR CÓPIA OCULTA (BCC) -->
+    <div class="modal-overlay" id="modalEnvioMassaBcc">
+        <div class="modal modal-lg" style="max-width:980px;display:flex;flex-direction:column;max-height:92vh;">
+            <div class="modal-header" style="border-bottom:1px solid var(--border-color);padding-bottom:12px;margin-bottom:14px;">
+                <div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:20px;">✉️</span>
+                        <h2 id="envioMassaModalTitle" style="font-size:18px;font-weight:700;margin:0;">Envio em Massa por Cópia Oculta (BCC)</h2>
+                    </div>
+                    <p id="envioMassaModalSub" class="text-xs text-muted" style="margin:4px 0 0;">Carregando dados da campanha...</p>
+                </div>
+                <button class="modal-close" id="btnFecharModalEnvioMassa" onclick="fecharModal('modalEnvioMassaBcc')">✕</button>
+            </div>
+
+            <div class="modal-body" style="overflow-y:auto;flex:1;padding-right:4px;">
+                <!-- Painel de Dados do E-mail e Mensagem -->
+                <div class="envio-massa-info-box" id="envioMassaInfoBox" style="background:var(--bg-primary);border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:14px;margin-bottom:16px;">
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:12px;margin-bottom:12px;">
+                        <div class="form-group" style="margin:0;">
+                            <label for="envioMassaToInput" style="font-weight:600;font-size:12px;">E-mail Principal (Para / To):</label>
+                            <div style="display:flex;gap:6px;">
+                                <input type="text" id="envioMassaToInput" class="form-control" style="font-size:13px;font-weight:600;padding:6px 10px;width:100%;" value="vendas4.cps@microautomacao.com.br">
+                                <button type="button" class="btn btn-outline btn-xs" id="btnCopiarToMassa" onclick="copiarTexto(document.getElementById('envioMassaToInput').value, 'E-mail principal copiado!')" title="Copiar e-mail">📋</button>
+                            </div>
+                            <span class="text-xs text-muted">E-mail que recebe a mensagem principal. Os contatos vão no campo Cco/Bcc.</span>
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label for="envioMassaAssuntoInput" style="font-weight:600;font-size:12px;">Assunto da Mensagem:</label>
+                            <div style="display:flex;gap:6px;">
+                                <input type="text" id="envioMassaAssuntoInput" class="form-control" style="font-size:13px;padding:6px 10px;width:100%;" value="">
+                                <button type="button" class="btn btn-outline btn-xs" id="btnCopiarAssuntoMassa" onclick="copiarTexto(document.getElementById('envioMassaAssuntoInput').value, 'Assunto copiado!')" title="Copiar assunto">📋</button>
+                            </div>
+                            <span class="text-xs text-muted">Ajuste o assunto se desejar antes de abrir o envio.</span>
+                        </div>
+                    </div>
+
+                    <!-- Mensagem do Modelo -->
+                    <div class="form-group" style="margin-bottom:0;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                            <label for="envioMassaCorpoInput" style="font-weight:600;font-size:12px;margin:0;">Conteúdo da Mensagem:</label>
+                            <div style="display:flex;gap:6px;">
+                                <button type="button" class="btn btn-outline btn-xs" id="btnCopiarMensagemMassa" onclick="copiarTexto(document.getElementById('envioMassaCorpoInput').value, 'Texto da mensagem copiado!')">📋 Copiar Mensagem</button>
+                                <button type="button" class="btn btn-outline btn-xs" id="btnTogglePreviaCorpo" onclick="alternarPreviaCorpoMassa()">Ocultar/Expandir</button>
+                            </div>
+                        </div>
+                        <div id="envioMassaCorpoWrap">
+                            <textarea id="envioMassaCorpoInput" rows="4" style="width:100%;font-size:12.5px;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-card);color:var(--text-primary);resize:vertical;"></textarea>
+                            <div class="text-xs text-muted" style="margin-top:4px;">
+                                💡 <em>No envio por cópia oculta, a mesma mensagem é entregue a todos os destinatários do lote. Tags de nomes foram ajustadas de forma geral.</em>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resumo dos Lotes e Estatísticas -->
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                        <h3 style="font-size:15px;font-weight:700;margin:0;">Lotes de Envio (Grupos de no máximo 100 e-mails)</h3>
+                        <span id="envioMassaBadgeContatos" class="badge" style="font-size:12px;padding:3px 10px;border-radius:12px;background:rgba(59,130,246,0.15);color:#2563eb;font-weight:600;">0 contatos</span>
+                        <span id="envioMassaBadgePartes" class="badge" style="font-size:12px;padding:3px 10px;border-radius:12px;background:rgba(147,51,234,0.15);color:#7c3aed;font-weight:600;">0 partes</span>
+                    </div>
+                    <div style="display:flex;gap:6px;">
+                        <button type="button" class="btn btn-outline btn-xs" id="btnMarcarTodosEnviadosMassa" onclick="marcarTodosLotesComoEnviados()">✓ Marcar Todos como Enviados no CRM</button>
+                    </div>
+                </div>
+
+                <!-- Container onde cada parte/lote é renderizado -->
+                <div id="envioMassaLotesContainer" style="display:flex;flex-direction:column;gap:14px;">
+                    <!-- Preenchido dinamicamente com os lotes (Parte 1, Parte 2, etc.) -->
+                </div>
+            </div>
+
+            <div class="modal-footer" style="border-top:1px solid var(--border-color);padding-top:12px;margin-top:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                <div class="text-xs text-muted" id="envioMassaRodapeStatus">
+                    Escolha um lote acima para abrir diretamente no seu provedor de e-mail (Gmail, Outlook ou mailto:) ou copiar a lista Cco.
+                </div>
+                <button type="button" class="btn btn-outline" id="btnFecharEnvioMassaRodape" onclick="fecharModal('modalEnvioMassaBcc')">Fechar</button>
+            </div>
         </div>
     </div>
 
