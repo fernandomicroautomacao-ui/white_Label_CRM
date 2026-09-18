@@ -53,3 +53,6 @@ const COLETOR_ITENS_POR_PAGINA = 50;
 
 // Segmentos-alvo salvos para a busca no Google Maps (editáveis pelo usuário)
 let segmentosBusca = [];
+
+// Modelos de Landing Pages personalizadas para os Leads (renderizadas sob demanda)
+let modelosLandingPage = [];

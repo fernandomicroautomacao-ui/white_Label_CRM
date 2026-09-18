@@ -13,6 +13,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('configOutlookId').textContent = CONFIG.OUTLOOK_CLIENT_ID || 'NÃO CONFIGURADO';
     document.getElementById('configOutlookTenant').textContent = CONFIG.OUTLOOK_TENANT_ID || 'NÃO CONFIGURADO';
 
+    // Se for acesso ao Portal do Cliente (Landing Page personalizada via URL ou sessão)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('lp') || urlParams.get('portal') || sessionStorage.getItem('crm_cliente_sessao') || window.location.hash.startsWith('#lp/')) {
+        if (typeof carregarDados === 'function') {
+            try { await carregarDados(); } catch(e) {}
+        }
+        if (typeof verificarAcessoPortalCliente === 'function') {
+            const isPortal = await verificarAcessoPortalCliente();
+            if (isPortal) {
+                return;
+            }
+        }
+    }
+
     // Verifica sessão do Supabase; se houver, carrega usuários/leads e mostra o app
     await verificarLogin();
 

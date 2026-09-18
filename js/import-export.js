@@ -319,6 +319,7 @@ function exportarBackup() {
         coletorListas,
         coletorListaAtivaId,
         segmentosBusca,
+        modelosLandingPage: typeof modelosLandingPage !== 'undefined' ? modelosLandingPage : [],
         usuarios,
         tema: localStorage.getItem('ploomesTemaV5') || 'light'
     };
@@ -394,6 +395,9 @@ function importarBackup(e) {
             coletorListas = parsed.coletorListas || [];
             coletorListaAtivaId = parsed.coletorListaAtivaId || null;
             segmentosBusca = parsed.segmentosBusca || [];
+            if (Array.isArray(parsed.modelosLandingPage)) {
+                modelosLandingPage = parsed.modelosLandingPage;
+            }
             if (parsed.tema) {
                 localStorage.setItem('ploomesTemaV5', parsed.tema);
                 aplicarTema();

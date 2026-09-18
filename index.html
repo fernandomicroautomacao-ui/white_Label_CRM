@@ -14,6 +14,67 @@
 </head>
 <body>
 
+    <!-- ============ PORTAL DO CLIENTE - TELA DE LOGIN (E-MAIL + CNPJ) ============ -->
+    <div class="cliente-portal-login-screen" id="clientePortalLoginScreen" style="display:none;">
+        <div class="cliente-portal-card">
+            <div class="cliente-portal-brand">
+                <div style="background:#0057a8;color:#fff;padding:8px 20px;font-family:'Montserrat',sans-serif;font-weight:900;font-size:1.8em;letter-spacing:2px;border-radius:6px;display:inline-block;line-height:1.1;width:fit-content;">
+                    MiCRO
+                    <span style="font-weight:400;font-size:0.5em;display:block;letter-spacing:3px;text-transform:lowercase;">automação</span>
+                </div>
+                <h2 style="font-size:1.35em;margin-top:18px;font-weight:700;color:#fff;line-height:1.3;">
+                    Portal Exclusivo do Cliente
+                </h2>
+                <p style="font-size:0.92em;opacity:0.85;color:#cbd5e1;margin-top:8px;">
+                    Acesse sua proposta comercial personalizada, catálogos técnicos e condições exclusivas MiCRO.
+                </p>
+                <div id="clienteLoginInfoEmpresa" style="display:none;margin-top:16px;background:rgba(242,101,34,0.15);border:1px solid #f26522;color:#ff9055;padding:8px 14px;border-radius:6px;font-weight:700;font-size:0.9em;"></div>
+            </div>
+            <div class="cliente-portal-box">
+                <h1 style="font-size:1.35em;font-weight:800;color:#1e293b;margin-bottom:6px;">Acesso à Proposta</h1>
+                <p style="font-size:0.88em;color:#64748b;margin-bottom:20px;">Digite seu e-mail corporativo e CNPJ cadastrado</p>
+                <form id="clienteLoginForm" onsubmit="autenticarClientePortal(event)">
+                    <input type="hidden" id="clienteLoginLeadId" value="">
+                    <div class="form-group" style="margin-bottom:16px;">
+                        <label style="display:block;font-size:12px;font-weight:700;color:#334155;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">E-mail Corporativo</label>
+                        <input type="email" id="clienteLoginEmail" placeholder="seu.email@empresa.com.br" required style="width:100%;padding:12px 14px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;box-sizing:border-box;">
+                    </div>
+                    <div class="form-group" style="margin-bottom:16px;">
+                        <label style="display:block;font-size:12px;font-weight:700;color:#334155;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">CNPJ da Empresa (Senha)</label>
+                        <input type="text" id="clienteLoginCnpj" placeholder="00.000.000/0001-00" required style="width:100%;padding:12px 14px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;box-sizing:border-box;">
+                        <span style="font-size:11px;color:#94a3b8;margin-top:4px;display:block;">Sua senha de acesso é o CNPJ (com ou sem pontuação)</span>
+                    </div>
+                    <div class="login-error" id="clienteLoginError" style="display:none;background:#fee2e2;border:1px solid #ef4444;color:#991b1b;padding:10px;border-radius:6px;font-size:13px;margin-bottom:14px;"></div>
+                    <button type="submit" class="btn" style="width:100%;padding:14px;background:#f26522;color:#fff;font-weight:800;font-size:14px;border-radius:6px;border:none;cursor:pointer;text-transform:uppercase;letter-spacing:1px;transition:background 0.2s;">Acessar Proposta Exclusiva →</button>
+                </form>
+                <div style="margin-top:20px;text-align:center;border-top:1px solid #f1f5f9;padding-top:14px;">
+                    <button type="button" onclick="voltarAoLoginCrmColaborador()" style="background:none;border:none;color:#0057a8;font-size:12px;cursor:pointer;text-decoration:underline;">
+                        🔐 Colaborador da MiCRO? Acessar CRM
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ PORTAL DO CLIENTE - LANDING PAGE RENDERIZADA (JIT) ============ -->
+    <div class="cliente-portal-view" id="clientePortalView" style="display:none;position:fixed;inset:0;background:#fff;z-index:99999;overflow:hidden;">
+        <div style="height:52px;background:#1a1a1a;border-bottom:3px solid #f26522;display:flex;align-items:center;justify-content:space-between;padding:0 20px;color:#fff;">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <div style="background:#0057a8;color:#fff;padding:4px 10px;font-weight:900;font-size:13px;border-radius:3px;">MiCRO</div>
+                <div style="font-size:13px;color:#cbd5e1;">Proposta Comercial: <strong id="clientePortalTopoEmpresa" style="color:#fff;"></strong></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+                <a href="https://wa.me/5519984400195" target="_blank" class="btn btn-xs" style="background:#25d366;color:#fff;font-weight:700;padding:6px 12px;border-radius:4px;text-decoration:none;display:flex;align-items:center;gap:5px;">
+                    <span>📱</span> WhatsApp Consultor
+                </a>
+                <button type="button" class="btn btn-outline btn-xs" onclick="sairPortalCliente()" style="color:#fff;border-color:#555;padding:6px 12px;border-radius:4px;">
+                    Sair do Portal
+                </button>
+            </div>
+        </div>
+        <iframe id="clienteLandingPageIframe" style="width:100%;height:calc(100vh - 52px);border:none;background:#fff;" sandbox="allow-scripts allow-same-origin allow-popups allow-forms"></iframe>
+    </div>
+
     <!-- ============ TELA DE LOGIN ============ -->
     <div class="login-screen" id="loginScreen">
         <div class="login-card" id="loginCard">
@@ -326,8 +387,26 @@
 
         <!-- ============ MARKETING ============ -->
         <section class="section" id="section-marketing">
-            <h3 style="font-size:18px;font-weight:700;margin-bottom:8px;">Email Marketing</h3>
-            <p class="text-muted mb-16">Gerencie modelos, campanhas e integrações com Gmail e Outlook via API</p>
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
+                <div>
+                    <h3 style="font-size:18px;font-weight:700;margin:0 0 4px;">Marketing & Páginas dos Leads</h3>
+                    <p class="text-muted" style="margin:0;">Gerencie campanhas de e-mail e Landing Pages personalizadas por lead (renderizadas sob demanda com login de e-mail e CNPJ)</p>
+                </div>
+            </div>
+
+            <!-- SUB-ABAS DE MARKETING -->
+            <div style="display:flex;gap:8px;margin-bottom:20px;border-bottom:1px solid var(--border-color, #cbd5e1);padding-bottom:12px;flex-wrap:wrap;">
+                <button type="button" class="btn btn-sm btn-primary" id="subtabBtnEmailMarketing" onclick="alternarSubabaMarketing('email')">
+                    📧 Email Marketing & Campanhas
+                </button>
+                <button type="button" class="btn btn-sm btn-outline" id="subtabBtnLandingPages" onclick="alternarSubabaMarketing('landing_pages')">
+                    🌐 Landing Pages dos Leads & Portais
+                </button>
+            </div>
+
+            <!-- PAINEL EMAIL MARKETING -->
+            <div id="painelMarketingEmail">
+                <p class="text-muted mb-16">Gerencie modelos, campanhas e integrações com Gmail e Outlook via API</p>
 
             <!-- Métricas de Marketing -->
             <div class="dashboard-cards" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
@@ -441,6 +520,58 @@
                     </div>
                 </div>
             </div>
+            <!-- FIM PAINEL EMAIL MARKETING -->
+
+            <!-- ============ PAINEL LANDING PAGES DOS LEADS (JIT) ============ -->
+            <div id="painelMarketingLandingPages" style="display:none;">
+                <!-- Cards de Métricas das Landing Pages -->
+                <div class="dashboard-cards" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));margin-bottom:20px;">
+                    <div class="stat-card marketing">
+                        <span class="emoji-big">🌐</span>
+                        <div class="label">Modelos de Landing Page</div>
+                        <div class="value" id="lpTotalModelos">0</div>
+                    </div>
+                    <div class="stat-card marketing">
+                        <span class="emoji-big">👥</span>
+                        <div class="label">Leads com LP Ativa</div>
+                        <div class="value" id="lpTotalLeadsAtivos">0</div>
+                    </div>
+                    <div class="stat-card marketing">
+                        <span class="emoji-big">👁️</span>
+                        <div class="label">Visualizações de Clientes</div>
+                        <div class="value" id="lpTotalViews">0</div>
+                    </div>
+                </div>
+
+                <!-- Barra de Ações -->
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+                    <div>
+                        <h4 style="font-size:16px;font-weight:700;margin:0;">Modelos de Landing Page (HTML/CSS/JS)</h4>
+                        <p class="text-xs text-muted" style="margin:2px 0 0;">Renderização Just-In-Time: consumindo zero memória contínua, as páginas são geradas sob demanda com login do cliente.</p>
+                    </div>
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn btn-outline btn-sm" onclick="abrirPreviewLandingPage()">👁️ Simular Qualquer Modelo</button>
+                        <button class="btn btn-primary btn-sm" onclick="abrirModalEditorLandingPage()">+ Nova Landing Page</button>
+                    </div>
+                </div>
+
+                <!-- Lista de Modelos de Landing Page -->
+                <div id="lpModelosList" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:16px;margin-bottom:24px;"></div>
+
+                <!-- Painel Informativo de Arquitetura e Uso -->
+                <div style="background:var(--card-bg, #fff);border:1px solid var(--border-color, #e2e8f0);border-radius:8px;padding:20px;">
+                    <h5 style="font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+                        <span>💡</span> Como Funciona o Portal do Cliente e a Renderização Sob Demanda
+                    </h5>
+                    <ul style="font-size:13px;color:var(--text-muted);line-height:1.7;padding-left:20px;margin:0;">
+                        <li><strong>Acesso Protegido por Lead:</strong> Cada lead possui uma URL exclusiva gerada no CRM (ex: <code>?lp=ID_DO_LEAD</code>). Ao abrir, o cliente visualiza a tela de login exclusiva solicitando seu <strong>E-mail corporativo</strong> e sua senha de segurança que é o seu <strong>CNPJ</strong> cadastrado.</li>
+                        <li><strong>Consumo Zero de Memória (JIT):</strong> A página não fica ocupando memória nem banco como páginas estáticas pesadas. Ela é interpolada e renderizada dinamicamente em milissegundos exatamente no momento em que o cliente abre ou efetua login.</li>
+                        <li><strong>Variáveis Personalizadas:</strong> Use <code>{{empresa}}</code>, <code>{{decisor}}</code>, <code>{{cnpj}}</code>, <code>{{valor}}</code>, <code>{{itens_tabela}}</code> (tabela com itens da cotação), dados do consultor comercial responsável e botões diretos de WhatsApp.</li>
+                        <li><strong>Controle Total para o Vendedor:</strong> O vendedor acompanha quantas vezes o cliente abriu a proposta e a data/hora do último acesso diretamente pelo card no Pipeline ou no perfil do cliente.</li>
+                    </ul>
+                </div>
+            </div>
+            <!-- FIM PAINEL LANDING PAGES -->
         </section>
 
         <!-- ============ WHATSAPP ============ -->
@@ -3879,6 +4010,246 @@ npx @open-wa/wa-automate -p 8080 --popup
         </div>
     </div>
 
+    <!-- ============ MODAL GERENCIAR LANDING PAGE DO LEAD ============ -->
+    <div class="modal-overlay" id="landingPageLeadModal">
+        <div class="modal" style="max-width:680px;">
+            <div class="modal-header">
+                <div>
+                    <h2 id="lpLeadModalTitle" style="margin:0;font-size:18px;">🌐 Landing Page do Cliente</h2>
+                    <p class="text-xs text-muted" style="margin:4px 0 0;">Configuração de acesso e visualização sob demanda</p>
+                </div>
+                <button type="button" class="modal-close" onclick="fecharModal('landingPageLeadModal')">✕</button>
+            </div>
+            <form id="formLandingPageLead" onsubmit="salvarLandingPageLead(event)">
+                <input type="hidden" id="lpLeadId" value="">
+                
+                <!-- Informações do Lead -->
+                <div style="background:var(--bg-primary, #f8fafc);border:1px solid var(--border-color, #e2e8f0);border-radius:8px;padding:14px;margin-bottom:16px;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px;">
+                        <div><strong style="color:var(--text-muted);">Empresa:</strong> <span id="lpLeadEmpresa" style="font-weight:700;"></span></div>
+                        <div><strong style="color:var(--text-muted);">Decisor/Contato:</strong> <span id="lpLeadDecisor"></span></div>
+                        <div><strong style="color:var(--text-muted);">E-mail (Login):</strong> <span id="lpLeadEmail" style="font-weight:600;"></span></div>
+                        <div><strong style="color:var(--text-muted);">CNPJ (Senha):</strong> <span id="lpLeadCnpj" style="font-weight:600;color:var(--primary);"></span></div>
+                    </div>
+                </div>
+
+                <!-- Estatísticas de Acesso -->
+                <div style="display:flex;gap:12px;margin-bottom:16px;background:rgba(0,87,168,0.05);border:1px solid rgba(0,87,168,0.2);border-radius:8px;padding:12px 16px;">
+                    <div style="flex:1;">
+                        <span class="text-xs text-muted" style="display:block;">Acessos do Cliente</span>
+                        <strong id="lpLeadTotalViews" style="font-size:18px;color:var(--primary);">0</strong>
+                    </div>
+                    <div style="flex:2;">
+                        <span class="text-xs text-muted" style="display:block;">Último Acesso Registrado</span>
+                        <strong id="lpLeadUltimoAcesso" style="font-size:14px;color:var(--text-primary);">Nunca acessou</strong>
+                    </div>
+                </div>
+
+                <!-- Escolha de Modelo de Landing Page -->
+                <div class="form-group" style="margin-bottom:16px;">
+                    <label for="lpLeadModeloId" style="font-weight:700;font-size:13px;">Modelo de Landing Page a Exibir</label>
+                    <div style="display:flex;gap:8px;">
+                        <select id="lpLeadModeloId" class="form-control" style="flex:1;padding:8px 12px;border:1px solid var(--border-color);border-radius:6px;font-size:13px;">
+                            <!-- Preenchido via JS -->
+                        </select>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="visualizarModeloSelecionadoLead()" title="Pré-visualizar modelo selecionado com os dados deste cliente">
+                            👁️ Ver Modelo
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Link de Acesso Direto -->
+                <div class="form-group" style="margin-bottom:16px;">
+                    <label style="font-weight:700;font-size:13px;">Link Exclusivo do Cliente (URL com login protegido)</label>
+                    <div style="display:flex;gap:8px;">
+                        <input type="text" id="lpLeadUrl" readonly class="form-control" style="flex:1;padding:8px 12px;border:1px solid var(--border-color);border-radius:6px;font-size:12px;background:var(--bg-primary);font-family:monospace;">
+                        <button type="button" class="btn btn-outline btn-sm" onclick="copiarLinkAcessoLead()">
+                            📋 Copiar Link
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Mensagem Customizada opcional -->
+                <div class="form-group" style="margin-bottom:16px;">
+                    <label for="lpLeadMensagemCustomizada" style="font-weight:700;font-size:13px;">Mensagem / Recado Exclusivo para o Cliente (Opcional)</label>
+                    <textarea id="lpLeadMensagemCustomizada" rows="2" class="form-control" placeholder="Ex: Proposta com condição especial válida até sexta-feira." style="width:100%;padding:8px 12px;border:1px solid var(--border-color);border-radius:6px;font-size:13px;"></textarea>
+                </div>
+
+                <!-- Ações Rápidas de Compartilhamento -->
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+                    <button type="button" class="btn btn-outline btn-sm" onclick="copiarConviteWhatsAppLead()" style="border-color:#25d366;color:#128c7e;font-weight:700;">
+                        📱 Copiar Convite Formatado para WhatsApp
+                    </button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="visualizarLandingPageLeadComoCliente()" style="border-color:var(--primary);color:var(--primary);font-weight:700;">
+                        🚀 Abrir Visualização como Cliente
+                    </button>
+                </div>
+
+                <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;padding-top:14px;border-top:1px solid var(--border-color);">
+                    <button type="button" class="btn btn-outline" onclick="fecharModal('landingPageLeadModal')">Fechar</button>
+                    <button type="submit" class="btn btn-primary">💾 Salvar Configurações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============ MODAL EDITOR DE LANDING PAGE (HTML/CSS/JS/IMAGENS) ============ -->
+    <div class="modal-overlay" id="editorLandingPageModal">
+        <div class="modal" style="max-width:1150px;width:95vw;height:90vh;display:flex;flex-direction:column;">
+            <div class="modal-header" style="flex-shrink:0;">
+                <div>
+                    <h2 id="lpEditorModalTitle" style="margin:0;font-size:18px;">Novo Modelo de Landing Page</h2>
+                    <p class="text-xs text-muted" style="margin:3px 0 0;">Renderizada sob demanda (JIT) quando o lead abrir a página com email e CNPJ</p>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <button type="button" class="btn btn-outline btn-sm" onclick="alternarPreviewEditorLP()">👁️ Alternar Preview</button>
+                    <button type="button" class="modal-close" onclick="fecharModal('editorLandingPageModal')">✕</button>
+                </div>
+            </div>
+
+            <div style="flex:1;display:flex;overflow:hidden;gap:16px;padding:16px 0;">
+                <!-- Coluna de Edição -->
+                <div id="lpEditorColunaCodigo" style="flex:1;display:flex;flex-direction:column;overflow-y:auto;min-width:340px;">
+                    <form id="formEditorLandingPage" onsubmit="salvarModeloLandingPage(event)" style="display:flex;flex-direction:column;gap:12px;">
+                        <input type="hidden" id="lpEditorModeloId" value="">
+                        
+                        <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;">
+                            <div class="form-group" style="margin:0;">
+                                <label style="font-weight:700;font-size:12px;">Nome do Modelo <span class="required">*</span></label>
+                                <input type="text" id="lpEditorNome" required placeholder="Ex: Proposta Comercial Premium - MiCRO" class="form-control" style="padding:8px 12px;border:1px solid var(--border-color);border-radius:6px;font-size:13px;">
+                            </div>
+                            <div class="form-group" style="margin:0;display:flex;align-items:center;gap:8px;padding-top:20px;">
+                                <input type="checkbox" id="lpEditorPadrao" style="width:18px;height:18px;cursor:pointer;">
+                                <label for="lpEditorPadrao" style="font-weight:700;font-size:12px;cursor:pointer;margin:0;">Usar como Padrão</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-weight:700;font-size:12px;">Descrição do Modelo</label>
+                            <input type="text" id="lpEditorDescricao" placeholder="Breve descrição da proposta e perfil de cliente" class="form-control" style="padding:8px 12px;border:1px solid var(--border-color);border-radius:6px;font-size:13px;">
+                        </div>
+
+                        <!-- Barra de Tags / Variáveis Dinâmicas -->
+                        <div>
+                            <span class="text-xs text-muted" style="display:block;margin-bottom:6px;font-weight:600;">Variáveis Dinâmicas (clique para inserir no editor ativo):</span>
+                            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                                <span class="lp-tag-chip" onclick="inserirTagEditor('{{empresa}}')" title="Nome da empresa do lead">{{empresa}}</span>
+                                <span class="lp-tag-chip" onclick="inserirTagEditor('{{decisor}}')" title="Contato / Decisor">{{decisor}}</span>
+                                <span class="lp-tag-chip" onclick="inserirTagEditor('{{cnpj}}')" title="CNPJ formatado">{{cnpj}}</span>
+                                <span class="lp-tag-chip" onclick="inserirTagEditor('{{email}}')" title="E-mail do lead">{{email}}</span>
+                                <span class="lp-tag-chip" onclick="inserirTagEditor('{{telefone}}')" title="Telefone">{{telefone}}</span>
+                                <span class="lp-tag-chip" onclick="inserirTagEditor('{{cidade}}')" title="Cidade">{{cidade}}</span>
+                                <span class="lp-tag-chip" onclick="inserirTagEditor('{{estado}}')" title="Estado">{{estado}}</span>
+                                <span class="lp-tag-chip" onclick="inserirTagEditor('{{valor}}')" title="Valor formatado (R$)">{{valor}}</span>
+                                <span class="lp-tag-chip" onclick="inserirTagEditor('{{itens_tabela}}')" title="Tabela com produtos/itens orçados">{{itens_tabela}}</span>
+                                <span class="lp-tag-chip" onclick="inserirTagEditor('{{vendedor_nome}}')" title="Nome do consultor">{{vendedor_nome}}</span>
+                                <span class="lp-tag-chip" onclick="inserirTagEditor('{{vendedor_email}}')" title="E-mail do consultor">{{vendedor_email}}</span>
+                                <span class="lp-tag-chip" onclick="inserirTagEditor('{{vendedor_whatsapp}}')" title="WhatsApp do consultor">{{vendedor_whatsapp}}</span>
+                                <span class="lp-tag-chip" onclick="inserirTagEditor('{{whatsapp_link}}')" title="Link direto wa.me com mensagem pronta">{{whatsapp_link}}</span>
+                            </div>
+                        </div>
+
+                        <!-- Abas de Edição (HTML, CSS, JS, IMAGENS) -->
+                        <div class="lp-editor-tabs">
+                            <button type="button" class="lp-editor-tab-btn active" id="btnTabEditorHtml" onclick="alternarAbaEditorLP('html')">📄 HTML Estrutura</button>
+                            <button type="button" class="lp-editor-tab-btn" id="btnTabEditorCss" onclick="alternarAbaEditorLP('css')">🎨 CSS Estilos</button>
+                            <button type="button" class="lp-editor-tab-btn" id="btnTabEditorJs" onclick="alternarAbaEditorLP('js')">⚡ JavaScript Interativo</button>
+                            <button type="button" class="lp-editor-tab-btn" id="btnTabEditorImagens" onclick="alternarAbaEditorLP('imagens')">🖼️ Imagens / Banner</button>
+                        </div>
+
+                        <!-- Painel HTML -->
+                        <div id="lpEditorPainelHtml" style="display:flex;flex-direction:column;flex:1;">
+                            <textarea id="lpEditorHtml" rows="14" class="form-control" style="width:100%;font-family:Consolas,Monaco,'Courier New',monospace;font-size:12px;padding:10px;border:1px solid var(--border-color);border-radius:6px;line-height:1.4;background:#1e1e1e;color:#d4d4d4;resize:vertical;" placeholder="Cole ou edite seu HTML aqui..."></textarea>
+                        </div>
+
+                        <!-- Painel CSS -->
+                        <div id="lpEditorPainelCss" style="display:none;flex-direction:column;flex:1;">
+                            <textarea id="lpEditorCss" rows="14" class="form-control" style="width:100%;font-family:Consolas,Monaco,'Courier New',monospace;font-size:12px;padding:10px;border:1px solid var(--border-color);border-radius:6px;line-height:1.4;background:#1e1e1e;color:#9cdcfe;resize:vertical;" placeholder="/* Regras CSS personalizadas */"></textarea>
+                        </div>
+
+                        <!-- Painel JS -->
+                        <div id="lpEditorPainelJs" style="display:none;flex-direction:column;flex:1;">
+                            <textarea id="lpEditorJs" rows="14" class="form-control" style="width:100%;font-family:Consolas,Monaco,'Courier New',monospace;font-size:12px;padding:10px;border:1px solid var(--border-color);border-radius:6px;line-height:1.4;background:#1e1e1e;color:#dcdcaa;resize:vertical;" placeholder="// Código JS executado dentro do iframe do cliente"></textarea>
+                        </div>
+
+                        <!-- Painel Imagens -->
+                        <div id="lpEditorPainelImagens" style="display:none;flex-direction:column;gap:10px;">
+                            <div class="form-group" style="margin:0;">
+                                <label style="font-weight:700;font-size:12px;">URL do Banner Principal (Hero)</label>
+                                <input type="text" id="lpEditorHeroImg" placeholder="https://exemplo.com/banner-micro.jpg" class="form-control" style="padding:8px 12px;border:1px solid var(--border-color);border-radius:6px;font-size:13px;">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label style="font-weight:700;font-size:12px;">URL do Logo / Ícone</label>
+                                <input type="text" id="lpEditorLogoImg" placeholder="https://exemplo.com/logo-micro.png" class="form-control" style="padding:8px 12px;border:1px solid var(--border-color);border-radius:6px;font-size:13px;">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label style="font-weight:700;font-size:12px;">Cor Primária de Destaque (Hex)</label>
+                                <input type="color" id="lpEditorCorPrimaria" value="#0057a8" style="height:36px;width:80px;border:none;cursor:pointer;border-radius:4px;">
+                            </div>
+                        </div>
+
+                        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;">
+                            <button type="button" class="btn btn-outline" onclick="fecharModal('editorLandingPageModal')">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">💾 Salvar Modelo</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Coluna de Live Preview -->
+                <div id="lpEditorColunaPreview" style="flex:1;display:flex;flex-direction:column;background:#f8fafc;border:1px solid var(--border-color);border-radius:8px;overflow:hidden;">
+                    <!-- Barra de Controles do Preview -->
+                    <div style="padding:8px 14px;background:#ffffff;border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                        <div style="display:flex;align-items:center;gap:6px;">
+                            <span class="text-xs text-muted" style="font-weight:700;">Simular com Lead:</span>
+                            <select id="lpEditorSimularLeadId" class="form-control" style="padding:4px 8px;font-size:12px;border:1px solid var(--border-color);border-radius:4px;max-width:200px;" onchange="atualizarLivePreviewEditorLP()">
+                                <option value="">Lead de Demonstração (Padrão)</option>
+                            </select>
+                        </div>
+                        <div style="display:flex;gap:4px;">
+                            <button type="button" class="lp-viewport-btn active" id="btnViewportDesktop" onclick="setEditorViewport('100%')">💻 Desktop</button>
+                            <button type="button" class="lp-viewport-btn" id="btnViewportTablet" onclick="setEditorViewport('768px')">📱 Tablet</button>
+                            <button type="button" class="lp-viewport-btn" id="btnViewportMobile" onclick="setEditorViewport('375px')">📲 Mobile</button>
+                            <button type="button" class="btn btn-outline btn-xs" onclick="atualizarLivePreviewEditorLP()" title="Recarregar Preview">🔄</button>
+                        </div>
+                    </div>
+                    <!-- Contêiner do Iframe -->
+                    <div id="lpEditorIframeWrap" style="flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;padding:10px;background:#e2e8f0;">
+                        <iframe id="lpEditorIframe" style="width:100%;height:100%;border:none;background:#ffffff;box-shadow:0 4px 12px rgba(0,0,0,0.1);border-radius:6px;transition:width 0.2s;" sandbox="allow-scripts allow-same-origin allow-popups allow-forms"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ MODAL PREVIEW RÁPIDO DE LANDING PAGE ============ -->
+    <div class="modal-overlay" id="previewLandingPageModal">
+        <div class="modal" style="max-width:1100px;width:95vw;height:90vh;display:flex;flex-direction:column;">
+            <div class="modal-header" style="flex-shrink:0;">
+                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                    <h2 style="margin:0;font-size:18px;">Visualizador da Landing Page</h2>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <select id="lpPreviewSelectModelo" class="form-control" style="padding:4px 8px;font-size:12px;border:1px solid var(--border-color);border-radius:4px;" onchange="recarregarPreviewModalLP()">
+                            <!-- Preenchido via JS -->
+                        </select>
+                        <select id="lpPreviewSelectLead" class="form-control" style="padding:4px 8px;font-size:12px;border:1px solid var(--border-color);border-radius:4px;" onchange="recarregarPreviewModalLP()">
+                            <!-- Preenchido via JS -->
+                        </select>
+                    </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button type="button" class="modal-viewport-btn active" id="btnModalVpDesktop" onclick="setModalPreviewViewport('100%')">💻 100%</button>
+                    <button type="button" class="modal-viewport-btn" id="btnModalVpTablet" onclick="setModalPreviewViewport('768px')">📱 768px</button>
+                    <button type="button" class="modal-viewport-btn" id="btnModalVpMobile" onclick="setModalPreviewViewport('375px')">📲 375px</button>
+                    <button type="button" class="btn btn-outline btn-xs" onclick="abrirPreviewEmNovaAba()" title="Abrir página em nova aba">↗️ Nova Aba</button>
+                    <button type="button" class="modal-close" onclick="fecharModal('previewLandingPageModal')">✕</button>
+                </div>
+            </div>
+            <div id="lpPreviewModalIframeWrap" style="flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;padding:10px;background:#cbd5e1;">
+                <iframe id="lpPreviewModalIframe" style="width:100%;height:100%;border:none;background:#ffffff;box-shadow:0 4px 16px rgba(0,0,0,0.15);border-radius:6px;transition:width 0.2s;" sandbox="allow-scripts allow-same-origin allow-popups allow-forms"></iframe>
+            </div>
+        </div>
+    </div>
+
     <div class="toast-container" id="toastContainer"></div>
 
     <!-- ============ SCRIPTS ============ -->
@@ -3938,6 +4309,7 @@ npx @open-wa/wa-automate -p 8080 --popup
     <script src="js/relatorio-atividades.js"></script>
     <script src="js/advanced-features.js"></script>
     <script src="js/mergulho-profundo.js"></script>
+    <script src="js/landing-pages.js"></script>
     <script src="js/init.js"></script>
 </body>
 </html>

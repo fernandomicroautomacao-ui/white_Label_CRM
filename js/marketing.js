@@ -918,4 +918,9 @@ function renderizarMarketing() {
     }
 
     document.getElementById('marketingCount').textContent = campanhas.filter(c => c.status === 'ativa').length;
+
+    // Atualiza também o painel de Landing Pages caso esteja ativo
+    if (typeof renderizarPainelLandingPagesMarketing === 'function') {
+        renderizarPainelLandingPagesMarketing();
+    }
 }

@@ -279,6 +279,8 @@ async function carregarDados() {
             coletorListas = data.coletorListas || [];
             coletorListaAtivaId = data.coletorListaAtivaId || null;
             segmentosBusca = data.segmentosBusca || [];
+            modelosLandingPage = data.modelosLandingPage || [];
+            if (typeof inicializarModelosLandingPageExemplo === 'function') inicializarModelosLandingPageExemplo();
         } catch (e) {
             modelos = [];
             campanhas = [];
@@ -290,6 +292,8 @@ async function carregarDados() {
             whatsappConsentimentos = {};
             whatsappFilaAtual = null;
             perdidos = [];
+            modelosLandingPage = [];
+            if (typeof inicializarModelosLandingPageExemplo === 'function') inicializarModelosLandingPageExemplo();
         }
     }
 
@@ -533,7 +537,8 @@ function salvarDadosDebounced(delay = 350) {
             metas,
             coletorListas,
             coletorListaAtivaId,
-            segmentosBusca
+            segmentosBusca,
+            modelosLandingPage
         }));
     } catch (e) {}
 
@@ -715,7 +720,8 @@ async function executarSalvarDadosInterno() {
             metas,
             coletorListas,
             coletorListaAtivaId,
-            segmentosBusca
+            segmentosBusca,
+            modelosLandingPage
         }));
     } catch (e) {}
 

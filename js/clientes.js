@@ -177,6 +177,9 @@ function abrirModalCliente(leadId) {
             <button class="cliente-action-btn" onclick="fecharModal('clienteModal');abrirEnvioEmail('${principal.id}')">
                 <span class="icon"><span data-icone="marketing"></span></span><span class="label">Enviar Email</span>
             </button>
+            <button class="cliente-action-btn" onclick="fecharModal('clienteModal');abrirModalLandingPageLead('${principal.id}')" title="Gerenciar Landing Page e Acesso do Cliente">
+                <span class="icon">🌐</span><span class="label">Landing Page</span>
+            </button>
             <button class="cliente-action-btn" onclick="fecharModal('clienteModal');gerarNovoNegocio('${principal.id}')">
                 <span class="icon"><span data-icone="atualizar"></span></span><span class="label">+ Negócio</span>
             </button>
