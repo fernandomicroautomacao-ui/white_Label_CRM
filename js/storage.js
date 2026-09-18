@@ -1,15 +1,140 @@
 // ============================================
-// PERSISTÊNCIA
+// PERSISTÊNCIA & BANCO DE DADOS (SUPABASE + INDEXEDDB)
 // ============================================
-// leads vive no Supabase (tabela public.leads); o resto por enquanto continua em localStorage.
 let leadsIdsCarregados = new Set(); // ids que vieram do banco na última carga, usado para detectar remoções
+
+// ============================================
+// ARMAZENAMENTO INDEXEDDB LOCAL ROBUSTO (Sem limites de 5MB do localStorage)
+// ============================================
+const CRM_IDB_NOME = 'FeitosaCrmDB';
+const CRM_IDB_VERSAO = 1;
+const CRM_IDB_STORE = 'leads_cache';
+
+function abrirIndexedDB() {
+    return new Promise((resolve) => {
+        if (!window.indexedDB) {
+            resolve(null);
+            return;
+        }
+        try {
+            const request = window.indexedDB.open(CRM_IDB_NOME, CRM_IDB_VERSAO);
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains(CRM_IDB_STORE)) {
+                    db.createObjectStore(CRM_IDB_STORE, { keyPath: 'id' });
+                }
+            };
+            request.onsuccess = (e) => resolve(e.target.result);
+            request.onerror = () => resolve(null);
+        } catch (e) {
+            resolve(null);
+        }
+    });
+}
+
+async function salvarLeadsNoIndexedDB(listaLeads) {
+    if (!listaLeads || !Array.isArray(listaLeads)) return;
+    const db = await abrirIndexedDB();
+    if (!db) return;
+    try {
+        const tx = db.transaction(CRM_IDB_STORE, 'readwrite');
+        const store = tx.objectStore(CRM_IDB_STORE);
+        store.clear();
+        listaLeads.forEach(lead => store.put(lead));
+        return new Promise((resolve) => {
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = () => resolve(false);
+        });
+    } catch (e) {
+        console.warn('Aviso ao salvar leads no IndexedDB:', e);
+    }
+}
+
+async function carregarLeadsDoIndexedDB() {
+    const db = await abrirIndexedDB();
+    if (!db) return [];
+    try {
+        const tx = db.transaction(CRM_IDB_STORE, 'readonly');
+        const store = tx.objectStore(CRM_IDB_STORE);
+        const req = store.getAll();
+        return new Promise((resolve) => {
+            req.onsuccess = () => resolve(req.result || []);
+            req.onerror = () => resolve([]);
+        });
+    } catch (e) {
+        return [];
+    }
+}
+
+function salvarCacheLocalImediato() {
+    if (!Array.isArray(leads)) return;
+
+    // 1. Salva de forma assíncrona no IndexedDB (sem limite de 5MB)
+    salvarLeadsNoIndexedDB(leads);
+
+    // 2. Salva no localStorage com proteção contra QuotaExceededError
+    try {
+        localStorage.setItem('ploomesLeadsCache', JSON.stringify(leads));
+    } catch (errQuota) {
+        try {
+            // Em caso de cota cheia no localStorage por arquivos base64, salva versão limpa de dados pesados
+            const leadsLeves = leads.map(l => {
+                if (l.orcamentoPdfPrincipal && l.orcamentoPdfPrincipal.dataUrl && l.orcamentoPdfPrincipal.dataUrl.length > 50000) {
+                    const clone = { ...l, orcamentoPdfPrincipal: { ...l.orcamentoPdfPrincipal } };
+                    delete clone.orcamentoPdfPrincipal.dataUrl;
+                    return clone;
+                }
+                return l;
+            });
+            localStorage.setItem('ploomesLeadsCache', JSON.stringify(leadsLeves));
+        } catch (e) {
+            console.warn('Aviso: Quota do localStorage atingida. Leads preservados com integridade no IndexedDB.');
+        }
+    }
+}
+
+async function obterMelhorCacheLocalLeads() {
+    // 1. Tenta carregar do IndexedDB
+    try {
+        const idbLeads = await carregarLeadsDoIndexedDB();
+        if (idbLeads && idbLeads.length > 0) return idbLeads;
+    } catch (e) {}
+
+    // 2. Fallback para localStorage
+    try {
+        const rawCache = localStorage.getItem('ploomesLeadsCache');
+        if (rawCache) {
+            const parsed = JSON.parse(rawCache);
+            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+    } catch (e) {}
+
+    return [];
+}
+
+function sanitizarOrcamentoPdfParaBanco(pdf) {
+    if (!pdf) return null;
+    const sanitizado = {
+        nome: pdf.nome || 'orcamento.pdf',
+        tipo: pdf.tipo || 'application/pdf',
+        tamanho: pdf.tamanho || 0,
+        valorDetectado: pdf.valorDetectado || 0,
+        dadosExtraidos: pdf.dadosExtraidos || {},
+        textoCompleto: (pdf.textoCompleto || '').slice(0, 3000)
+    };
+    // Se dataUrl for moderado (< 250KB), pode ir no banco
+    if (pdf.dataUrl && typeof pdf.dataUrl === 'string' && pdf.dataUrl.length < 250000) {
+        sanitizado.dataUrl = pdf.dataUrl;
+    }
+    return sanitizado;
+}
 
 function leadParaLinhaSupabase(l) {
     return {
         id: l.id,
         codigo_unico: l.codigoUnico || '',
         cnpj: l.cnpj || '',
-        empresa: l.empresa,
+        empresa: l.empresa || '',
         cidade: l.cidade || '',
         estado: l.estado || '',
         telefone: l.telefone || '',
@@ -38,7 +163,7 @@ function leadParaLinhaSupabase(l) {
         usuario_id: l.usuarioId || null,
         historico: l.historico || [],
         orcamento_anexos: l.orcamentoAnexos || [],
-        orcamento_pdf_principal: l.orcamentoPdfPrincipal || null,
+        orcamento_pdf_principal: sanitizarOrcamentoPdfParaBanco(l.orcamentoPdfPrincipal),
         orcamento_modo: l.orcamentoModo || 'pdf',
         orcamento_reset_em: l.orcamentoResetEm || null,
         data_entrada_etapa: l.dataEntradaEtapa || l.dataCriacao || new Date().toISOString(),
@@ -51,44 +176,45 @@ function leadParaLinhaSupabase(l) {
 function linhaSupabaseParaLead(r) {
     return {
         id: r.id,
-        codigoUnico: r.codigo_unico,
+        codigoUnico: r.codigo_unico || '',
         cnpj: r.cnpj || '',
-        empresa: r.empresa,
-        cidade: r.cidade,
-        estado: r.estado,
-        telefone: r.telefone,
-        whatsapp: r.whatsapp,
-        email: r.email,
-        decisor: r.decisor,
-        valor: r.valor,
-        potencial: r.potencial,
+        empresa: r.empresa || '',
+        cidade: r.cidade || '',
+        estado: r.estado || '',
+        telefone: r.telefone || '',
+        whatsapp: r.whatsapp || '',
+        email: r.email || '',
+        decisor: r.decisor || '',
+        valor: r.valor || 0,
+        potencial: r.potencial || 'B',
         classificacao: r.classificacao || 'outros',
-        etapa: r.etapa,
-        observacoes: r.observacoes,
-        dataCriacao: r.data_criacao,
-        cliente: r.cliente,
-        recorrente: r.recorrente,
-        numeroPedido: r.numero_pedido,
-        obsOrcamento: r.obs_orcamento,
-        condicoes: r.condicoes,
-        desconto: r.desconto,
-        frete: r.frete,
+        etapa: r.etapa || 'leads',
+        observacoes: r.observacoes || '',
+        dataCriacao: r.data_criacao || new Date().toISOString(),
+        cliente: !!r.cliente,
+        recorrente: !!r.recorrente,
+        numeroPedido: r.numero_pedido || '',
+        obsOrcamento: r.obs_orcamento || '',
+        condicoes: r.condicoes || '',
+        desconto: r.desconto || 0,
+        frete: r.frete || 0,
         itens: r.itens || [],
         pedidos: r.pedidos || [],
-        dataPedido: r.data_pedido,
-        proximaAcao: r.proxima_acao,
-        proximaData: r.proxima_data,
+        dataPedido: r.data_pedido || '',
+        proximaAcao: r.proxima_acao || '',
+        proximaData: r.proxima_data || '',
         tarefas: r.tarefas || {},
-        usuarioId: r.usuario_id,
+        usuarioId: r.usuario_id || null,
         historico: r.historico || [],
         orcamentoAnexos: r.orcamento_anexos || [],
         orcamentoPdfPrincipal: r.orcamento_pdf_principal || null,
         orcamentoModo: r.orcamento_modo || 'pdf',
         orcamentoResetEm: r.orcamento_reset_em || null,
-        dataEntradaEtapa: r.data_entrada_etapa,
+        dataEntradaEtapa: r.data_entrada_etapa || r.data_criacao || new Date().toISOString(),
         cardObs: r.card_obs || '',
         autorizacaoPedidoId: r.autorizacao_pedido_id || null,
-        autorizacaoPedidoStatus: r.autorizacao_pedido_status || null
+        autorizacaoPedidoStatus: r.autorizacao_pedido_status || null,
+        atualizadoEm: r.updated_at || r.atualizado_em || r.data_criacao || null
     };
 }
 
@@ -167,43 +293,99 @@ async function carregarDados() {
         }
     }
 
+    // 1. Carrega o melhor cache local (IndexedDB + localStorage) antes de consultar o banco
+    const cacheLocalLeads = await obterMelhorCacheLocalLeads();
+    const mapaCache = new Map((cacheLocalLeads || []).map(cl => [cl.id, cl]));
+    const backupPendente = localStorage.getItem('crm_backup_pendente_sincronizacao') === 'true';
+
+    // 2. Consulta o Supabase
+    let linhas = null;
+    let erroBanco = null;
     try {
-        const { data: linhas, error } = await supabaseClient.from('leads').select('*');
-        if (error) {
-            console.warn('Aviso ao carregar leads do Supabase (utilizando cache local se disponível):', error);
-            // Se houver falha de rede/fetch, tenta restaurar do cache local de leads
-            let cacheLeads = [];
-            try {
-                const rawCache = localStorage.getItem('ploomesLeadsCache');
-                if (rawCache) cacheLeads = JSON.parse(rawCache);
-            } catch (e) {}
-            if (cacheLeads.length > 0) {
-                leads = cacheLeads;
-            } else {
-                leads = [];
-            }
+        const resp = await supabaseClient.from('leads').select('*');
+        if (resp.error) {
+            erroBanco = resp.error;
+            console.warn('Aviso ao carregar leads do Supabase (utilizando cache local seguro):', resp.error);
         } else {
-            leads = (linhas || []).map(linhaSupabaseParaLead);
+            linhas = resp.data || [];
         }
     } catch (errRede) {
+        erroBanco = errRede;
         console.warn('Exceção de rede ao carregar leads do Supabase:', errRede);
-        let cacheLeads = [];
-        try {
-            const rawCache = localStorage.getItem('ploomesLeadsCache');
-            if (rawCache) cacheLeads = JSON.parse(rawCache);
-        } catch (e) {}
-        leads = cacheLeads.length > 0 ? cacheLeads : [];
     }
+
+    // 3. RECONCILIAÇÃO INTELIGENTE: Garante permanência de alterações e backups
+    let precisaPersistirNoBanco = false;
+
+    if (erroBanco || !linhas || (linhas.length === 0 && cacheLocalLeads.length > 0)) {
+        // Se o banco falhou ou retornou vazio mas temos dados no cache local:
+        console.info(`Supabase ${erroBanco ? 'com aviso' : 'sem registros'}. Preservando ${cacheLocalLeads.length} leads do cache local.`);
+        leads = cacheLocalLeads;
+        if (!erroBanco && leads.length > 0) {
+            precisaPersistirNoBanco = true;
+        }
+    } else {
+        // O banco retornou registros
+        const leadsDoBanco = (linhas || []).map(linhaSupabaseParaLead);
+        const mapaBanco = new Map(leadsDoBanco.map(l => [l.id, l]));
+
+        if (backupPendente && cacheLocalLeads.length > 0) {
+            // Backup restaurado recentemente: o estado do backup local prevalece sobre o banco anterior!
+            console.info('Backup restaurado pendente detectado no refresh. Forçando permanência do backup no banco...');
+            leads = cacheLocalLeads;
+            precisaPersistirNoBanco = true;
+        } else {
+            const reconciliados = [];
+
+            // A. Avalia cada lead vindo do banco
+            leadsDoBanco.forEach(leadBanco => {
+                const leadCache = mapaCache.get(leadBanco.id);
+                if (!leadCache) {
+                    reconciliados.push(leadBanco);
+                    return;
+                }
+
+                // Detecta se o cache local possui ações de orçamento mais recentes ou campos preenchidos que o banco não tem
+                const cacheTemOrcamento = !!(leadCache.orcamentoPdfPrincipal || (leadCache.itens && leadCache.itens.length > 0) || (leadCache.valor && leadCache.valor > 0) || leadCache.obsOrcamento);
+                const bancoSemOrcamento = !leadBanco.orcamentoPdfPrincipal && (!leadBanco.itens || leadBanco.itens.length === 0) && (!leadBanco.valor || leadBanco.valor === 0) && !leadBanco.obsOrcamento;
+
+                const cacheMaisRecente = (leadCache.atualizadoEm && leadBanco.atualizadoEm && new Date(leadCache.atualizadoEm) > new Date(leadBanco.atualizadoEm))
+                    || (leadCache.historico && leadBanco.historico && leadCache.historico.length > leadBanco.historico.length)
+                    || (cacheTemOrcamento && bancoSemOrcamento);
+
+                if (cacheMaisRecente) {
+                    // O cache local tem dados de orçamento ou edições mais recentes: preserva o lead local
+                    const leadMesclado = { ...leadBanco, ...leadCache };
+                    if (leadCache.orcamentoPdfPrincipal?.dataUrl && leadMesclado.orcamentoPdfPrincipal && !leadMesclado.orcamentoPdfPrincipal.dataUrl) {
+                        leadMesclado.orcamentoPdfPrincipal.dataUrl = leadCache.orcamentoPdfPrincipal.dataUrl;
+                    }
+                    reconciliados.push(leadMesclado);
+                    precisaPersistirNoBanco = true;
+                } else {
+                    // O banco é a versão mais recente. Preserva o dataUrl do PDF local para o visualizador não ficar em branco
+                    if (leadCache.orcamentoPdfPrincipal?.dataUrl && leadBanco.orcamentoPdfPrincipal && !leadBanco.orcamentoPdfPrincipal.dataUrl) {
+                        leadBanco.orcamentoPdfPrincipal.dataUrl = leadCache.orcamentoPdfPrincipal.dataUrl;
+                    }
+                    reconciliados.push(leadBanco);
+                }
+            });
+
+            // B. Adiciona leads presentes apenas no cache local (ex: restaurados de backup ou criados offline)
+            cacheLocalLeads.forEach(leadCache => {
+                if (!mapaBanco.has(leadCache.id)) {
+                    console.info(`Lead local ${leadCache.id} (${leadCache.empresa}) preservado e preparado para gravação no banco.`);
+                    reconciliados.push(leadCache);
+                    precisaPersistirNoBanco = true;
+                }
+            });
+
+            leads = reconciliados;
+        }
+    }
+
     leadsIdsCarregados = new Set(leads.map(l => l.id));
 
-    let cacheLocalLeads = [];
-    try {
-        const rawCache = localStorage.getItem('ploomesLeadsCache');
-        if (rawCache) cacheLocalLeads = JSON.parse(rawCache);
-    } catch (e) {}
-
-    const mapaCache = new Map(cacheLocalLeads.map(cl => [cl.id, cl]));
-
+    // Normalização padrão dos leads
     leads = leads.map(l => {
         const itemCache = mapaCache.get(l.id);
         if ((!l.classificacao || l.classificacao === 'outros') && itemCache && itemCache.classificacao && itemCache.classificacao !== 'outros') {
@@ -215,8 +397,7 @@ async function carregarDados() {
         if ((!l.itens || l.itens.length === 0) && itemCache && Array.isArray(itemCache.itens) && itemCache.itens.length > 0) {
             l.itens = itemCache.itens;
         }
-        if (!l.codigoUnico) l.codigoUnico = l.empresa ? l.empresa.trim().toLowerCase().replace(
-            /\s+/g, '-') : l.id;
+        if (!l.codigoUnico) l.codigoUnico = l.empresa ? l.empresa.trim().toLowerCase().replace(/\s+/g, '-') : l.id;
         if (!l.historico) l.historico = [];
         if (!l.dataCriacao) l.dataCriacao = new Date().toISOString();
         if (!l.etapa) l.etapa = 'leads';
@@ -245,7 +426,7 @@ async function carregarDados() {
         return l;
     });
 
-    // Auto-correção para leads legados que possam ter gravado o CNPJ da Micro Automação ao importar PDF antigamente
+    // Auto-correção para leads legados com CNPJ da Micro Automação
     if (typeof obterCnpjsEmissorParaIgnorar === 'function' && Array.isArray(leads)) {
         const cnpjsIgnorar = obterCnpjsEmissorParaIgnorar();
         leads.forEach(l => {
@@ -277,6 +458,7 @@ async function carregarDados() {
             }
         });
     }
+
     perdidos = perdidos.map(p => {
         if (!p.usuarioId) {
             const admin = usuarios.find(u => u.papel === 'admin');
@@ -285,16 +467,9 @@ async function carregarDados() {
         return p;
     });
 
-    if (perdidos.length === 0) {
-        carregarExemplosPerdidos();
-    }
-
-    if (modelos.length === 0) {
-        carregarModelosExemplo();
-    }
-    if (modelosWhatsapp.length === 0) {
-        carregarModelosWhatsappExemplo();
-    }
+    if (perdidos.length === 0) carregarExemplosPerdidos();
+    if (modelos.length === 0) carregarModelosExemplo();
+    if (modelosWhatsapp.length === 0) carregarModelosWhatsappExemplo();
     if (coletorListas.length === 0) {
         coletorListas = [{ id: gerarId(), nome: 'Minha lista', linhas: [] }];
         coletorListaAtivaId = coletorListas[0].id;
@@ -302,11 +477,9 @@ async function carregarDados() {
     if (!coletorListas.some(p => p.id === coletorListaAtivaId)) {
         coletorListaAtivaId = coletorListas[0].id;
     }
-    if (segmentosBusca.length === 0) {
-        carregarSegmentosExemplo();
-    }
+    if (segmentosBusca.length === 0) carregarSegmentosExemplo();
 
-    // Carregar Pessoas (fallback localStorage + sincronização Supabase)
+    // Carregar Pessoas
     const savedPessoas = localStorage.getItem('ploomesPessoasV1');
     if (savedPessoas) {
         try {
@@ -327,6 +500,16 @@ async function carregarDados() {
     if (!pessoas || pessoas.length === 0) {
         carregarExemplosPessoas();
     }
+
+    // Se precisamos forçar a permanência no banco de dados (ex: após restaurar backup ou ações de orçamento locais)
+    if (precisaPersistirNoBanco) {
+        console.info('Forçando sincronização e permanência dos dados no banco de dados Supabase...');
+        setTimeout(() => {
+            forcarPersistenciaBanco({ mostrarProgresso: false });
+        }, 1200);
+    } else {
+        atualizarIndicadorStatusSync('sucesso');
+    }
 }
 
 let salvarDadosTimeout = null;
@@ -334,9 +517,8 @@ let salvandoDadosEmExecucao = false;
 let salvarNovamenteAoTerminar = false;
 
 function salvarDadosDebounced(delay = 350) {
-    // Salva imediatamente no localStorage para garantir persistência local instantânea
+    salvarCacheLocalImediato();
     try {
-        localStorage.setItem('ploomesLeadsCache', JSON.stringify(leads || []));
         localStorage.setItem('ploomesLeadsV5', JSON.stringify({
             modelos,
             campanhas,
@@ -378,75 +560,199 @@ async function salvarDados() {
     }
 }
 
-async function executarSalvarDadosInterno() {
+async function upsertLeadsNoSupabaseEmLotes(linhas, tamanhoLote = 15) {
+    let totalSalvos = 0;
+    let erros = [];
+
+    for (let i = 0; i < linhas.length; i += tamanhoLote) {
+        const lote = linhas.slice(i, i + tamanhoLote);
+        let res = await supabaseClient.from('leads').upsert(lote, { onConflict: 'id' });
+        if (res.error) {
+            console.warn(`Lote ${i}..${i + lote.length} falhou no upsert em grupo. Tentando individualmente...`, res.error);
+            for (const linha of lote) {
+                let resIndiv = await supabaseClient.from('leads').upsert([linha], { onConflict: 'id' });
+                if (resIndiv.error) {
+                    const clone = { ...linha };
+                    if (clone.orcamento_pdf_principal && clone.orcamento_pdf_principal.dataUrl) {
+                        clone.orcamento_pdf_principal = { ...clone.orcamento_pdf_principal };
+                        delete clone.orcamento_pdf_principal.dataUrl;
+                    }
+                    let retry = await supabaseClient.from('leads').upsert([clone], { onConflict: 'id' });
+                    if (retry.error) {
+                        erros.push({ id: linha.id, empresa: linha.empresa, erro: retry.error.message });
+                    } else {
+                        totalSalvos++;
+                    }
+                } else {
+                    totalSalvos++;
+                }
+            }
+        } else {
+            totalSalvos += lote.length;
+        }
+    }
+
+    return { totalSalvos, erros };
+}
+
+async function salvarLeadNoBanco(lead) {
+    if (!lead || !lead.id) return false;
     try {
-        localStorage.setItem('ploomesLeadsCache', JSON.stringify(leads || []));
+        if (!lead.atualizadoEm) lead.atualizadoEm = new Date().toISOString();
+        salvarCacheLocalImediato();
+        const linha = leadParaLinhaSupabase(lead);
+        let res = await supabaseClient.from('leads').upsert([linha], { onConflict: 'id' });
+        if (res.error) {
+            const clone = { ...linha };
+            if (clone.orcamento_pdf_principal && clone.orcamento_pdf_principal.dataUrl) {
+                clone.orcamento_pdf_principal = { ...clone.orcamento_pdf_principal };
+                delete clone.orcamento_pdf_principal.dataUrl;
+            }
+            let retry = await supabaseClient.from('leads').upsert([clone], { onConflict: 'id' });
+            if (!retry.error) {
+                atualizarIndicadorStatusSync('sucesso');
+                return true;
+            } else {
+                console.warn(`Aviso ao persistir lead individual ${lead.id}:`, retry.error);
+                atualizarIndicadorStatusSync('parcial');
+                return false;
+            }
+        } else {
+            atualizarIndicadorStatusSync('sucesso');
+            return true;
+        }
+    } catch (e) {
+        console.warn('Exceção ao persistir lead único no Supabase:', e);
+        atualizarIndicadorStatusSync('offline');
+        return false;
+    }
+}
+
+async function forcarPersistenciaBanco(opcoes = {}) {
+    const mostrarProgresso = opcoes.mostrarProgresso !== false;
+    if (mostrarProgresso && typeof showToast === 'function') {
+        showToast('Gravando alterações e forçando persistência no banco de dados...', 'info');
+    }
+    atualizarIndicadorStatusSync('sincronizando');
+
+    salvarCacheLocalImediato();
+
+    if (!leads || leads.length === 0) {
+        atualizarIndicadorStatusSync('sucesso');
+        if (mostrarProgresso && typeof showToast === 'function') {
+            showToast('Nenhum lead para persistir no momento.', 'warning');
+        }
+        return { sucesso: true, totalSalvos: 0, erros: [] };
+    }
+
+    const agora = new Date().toISOString();
+    leads.forEach(l => {
+        if (!l.atualizadoEm) l.atualizadoEm = agora;
+    });
+
+    const linhas = leads.map(leadParaLinhaSupabase);
+    const { totalSalvos, erros } = await upsertLeadsNoSupabaseEmLotes(linhas, 15);
+
+    leadsIdsCarregados = new Set(leads.map(l => l.id));
+    localStorage.setItem('crm_ultima_persistencia_banco', agora);
+    localStorage.removeItem('crm_backup_pendente_sincronizacao');
+
+    if (erros.length > 0) {
+        console.warn('Persistência no banco concluída com avisos em alguns itens:', erros);
+        atualizarIndicadorStatusSync('parcial');
+        if (mostrarProgresso && typeof showToast === 'function') {
+            showToast(`✓ ${totalSalvos} leads gravados com sucesso no banco de dados (${erros.length} salvos no cache local).`, 'warning');
+        }
+    } else {
+        atualizarIndicadorStatusSync('sucesso');
+        if (mostrarProgresso && typeof showToast === 'function') {
+            showToast(`✓ Todos os ${totalSalvos} leads e orçamentos foram gravados no banco de dados com sucesso!`, 'success');
+        }
+    }
+
+    return { sucesso: erros.length === 0, totalSalvos, erros };
+}
+
+function atualizarIndicadorStatusSync(status) {
+    const btn = document.getElementById('btnSyncBanco');
+    const icone = document.getElementById('iconeStatusSync');
+    const texto = document.getElementById('textoStatusSync');
+    if (!btn || !icone || !texto) return;
+
+    if (status === 'sincronizando') {
+        icone.textContent = '🔄';
+        texto.textContent = 'Salvando no banco...';
+        btn.style.borderColor = 'var(--primary)';
+        btn.style.color = 'var(--primary)';
+    } else if (status === 'sucesso') {
+        icone.textContent = '☁️';
+        texto.textContent = 'Banco Atualizado';
+        btn.style.borderColor = 'var(--success, #10b981)';
+        btn.style.color = 'var(--success, #10b981)';
+    } else if (status === 'parcial' || status === 'offline') {
+        icone.textContent = '⚠️';
+        texto.textContent = 'Salvo Local (Sincronizar)';
+        btn.style.borderColor = 'var(--warning, #f59e0b)';
+        btn.style.color = 'var(--warning, #f59e0b)';
+    }
+}
+
+async function executarSalvarDadosInterno() {
+    salvarCacheLocalImediato();
+
+    try {
+        localStorage.setItem('ploomesLeadsV5', JSON.stringify({
+            modelos,
+            campanhas,
+            emailLog,
+            modelosWhatsapp,
+            whatsappLog,
+            whatsappCampanhas,
+            whatsappOptOut,
+            whatsappConsentimentos,
+            whatsappFilaAtual,
+            perdidos,
+            metas,
+            coletorListas,
+            coletorListaAtivaId,
+            segmentosBusca
+        }));
     } catch (e) {}
 
-    localStorage.setItem('ploomesLeadsV5', JSON.stringify({
-        modelos,
-        campanhas,
-        emailLog,
-        modelosWhatsapp,
-        whatsappLog,
-        whatsappCampanhas,
-        whatsappOptOut,
-        whatsappConsentimentos,
-        whatsappFilaAtual,
-        perdidos,
-        metas,
-        coletorListas,
-        coletorListaAtivaId,
-        segmentosBusca
-    }));
     try {
         localStorage.setItem('ploomesPessoasV1', JSON.stringify(pessoas || []));
     } catch (e) {}
-    atualizarContadores();
 
-    const idsAtuais = new Set(leads.map(l => l.id));
-    const idsParaExcluir = [...leadsIdsCarregados].filter(id => !idsAtuais.has(id));
+    atualizarContadores();
+    atualizarIndicadorStatusSync('sincronizando');
+
+    const idsAtuais = new Set((leads || []).map(l => l.id));
+    let idsParaExcluir = [];
+    if (leadsIdsCarregados && leadsIdsCarregados.size > 0 && leads.length > 0) {
+        idsParaExcluir = [...leadsIdsCarregados].filter(id => !idsAtuais.has(id));
+    }
     leadsIdsCarregados = idsAtuais;
 
     try {
-        if (leads.length > 0) {
+        if (leads && leads.length > 0) {
             const linhas = leads.map(leadParaLinhaSupabase);
-            let { error } = await supabaseClient.from('leads').upsert(linhas, { onConflict: 'id' });
-            if (error) {
-                console.error('Erro ao salvar leads no Supabase:', error);
-                const msg = (error.message || '') + ' ' + (error.details || '') + ' ' + (error.code || '');
-                if (/PGRST204|cnpj|classificacao|orcamento|column .* does not exist|schema cache/i.test(msg)) {
-                    // Identifica dinamicamente coluna ausente ou limpa as colunas mais recentes para não travar a aplicação
-                    const linhasCompatibilidade = linhas.map(linha => {
-                        const clone = { ...linha };
-                        delete clone.cnpj;
-                        delete clone.classificacao;
-                        delete clone.orcamento_pdf_principal;
-                        delete clone.orcamento_modo;
-                        delete clone.orcamento_reset_em;
-                        return clone;
-                    });
-                    const retry = await supabaseClient.from('leads').upsert(linhasCompatibilidade, { onConflict: 'id' });
-                    if (retry.error) {
-                        console.error('Erro no fallback do Supabase:', retry.error);
-                    } else {
-                        console.info('Leads salvos com fallback de compatibilidade do Supabase.');
-                    }
-                } else if (/failed to fetch|networkerror|conex|offline/i.test(msg)) {
-                    console.warn('Conexão instável com o banco de dados. Dados preservados com segurança no armazenamento local.');
-                } else {
-                    showToast('Erro ao salvar no banco de dados: ' + error.message, 'error');
-                }
+            const { totalSalvos, erros } = await upsertLeadsNoSupabaseEmLotes(linhas, 15);
+            if (erros.length > 0) {
+                console.warn(`Sincronização parcial: ${totalSalvos} salvos, ${erros.length} avisos.`, erros);
+                atualizarIndicadorStatusSync('parcial');
+            } else {
+                atualizarIndicadorStatusSync('sucesso');
+                localStorage.setItem('crm_ultima_persistencia_banco', new Date().toISOString());
+                localStorage.removeItem('crm_backup_pendente_sincronizacao');
             }
         }
         if (idsParaExcluir.length > 0) {
-            const { error } = await supabaseClient.from('leads').delete().in('id', idsParaExcluir);
-            if (error) {
-                console.error('Erro ao excluir leads no Supabase:', error);
-            }
+            const { error: errDel } = await supabaseClient.from('leads').delete().in('id', idsParaExcluir);
+            if (errDel) console.warn('Aviso ao excluir leads no Supabase:', errDel);
         }
     } catch (errSupabase) {
-        console.warn('Falha de rede ao sincronizar leads com Supabase (salvo localmente):', errSupabase);
+        console.warn('Aviso de rede ao sincronizar leads com Supabase (mantido no cache local):', errSupabase);
+        atualizarIndicadorStatusSync('offline');
     }
 
     // Sincronizar Pessoas com Supabase (com detecção graciosa de erros se tabela ainda não criada)

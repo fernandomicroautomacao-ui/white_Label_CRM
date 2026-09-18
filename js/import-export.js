@@ -348,11 +348,19 @@ function importarBackup(e) {
                         const admin = usuarios.find(u => u.papel === 'admin');
                         l.usuarioId = admin ? admin.id : (usuarios[0] ? usuarios[0].id : 'admin');
                     }
+                    if (!l.atualizadoEm) l.atualizadoEm = new Date().toISOString();
                 });
                 leads = parsed;
-                salvarDados();
+                localStorage.setItem('crm_backup_pendente_sincronizacao', 'true');
+                if (typeof salvarCacheLocalImediato === 'function') salvarCacheLocalImediato();
                 renderizarAll();
-                showToast(`Backup restaurado! ${leads.length} leads carregados.`);
+                showToast(`Backup restaurado! Gravando ${leads.length} leads no banco de dados...`, 'info');
+                if (typeof forcarPersistenciaBanco === 'function') {
+                    await forcarPersistenciaBanco({ mostrarProgresso: true });
+                } else {
+                    await salvarDados();
+                }
+                renderizarAll();
                 e.target.value = '';
                 return;
             }
@@ -373,6 +381,9 @@ function importarBackup(e) {
             }
 
             leads = parsed.leads || [];
+            leads.forEach(l => {
+                if (!l.atualizadoEm) l.atualizadoEm = new Date().toISOString();
+            });
             modelos = parsed.modelos || [];
             campanhas = parsed.campanhas || [];
             emailLog = parsed.emailLog || [];
@@ -388,13 +399,22 @@ function importarBackup(e) {
                 aplicarTema();
             }
 
-            await salvarDados();
+            localStorage.setItem('crm_backup_pendente_sincronizacao', 'true');
+            if (typeof salvarCacheLocalImediato === 'function') salvarCacheLocalImediato();
+            renderizarAll();
+
+            showToast(`Gravando ${leads.length} leads do backup e forçando permanência no banco de dados...`, 'info');
+            if (typeof forcarPersistenciaBanco === 'function') {
+                await forcarPersistenciaBanco({ mostrarProgresso: true });
+            } else {
+                await salvarDados();
+            }
             renderizarAll();
 
             const avisoUsuarios = Array.isArray(parsed.usuarios) && parsed.usuarios.length > 0
                 ? ' Usuários não foram restaurados por este arquivo — contas agora são gerenciadas em Administração.'
                 : '';
-            showToast(`Backup completo restaurado com sucesso!${avisoUsuarios}`);
+            showToast(`Backup completo restaurado e gravado no banco com sucesso!${avisoUsuarios}`, 'success');
         } catch (err) {
             showToast('Arquivo inválido ou corrompido!', 'error');
         }

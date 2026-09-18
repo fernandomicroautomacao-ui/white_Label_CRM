@@ -570,7 +570,11 @@ function aplicarDadosPdfAoLead() {
         atualizacoes.push('Nº Pedido/Orçamento');
     }
 
+    lead.atualizadoEm = new Date().toISOString();
     salvarDados();
+    if (typeof salvarLeadNoBanco === 'function') {
+        salvarLeadNoBanco(lead);
+    }
     renderizarAll();
     showToast(`Lead sincronizado com o PDF: ${atualizacoes.join(', ')}!`, 'success');
 }
@@ -844,6 +848,7 @@ function salvarItensOrcamento() {
     lead.condicoes = condicoes;
     lead.obsOrcamento = obsOrcamento;
     lead.valor = total;
+    lead.atualizadoEm = new Date().toISOString();
 
     if (!lead.historico) lead.historico = [];
     lead.historico.push({
@@ -856,6 +861,9 @@ function salvarItensOrcamento() {
     });
 
     salvarDados();
+    if (typeof salvarLeadNoBanco === 'function') {
+        salvarLeadNoBanco(lead);
+    }
     fecharModal('itensModal');
     renderizarAll();
     showToast('Orçamento salvo com sucesso!', 'success');
