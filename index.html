@@ -395,12 +395,15 @@
             </div>
 
             <!-- SUB-ABAS DE MARKETING -->
-            <div style="display:flex;gap:8px;margin-bottom:20px;border-bottom:1px solid var(--border-color, #cbd5e1);padding-bottom:12px;flex-wrap:wrap;">
+            <div style="display:flex;gap:8px;margin-bottom:20px;border-bottom:1px solid var(--border-color, #cbd5e1);padding-bottom:12px;flex-wrap:wrap;align-items:center;">
                 <button type="button" class="btn btn-sm btn-primary" id="subtabBtnEmailMarketing" onclick="alternarSubabaMarketing('email')">
                     📧 Email Marketing & Campanhas
                 </button>
                 <button type="button" class="btn btn-sm btn-outline" id="subtabBtnLandingPages" onclick="alternarSubabaMarketing('landing_pages')">
                     🌐 Landing Pages dos Leads & Portais
+                </button>
+                <button type="button" class="btn btn-sm btn-success" onclick="abrirModalEditorLandingPage()" style="margin-left:auto;display:flex;align-items:center;gap:6px;font-weight:700;">
+                    ➕ Nova Landing Page
                 </button>
             </div>
 
@@ -519,6 +522,7 @@
                         </div>
                     </div>
                 </div>
+            </div>
             </div>
             <!-- FIM PAINEL EMAIL MARKETING -->
 

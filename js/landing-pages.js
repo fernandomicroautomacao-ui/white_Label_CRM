@@ -1324,6 +1324,7 @@ function renderizarLandingPageJIT(modeloIdOuObjeto, lead) {
         vendedor_telefone: vendedorTelefone,
         vendedor_whatsapp: vendedorTelefone,
         vendedor_whatsapp_digits: vendedorWhatsappDigits,
+        whatsapp_link: `https://wa.me/${vendedorWhatsappDigits}?text=${encodeURIComponent('Olá, gostaria de falar sobre a proposta comercial da MiCRO Automação.')}`,
         data_hoje: hojeStr,
         ano_atual: anoAtualStr
     };

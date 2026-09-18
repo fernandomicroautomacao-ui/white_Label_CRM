@@ -46,7 +46,12 @@ function navegarPara(section) {
     if (section === 'dashboard') renderizarDashboard();
     if (section === 'pipeline') renderizarPipeline();
     if (section === 'central' && typeof renderizarCentral === 'function') renderizarCentral();
-    if (section === 'marketing') renderizarMarketing();
+    if (section === 'marketing') {
+        renderizarMarketing();
+        if (typeof renderizarPainelLandingPagesMarketing === 'function') {
+            renderizarPainelLandingPagesMarketing();
+        }
+    }
     if (section === 'whatsapp') renderizarWhatsapp();
     if (section === 'coletor') renderizarColetor();
     if (section === 'calendario') renderizarCalendario();
