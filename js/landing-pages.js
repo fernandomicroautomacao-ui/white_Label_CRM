@@ -2593,6 +2593,156 @@ const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
 </html>`;
 
 // ================================================================
+// PERSISTÊNCIA NO SUPABASE (tabela landing_page_modelos)
+// Guarda apenas o MOLDE (html/css/js com {{tags}}) — nunca a página já
+// renderizada. A montagem final acontece sob demanda (JIT), ver mais abaixo.
+// ================================================================
+function modeloLPParaSupabase(m) {
+    return {
+        id: m.id,
+        nome: m.nome || '',
+        descricao: m.descricao || '',
+        padrao: !!m.padrao,
+        html: m.html || '',
+        css: m.css || '',
+        js: m.js || '',
+        hero_img: m.heroImg || '',
+        logo_img: m.logoImg || '',
+        cor_primaria: m.corPrimaria || '#0057a8',
+        imagens: m.imagens || [],
+        usuario_id: m.usuarioId || null
+    };
+}
+
+function linhaSupabaseParaModeloLP(r) {
+    return {
+        id: r.id,
+        nome: r.nome || '',
+        descricao: r.descricao || '',
+        padrao: !!r.padrao,
+        html: r.html || '',
+        css: r.css || '',
+        js: r.js || '',
+        heroImg: r.hero_img || '',
+        logoImg: r.logo_img || '',
+        corPrimaria: r.cor_primaria || '#0057a8',
+        imagens: r.imagens || [],
+        usuarioId: r.usuario_id || null,
+        criadoEm: r.created_at || new Date().toISOString(),
+        atualizadoEm: r.updated_at || new Date().toISOString()
+    };
+}
+
+// Upsert de um modelo no banco (chamado ao salvar/duplicar/definir padrão).
+// "Fire and forget": não trava a UI, que já foi atualizada localmente antes.
+async function sincronizarModeloLandingPageNoBanco(modelo) {
+    if (!modelo || typeof supabaseClient === 'undefined' || !supabaseClient.from) return false;
+    try {
+        const { error } = await supabaseClient
+            .from('landing_page_modelos')
+            .upsert(modeloLPParaSupabase(modelo), { onConflict: 'id' });
+        if (error) {
+            console.warn('Falha ao sincronizar modelo de Landing Page no Supabase:', error.message);
+            return false;
+        }
+        return true;
+    } catch (e) {
+        console.warn('Erro de rede ao sincronizar modelo de Landing Page:', e);
+        return false;
+    }
+}
+
+async function excluirModeloLandingPageDoBanco(modeloId) {
+    if (!modeloId || typeof supabaseClient === 'undefined' || !supabaseClient.from) return false;
+    try {
+        const { error } = await supabaseClient
+            .from('landing_page_modelos')
+            .delete()
+            .eq('id', modeloId);
+        if (error) console.warn('Falha ao excluir modelo de Landing Page no Supabase:', error.message);
+        return !error;
+    } catch (e) {
+        console.warn('Erro de rede ao excluir modelo de Landing Page:', e);
+        return false;
+    }
+}
+
+// Carrega TODOS os modelos do banco para o painel de gestão (aba Marketing),
+// mesclando com o array local. Não é usado no caminho do Portal do Cliente —
+// lá a busca é individual e sob demanda (ver buscarModeloLandingPageJIT).
+async function carregarModelosLandingPageDoBanco() {
+    if (typeof supabaseClient === 'undefined' || !supabaseClient.from) return;
+    try {
+        const { data, error } = await supabaseClient.from('landing_page_modelos').select('*');
+        if (error || !data) return;
+        const remotos = data.map(linhaSupabaseParaModeloLP);
+        const mapaLocal = new Map((modelosLandingPage || []).map(m => [m.id, m]));
+        remotos.forEach(r => mapaLocal.set(r.id, { ...mapaLocal.get(r.id), ...r }));
+        modelosLandingPage = Array.from(mapaLocal.values());
+        if (typeof salvarDados === 'function') salvarDados();
+        if (typeof renderizarPainelLandingPagesMarketing === 'function') {
+            try { renderizarPainelLandingPagesMarketing(); } catch (e) {}
+        }
+    } catch (e) {
+        console.warn('Erro de rede ao carregar modelos de Landing Page do Supabase:', e);
+    }
+}
+
+// ================================================================
+// BUSCA JUST-IN-TIME DE UM ÚNICO MODELO (uso no Portal do Cliente)
+// Não depende do array modelosLandingPage estar carregado em memória:
+// busca no Supabase apenas o registro necessário, no instante do login do
+// cliente. Cai para o array local e, por fim, para os templates padrão
+// embutidos no código caso não haja rede/registro (garante que o portal
+// nunca fica sem página para mostrar).
+// ================================================================
+async function buscarModeloLandingPageJIT(modeloId) {
+    if (modeloId && typeof supabaseClient !== 'undefined' && supabaseClient.from) {
+        try {
+            const { data, error } = await supabaseClient
+                .from('landing_page_modelos')
+                .select('*')
+                .eq('id', modeloId)
+                .maybeSingle();
+            if (!error && data) return linhaSupabaseParaModeloLP(data);
+        } catch (e) {
+            console.warn('Portal do Cliente: sem rede para buscar modelo no Supabase, usando fallback local.', e);
+        }
+    }
+
+    // Sem id, sem registro no banco, ou offline: tenta o array local
+    if (modeloId) {
+        const local = (modelosLandingPage || []).find(m => m.id === modeloId);
+        if (local) return local;
+    }
+
+    // Nenhum modelo específico: busca o padrão no banco
+    if (typeof supabaseClient !== 'undefined' && supabaseClient.from) {
+        try {
+            const { data, error } = await supabaseClient
+                .from('landing_page_modelos')
+                .select('*')
+                .eq('padrao', true)
+                .limit(1)
+                .maybeSingle();
+            if (!error && data) return linhaSupabaseParaModeloLP(data);
+        } catch (e) {}
+    }
+
+    return (modelosLandingPage || []).find(m => m.padrao) || (modelosLandingPage || [])[0] || null;
+}
+
+// Versão assíncrona de renderizarLandingPageJIT: busca o modelo (banco →
+// local → padrão embutido) e só então monta o HTML final em memória.
+async function renderizarLandingPageJITAsync(modeloIdOuObjeto, lead) {
+    let modelo = modeloIdOuObjeto;
+    if (typeof modeloIdOuObjeto === 'string' || !modeloIdOuObjeto) {
+        modelo = await buscarModeloLandingPageJIT(modeloIdOuObjeto);
+    }
+    return renderizarLandingPageJIT(modelo, lead);
+}
+
+// ================================================================
 // INICIALIZAÇÃO DE MODELOS DE LANDING PAGE
 // ================================================================
 function inicializarModelosLandingPageExemplo() {
@@ -2636,6 +2786,7 @@ function inicializarModelosLandingPageExemplo() {
             }
         ];
         if (typeof salvarDados === 'function') salvarDados();
+        modelosLandingPage.forEach(m => sincronizarModeloLandingPageNoBanco(m));
     } else {
         // Garante que o modelo "Visualizador de Orçamento" exista e esteja sempre com o visualizador PDF original atualizado
         const idxVis = modelosLandingPage.findIndex(m => m.id === 'lp_visualizador_orcamento' || m.nome === 'Visualizador de Orçamento');
@@ -2653,12 +2804,16 @@ function inicializarModelosLandingPageExemplo() {
                 atualizadoEm: new Date().toISOString()
             });
             if (typeof salvarDados === 'function') salvarDados();
+            sincronizarModeloLandingPageNoBanco(modelosLandingPage[modelosLandingPage.length - 1]);
         } else {
             modelosLandingPage[idxVis].html = TEMPLATE_VISUALIZADOR_ORCAMENTO;
             modelosLandingPage[idxVis].descricao = 'Portal do cliente com visualizador de proposta em anexo estilo PDF em alta fidelidade com PDF.js, aceite/assinatura digital, impressão A4 e vitrine lateral de produtos MiCRO.';
             modelosLandingPage[idxVis].atualizadoEm = new Date().toISOString();
+            sincronizarModeloLandingPageNoBanco(modelosLandingPage[idxVis]);
         }
     }
+    // Puxa em segundo plano o que já existir no banco (outros dispositivos/usuários)
+    if (typeof carregarModelosLandingPageDoBanco === 'function') carregarModelosLandingPageDoBanco();
 }
 
 // ================================================================
@@ -3303,6 +3458,7 @@ function salvarModeloLandingPage(event) {
                 atualizadoEm: new Date().toISOString()
             };
             showToast(`Modelo "${nome}" atualizado com sucesso!`, 'success');
+            sincronizarModeloLandingPageNoBanco(modelosLandingPage[idx]);
         }
     } else {
         const novoId = 'lp_' + Date.now();
@@ -3322,6 +3478,7 @@ function salvarModeloLandingPage(event) {
         };
         modelosLandingPage.push(novoModelo);
         showToast(`Novo modelo "${nome}" criado com sucesso!`, 'success');
+        sincronizarModeloLandingPageNoBanco(novoModelo);
     }
 
     // Persistência forçada
@@ -3348,6 +3505,7 @@ function duplicarModeloLandingPage(modeloId) {
     if (typeof salvarDados === 'function') salvarDados();
     renderizarPainelLandingPagesMarketing();
     showToast(`Modelo copiado como "${novoModelo.nome}"!`, 'success');
+    sincronizarModeloLandingPageNoBanco(novoModelo);
 }
 
 function definirModeloLandingPagePadrao(modeloId) {
@@ -3355,6 +3513,8 @@ function definirModeloLandingPagePadrao(modeloId) {
     if (typeof salvarDados === 'function') salvarDados();
     renderizarPainelLandingPagesMarketing();
     showToast('Modelo padrão atualizado!', 'success');
+    const modeloPadrao = (modelosLandingPage || []).find(m => m.id === modeloId);
+    if (modeloPadrao) sincronizarModeloLandingPageNoBanco(modeloPadrao);
 }
 
 function excluirModeloLandingPage(modeloId) {
@@ -3368,11 +3528,13 @@ function excluirModeloLandingPage(modeloId) {
     modelosLandingPage = modelosLandingPage.filter(m => m.id !== modeloId);
     if (!modelosLandingPage.some(m => m.padrao)) {
         modelosLandingPage[0].padrao = true;
+        sincronizarModeloLandingPageNoBanco(modelosLandingPage[0]);
     }
 
     if (typeof salvarDados === 'function') salvarDados();
     renderizarPainelLandingPagesMarketing();
     showToast('Modelo excluído com sucesso!', 'info');
+    excluirModeloLandingPageDoBanco(modeloId);
 }
 
 // ================================================================
@@ -3746,7 +3908,7 @@ function autenticarClientePortal(event) {
     }
 }
 
-function iniciarSessaoPortalCliente(lead, registrarAcesso = true) {
+async function iniciarSessaoPortalCliente(lead, registrarAcesso = true) {
     leadClienteAutenticado = lead;
 
     sessionStorage.setItem('crm_cliente_sessao', JSON.stringify({
@@ -3791,7 +3953,9 @@ function iniciarSessaoPortalCliente(lead, registrarAcesso = true) {
     if (portalView) portalView.style.display = 'block';
 
     if (iframe) {
-        const rendered = renderizarLandingPageJIT(lead.landingPageModeloId, lead);
+        // Busca o molde sob demanda (Supabase → cache local → padrão embutido)
+        // e só então monta o HTML final em memória — nada fica pré-carregado.
+        const rendered = await renderizarLandingPageJITAsync(lead.landingPageModeloId, lead);
         iframe.srcdoc = rendered;
     }
 }
