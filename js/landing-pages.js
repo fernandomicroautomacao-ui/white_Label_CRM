@@ -3656,6 +3656,30 @@ function abrirPreviewEmNovaAba() {
 // ================================================================
 let leadLpModalAtivoId = null;
 
+// Monta a URL do Portal do Cliente. Se um modeloId for informado, ele vai
+// gravado na própria URL (?modelo=...) — assim o link já abre com aquele
+// modelo, sem precisar salvar nada antes nem depender do que está gravado
+// no banco para aquele lead. Sem modeloId, o link fica "dinâmico": sempre
+// abre o que estiver marcado como Padrão no momento do acesso.
+function montarLinkPortalLead(leadId, modeloId) {
+    const baseUrl = `${window.location.origin}${window.location.pathname}`;
+    let url = `${baseUrl}?lp=${leadId}`;
+    if (modeloId) url += `&modelo=${encodeURIComponent(modeloId)}`;
+    return url;
+}
+
+// Recalcula e escreve no campo de URL o link correspondente ao modelo
+// selecionado agora no <select>. Chamado ao abrir o modal e a cada troca
+// de opção (onchange), para o link responder na hora.
+function atualizarLinkLeadConformeModelo() {
+    const elId = document.getElementById('lpLeadId');
+    const selModelo = document.getElementById('lpLeadModeloId');
+    const elUrl = document.getElementById('lpLeadUrl');
+    if (!elId || !elUrl) return;
+    const modeloId = selModelo ? selModelo.value : '';
+    elUrl.value = montarLinkPortalLead(elId.value, modeloId);
+}
+
 function abrirModalLandingPageLead(leadId) {
     const lead = (typeof leads !== 'undefined' && Array.isArray(leads)) ? leads.find(l => l.id === leadId) : null;
     if (!lead) {
@@ -3693,9 +3717,8 @@ function abrirModalLandingPageLead(leadId) {
             : 'Nunca acessou';
     }
 
-    // URL Exclusiva do Cliente
-    const baseUrl = `${window.location.origin}${window.location.pathname}`;
-    const clientUrl = `${baseUrl}?lp=${lead.id}`;
+    // URL Exclusiva do Cliente — recalculada a cada troca de modelo abaixo
+    const clientUrl = montarLinkPortalLead(lead.id, lead.landingPageModeloId || '');
     if (elUrl) elUrl.value = clientUrl;
 
     if (elMsg) elMsg.value = lead.landingPageMensagem || '';
@@ -3712,6 +3735,8 @@ function abrirModalLandingPageLead(leadId) {
             return `<option value="${m.id}" ${isSelected ? 'selected' : ''}>${m.nome} ${m.padrao ? '(Padrão atual)' : ''}</option>`;
         }).join('');
         selModelo.innerHTML = opcaoPadraoDinamico + opcoesModelos;
+        // Ao trocar a opção, o link é reescrito na mesma hora
+        selModelo.onchange = atualizarLinkLeadConformeModelo;
     }
 
     abrirModal('landingPageLeadModal');
@@ -3767,8 +3792,12 @@ function copiarConviteWhatsAppLead() {
     const lead = (typeof leads !== 'undefined' && Array.isArray(leads)) ? leads.find(l => l.id === leadId) : null;
     if (!lead) return;
 
-    const baseUrl = `${window.location.origin}${window.location.pathname}`;
-    const clientUrl = `${baseUrl}?lp=${lead.id}`;
+    // Reaproveita o link já calculado no campo (reflete o modelo selecionado)
+    const elUrlAtual = document.getElementById('lpLeadUrl');
+    const selModeloAtual = document.getElementById('lpLeadModeloId');
+    const clientUrl = (elUrlAtual && elUrlAtual.value)
+        ? elUrlAtual.value
+        : montarLinkPortalLead(lead.id, selModeloAtual ? selModeloAtual.value : (lead.landingPageModeloId || ''));
     const decisor = lead.decisor || 'Diretoria';
     const emailLogin = lead.email || 'seu e-mail comercial';
     const cnpjSenha = lead.cnpj || 'seu CNPJ';
@@ -3878,6 +3907,7 @@ async function buscarLeadParaAcessoDireto(leadId) {
 async function verificarAcessoPortalCliente() {
     const urlParams = new URLSearchParams(window.location.search);
     const lpParam = urlParams.get('lp') || urlParams.get('portal');
+    const modeloParam = urlParams.get('modelo') || '';
     const hash = window.location.hash;
 
     let leadIdDetectado = lpParam;
@@ -3899,7 +3929,7 @@ async function verificarAcessoPortalCliente() {
 
     let lead = await buscarLeadParaAcessoDireto(leadIdDetectado);
     if (lead) {
-        iniciarSessaoPortalCliente(lead, true);
+        iniciarSessaoPortalCliente(lead, true, modeloParam);
         return true;
     }
 
@@ -3907,7 +3937,7 @@ async function verificarAcessoPortalCliente() {
     setTimeout(async () => {
         lead = await buscarLeadParaAcessoDireto(leadIdDetectado);
         if (lead) {
-            iniciarSessaoPortalCliente(lead, true);
+            iniciarSessaoPortalCliente(lead, true, modeloParam);
         }
     }, 700);
 
@@ -3933,7 +3963,7 @@ function autenticarClientePortal(event) {
     }
 }
 
-async function iniciarSessaoPortalCliente(lead, registrarAcesso = true) {
+async function iniciarSessaoPortalCliente(lead, registrarAcesso = true, modeloIdOverride = '') {
     leadClienteAutenticado = lead;
 
     sessionStorage.setItem('crm_cliente_sessao', JSON.stringify({
@@ -3978,9 +4008,11 @@ async function iniciarSessaoPortalCliente(lead, registrarAcesso = true) {
     if (portalView) portalView.style.display = 'block';
 
     if (iframe) {
-        // Busca o molde sob demanda (Supabase → cache local → padrão embutido)
-        // e só então monta o HTML final em memória — nada fica pré-carregado.
-        const rendered = await renderizarLandingPageJITAsync(lead.landingPageModeloId, lead);
+        // Prioridade: modelo vindo na própria URL (?modelo=...) > modelo
+        // salvo no lead > modelo Padrão atual. Busca sob demanda (Supabase →
+        // cache local → padrão embutido) e só então monta o HTML em memória.
+        const modeloParaUsar = modeloIdOverride || lead.landingPageModeloId;
+        const rendered = await renderizarLandingPageJITAsync(modeloParaUsar, lead);
         iframe.srcdoc = rendered;
     }
 }
