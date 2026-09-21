@@ -3463,7 +3463,7 @@ inicializarModelosLandingPageExemplo();
 
 /* LP_MANUTENCAO_PET_V1 */
 // Landing page comercial para Manutenção Industrial — usa os ativos oficiais do repositório.
-const TEMPLATE_MANUTENCAO_INDUSTRIAL_PET = \`<!DOCTYPE html>
+const TEMPLATE_MANUTENCAO_INDUSTRIAL_PET = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
