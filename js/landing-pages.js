@@ -3700,12 +3700,18 @@ function abrirModalLandingPageLead(leadId) {
 
     if (elMsg) elMsg.value = lead.landingPageMensagem || '';
 
-    // Seletor de modelos
+    // Seletor de modelos — a primeira opção "Seguir o Padrão" mantém o link
+    // sempre dinâmico: se você trocar o modelo padrão depois, o link deste
+    // lead passa a usar o novo automaticamente, sem precisar reabrir e salvar
+    // cada lead de novo.
     if (selModelo) {
-        selModelo.innerHTML = (modelosLandingPage || []).map(m => {
-            const isSelected = lead.landingPageModeloId === m.id || (!lead.landingPageModeloId && m.padrao);
-            return `<option value="${m.id}" ${isSelected ? 'selected' : ''}>${m.nome} ${m.padrao ? '(Padrão)' : ''}</option>`;
+        const seguindoPadrao = !lead.landingPageModeloId;
+        const opcaoPadraoDinamico = `<option value="" ${seguindoPadrao ? 'selected' : ''}>🔄 Seguir sempre o modelo Padrão atual</option>`;
+        const opcoesModelos = (modelosLandingPage || []).map(m => {
+            const isSelected = lead.landingPageModeloId === m.id;
+            return `<option value="${m.id}" ${isSelected ? 'selected' : ''}>${m.nome} ${m.padrao ? '(Padrão atual)' : ''}</option>`;
         }).join('');
+        selModelo.innerHTML = opcaoPadraoDinamico + opcoesModelos;
     }
 
     abrirModal('landingPageLeadModal');
@@ -3721,7 +3727,7 @@ function salvarLandingPageLead(event) {
     const selModelo = document.getElementById('lpLeadModeloId');
     const elMsg = document.getElementById('lpLeadMensagemCustomizada');
 
-    if (selModelo) lead.landingPageModeloId = selModelo.value;
+    if (selModelo) lead.landingPageModeloId = selModelo.value || null;
     if (elMsg) lead.landingPageMensagem = elMsg.value.trim();
 
     lead.atualizadoEm = new Date().toISOString();
@@ -3861,7 +3867,7 @@ async function buscarLeadParaAcessoDireto(leadId) {
                     orcamentoAnexos: r.orcamento_anexos,
                     autorizacaoPedidoId: r.autorizacao_pedido_id,
                     autorizacaoPedidoStatus: r.autorizacao_pedido_status,
-                    landingPageModeloId: r.landing_page_modelo_id || 'lp_visualizador_orcamento'
+                    landingPageModeloId: r.landing_page_modelo_id || null
                 };
             }
         } catch (e) {}
