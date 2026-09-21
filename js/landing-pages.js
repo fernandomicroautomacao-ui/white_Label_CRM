@@ -3547,7 +3547,7 @@ Seu navegador não suporta vídeo HTML5.
 
 <section class="sec"><div class="wrap"><div class="cta"><div><h2 style="margin:0 0 8px">Sua manutenção precisa de uma alternativa para válvula de sopro PET?</h2><div>Envie os dados da aplicação e fale diretamente com o atendimento MiCRO.</div></div><a class="btn" href="https://wa.me/{{vendedor_whatsapp_digits}}" target="_blank">Solicitar análise</a></div></div></section>
 <footer><div class="wrap">MiCRO Automação • Atendimento técnico-comercial • Campinas/SP • {{ano_atual}}</div></footer>
-</body></html>\`;
+</body></html>`;
 
 (function garantirLandingManutencaoIndustrialPET(){
     if (!Array.isArray(modelosLandingPage)) return;
