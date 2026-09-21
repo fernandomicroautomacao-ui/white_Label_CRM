@@ -2670,21 +2670,36 @@ async function excluirModeloLandingPageDoBanco(modeloId) {
 // Carrega TODOS os modelos do banco para o painel de gestão (aba Marketing),
 // mesclando com o array local. Não é usado no caminho do Portal do Cliente —
 // lá a busca é individual e sob demanda (ver buscarModeloLandingPageJIT).
+// Guardas anti-loop: só busca uma vez por sessão e nunca re-renderiza o
+// painel se nada realmente mudou (evita re-render em cascata dos cards).
+let _lpBancoCarregadoUmaVez = false;
+let _lpBancoCarregando = false;
 async function carregarModelosLandingPageDoBanco() {
+    if (_lpBancoCarregando) return;
     if (typeof supabaseClient === 'undefined' || !supabaseClient.from) return;
+    _lpBancoCarregando = true;
     try {
         const { data, error } = await supabaseClient.from('landing_page_modelos').select('*');
         if (error || !data) return;
         const remotos = data.map(linhaSupabaseParaModeloLP);
         const mapaLocal = new Map((modelosLandingPage || []).map(m => [m.id, m]));
+        const assinaturaAntes = JSON.stringify(Array.from(mapaLocal.entries()).sort());
         remotos.forEach(r => mapaLocal.set(r.id, { ...mapaLocal.get(r.id), ...r }));
+        const assinaturaDepois = JSON.stringify(Array.from(mapaLocal.entries()).sort());
+        const mudou = assinaturaAntes !== assinaturaDepois;
+
         modelosLandingPage = Array.from(mapaLocal.values());
-        if (typeof salvarDados === 'function') salvarDados();
-        if (typeof renderizarPainelLandingPagesMarketing === 'function') {
-            try { renderizarPainelLandingPagesMarketing(); } catch (e) {}
+        if (mudou) {
+            if (typeof salvarDados === 'function') salvarDados();
+            if (typeof renderizarPainelLandingPagesMarketing === 'function') {
+                try { renderizarPainelLandingPagesMarketing(); } catch (e) {}
+            }
         }
     } catch (e) {
         console.warn('Erro de rede ao carregar modelos de Landing Page do Supabase:', e);
+    } finally {
+        _lpBancoCarregando = false;
+        _lpBancoCarregadoUmaVez = true;
     }
 }
 
@@ -2812,8 +2827,12 @@ function inicializarModelosLandingPageExemplo() {
             sincronizarModeloLandingPageNoBanco(modelosLandingPage[idxVis]);
         }
     }
-    // Puxa em segundo plano o que já existir no banco (outros dispositivos/usuários)
-    if (typeof carregarModelosLandingPageDoBanco === 'function') carregarModelosLandingPageDoBanco();
+    // Puxa do banco só na primeira vez (evita loop: esta função roda toda
+    // vez que o painel é (re)renderizado, mas o fetch do banco só precisa
+    // acontecer uma vez por carregamento da página).
+    if (!_lpBancoCarregadoUmaVez && typeof carregarModelosLandingPageDoBanco === 'function') {
+        carregarModelosLandingPageDoBanco();
+    }
 }
 
 // ================================================================
