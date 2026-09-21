@@ -49,13 +49,309 @@ function abrirItens(leadId, tipo) {
     abrirModal('itensModal');
 }
 
-// ---------- Visualizador do Anexo PDF Principal & Extrator ----------
+// ---------- Visualizador do Anexo PDF Principal em Alta Fidelidade & Extrator ----------
+let orcPdfZoomAtual = 1.0;
+let orcPdfDocInstancia = null;
+let orcPdfCanvasesRenderizados = [];
+let orcPdfRenderId = 0;
+
+function dataUrlParaUint8Array(dataUrl) {
+    if (!dataUrl) return new Uint8Array(0);
+    const partes = dataUrl.split(',');
+    const base64 = partes.length > 1 ? partes[1] : partes[0];
+    const raw = atob(base64.replace(/\s/g, ''));
+    const bytes = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) {
+        bytes[i] = raw.charCodeAt(i);
+    }
+    return bytes;
+}
+
+function dataUrlParaBlob(dataUrl, mimePadrao = 'application/pdf') {
+    const partes = dataUrl.split(',');
+    const mimeMatch = partes[0].match(/:(.*?);/);
+    const mime = mimeMatch ? mimeMatch[1] : mimePadrao;
+    const bytes = dataUrlParaUint8Array(dataUrl);
+    return new Blob([bytes], { type: mime });
+}
+
+async function carregarERenderizarPdfCanvas(dataUrl) {
+    const currentRenderId = ++orcPdfRenderId;
+    const wrapper = document.getElementById('orcPdfCanvasWrapper');
+    const spinner = document.getElementById('orcPdfCarregando');
+    const iframe = document.getElementById('orcPdfIframe');
+    const infoTag = document.getElementById('orcPdfPaginaInfo');
+    const btn100 = document.getElementById('btnZoomPdf100');
+
+    orcPdfCanvasesRenderizados = [];
+
+    if (btn100) btn100.textContent = `${Math.round(orcPdfZoomAtual * 100)}%`;
+
+    if (!window.pdfjsLib) {
+        console.warn('pdfjsLib não disponível. Usando visualizador padrão.');
+        if (spinner) spinner.style.display = 'none';
+        if (wrapper) wrapper.style.display = 'none';
+        if (iframe) {
+            iframe.src = dataUrl;
+            iframe.style.display = 'block';
+        }
+        if (infoTag) infoTag.textContent = 'Modo Navegador';
+        return;
+    }
+
+    try {
+        if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+
+        if (spinner) spinner.style.display = 'flex';
+        if (wrapper) {
+            wrapper.innerHTML = '';
+            wrapper.style.display = 'flex';
+        }
+        if (iframe) iframe.style.display = 'none';
+        if (infoTag) infoTag.textContent = 'Carregando documento...';
+
+        const bytes = dataUrlParaUint8Array(dataUrl);
+        const loadingTask = pdfjsLib.getDocument({ data: bytes });
+        const pdfDoc = await loadingTask.promise;
+
+        if (currentRenderId !== orcPdfRenderId) return; // cancelado por outra renderização
+
+        orcPdfDocInstancia = pdfDoc;
+        const totalPaginas = pdfDoc.numPages;
+        if (infoTag) infoTag.textContent = `${totalPaginas} ${totalPaginas === 1 ? 'página' : 'páginas'}`;
+
+        const containerWidth = (wrapper && wrapper.clientWidth > 100) ? wrapper.clientWidth : 720;
+        const targetWidthBase = Math.min(containerWidth - 32, 780);
+
+        for (let num = 1; num <= totalPaginas; num++) {
+            if (currentRenderId !== orcPdfRenderId) return;
+
+            const page = await pdfDoc.getPage(num);
+            const unscaledViewport = page.getViewport({ scale: 1.0 });
+
+            const pixelRatio = Math.min(window.devicePixelRatio || 1.5, 2.0);
+            const baseScale = (targetWidthBase / unscaledViewport.width);
+            const renderScale = baseScale * orcPdfZoomAtual * pixelRatio;
+            const viewport = page.getViewport({ scale: renderScale });
+
+            const pageWrap = document.createElement('div');
+            pageWrap.className = 'pdf-page-wrapper';
+            pageWrap.id = `pdfPageWrap_${num}`;
+
+            const canvas = document.createElement('canvas');
+            canvas.className = 'pdf-page-canvas';
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            canvas.style.width = (viewport.width / pixelRatio) + 'px';
+            canvas.style.height = (viewport.height / pixelRatio) + 'px';
+
+            const ctx = canvas.getContext('2d', { alpha: false });
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+
+            pageWrap.appendChild(canvas);
+
+            if (totalPaginas > 1) {
+                const badge = document.createElement('span');
+                badge.className = 'pdf-page-number-tag';
+                badge.textContent = `Pág. ${num}/${totalPaginas}`;
+                pageWrap.appendChild(badge);
+            }
+
+            if (wrapper) wrapper.appendChild(pageWrap);
+
+            const renderContext = {
+                canvasContext: ctx,
+                viewport: viewport
+            };
+
+            await page.render(renderContext).promise;
+            orcPdfCanvasesRenderizados.push(canvas);
+        }
+
+        if (spinner) spinner.style.display = 'none';
+        if (infoTag) infoTag.textContent = `1 a ${totalPaginas} de ${totalPaginas} ${totalPaginas === 1 ? 'página' : 'páginas'}`;
+    } catch (err) {
+        console.warn('Falha na renderização de canvas via PDF.js, utilizando fallback em iframe:', err);
+        if (spinner) spinner.style.display = 'none';
+        if (wrapper) wrapper.style.display = 'none';
+        if (iframe) {
+            iframe.src = dataUrl;
+            iframe.style.display = 'block';
+        }
+        if (infoTag) infoTag.textContent = 'Visualizador Embutido';
+    }
+}
+
+function alterarZoomPdfViewer(delta) {
+    orcPdfZoomAtual = Math.max(0.4, Math.min(2.5, +(orcPdfZoomAtual + delta).toFixed(2)));
+    const btn100 = document.getElementById('btnZoomPdf100');
+    if (btn100) btn100.textContent = `${Math.round(orcPdfZoomAtual * 100)}%`;
+
+    if (itensEditPdfPrincipal && itensEditPdfPrincipal.dataUrl) {
+        carregarERenderizarPdfCanvas(itensEditPdfPrincipal.dataUrl);
+    }
+}
+
+function definirZoomPdfViewer(zoom = 1.0) {
+    orcPdfZoomAtual = zoom;
+    const btn100 = document.getElementById('btnZoomPdf100');
+    if (btn100) btn100.textContent = `${Math.round(orcPdfZoomAtual * 100)}%`;
+
+    if (itensEditPdfPrincipal && itensEditPdfPrincipal.dataUrl) {
+        carregarERenderizarPdfCanvas(itensEditPdfPrincipal.dataUrl);
+    }
+}
+
+function ajustarPdfAoContainer() {
+    const wrapper = document.getElementById('orcPdfCanvasWrapper');
+    if (!wrapper || !orcPdfDocInstancia) {
+        definirZoomPdfViewer(1.0);
+        return;
+    }
+    const containerWidth = wrapper.clientWidth || 700;
+    const targetWidth = Math.max(400, containerWidth - 40);
+    const zoomCalculado = +(targetWidth / 780).toFixed(2);
+    definirZoomPdfViewer(Math.max(0.5, Math.min(2.0, zoomCalculado)));
+}
+
+function baixarPdfOrcamentoModal() {
+    if (!itensEditPdfPrincipal || !itensEditPdfPrincipal.dataUrl) {
+        showToast('Nenhum PDF disponível para download.', 'warning');
+        return;
+    }
+    const blob = dataUrlParaBlob(itensEditPdfPrincipal.dataUrl);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = itensEditPdfPrincipal.nome || `orcamento_${hoje()}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, 1000);
+    showToast('Download do PDF iniciado!');
+}
+
+function imprimirPdfOrcamentoModal() {
+    if (!itensEditPdfPrincipal || !itensEditPdfPrincipal.dataUrl) {
+        showToast('Nenhum PDF anexado para imprimir!', 'warning');
+        return;
+    }
+
+    showToast('Preparando impressão direta do PDF original...', 'info');
+
+    // Se temos os canvas renderizados em alta resolução, imprimimos através deles para fidelidade visual absoluta
+    if (orcPdfCanvasesRenderizados && orcPdfCanvasesRenderizados.length > 0) {
+        imprimirCanvasesEmIframeOculto(orcPdfCanvasesRenderizados, itensEditPdfPrincipal.nome || 'Orçamento PDF');
+        return;
+    }
+
+    // Fallback: imprime via Blob URL em iframe oculto
+    const blob = dataUrlParaBlob(itensEditPdfPrincipal.dataUrl);
+    const blobUrl = URL.createObjectURL(blob);
+    const printFrame = document.createElement('iframe');
+    printFrame.style.position = 'fixed';
+    printFrame.style.right = '0';
+    printFrame.style.bottom = '0';
+    printFrame.style.width = '0';
+    printFrame.style.height = '0';
+    printFrame.style.border = 'none';
+    document.body.appendChild(printFrame);
+
+    printFrame.onload = () => {
+        setTimeout(() => {
+            try {
+                printFrame.contentWindow.focus();
+                printFrame.contentWindow.print();
+            } catch (e) {
+                console.warn('Aviso ao imprimir via blob iframe, abrindo janela auxiliar:', e);
+                window.open(blobUrl, '_blank');
+            } finally {
+                setTimeout(() => {
+                    document.body.removeChild(printFrame);
+                    URL.revokeObjectURL(blobUrl);
+                }, 4000);
+            }
+        }, 500);
+    };
+    printFrame.src = blobUrl;
+}
+
+function imprimirCanvasesEmIframeOculto(canvases, tituloDocumento) {
+    const imagens = canvases.map(c => c.toDataURL('image/png', 1.0));
+    const printFrame = document.createElement('iframe');
+    printFrame.style.position = 'fixed';
+    printFrame.style.right = '0';
+    printFrame.style.bottom = '0';
+    printFrame.style.width = '0';
+    printFrame.style.height = '0';
+    printFrame.style.border = 'none';
+    document.body.appendChild(printFrame);
+
+    const doc = printFrame.contentWindow.document;
+    doc.open();
+    doc.write(`
+        <!DOCTYPE html>
+        <html lang="pt-BR">
+        <head>
+            <meta charset="UTF-8">
+            <title>${tituloDocumento}</title>
+            <style>
+                @page {
+                    size: auto;
+                    margin: 0mm;
+                }
+                html, body {
+                    margin: 0;
+                    padding: 0;
+                    background: #ffffff;
+                    width: 100%;
+                }
+                .pdf-print-page {
+                    display: block;
+                    width: 100%;
+                    height: auto;
+                    page-break-after: always;
+                    page-break-inside: avoid;
+                    margin: 0;
+                }
+                .pdf-print-page:last-child {
+                    page-break-after: auto;
+                }
+            </style>
+        </head>
+        <body>
+            ${imagens.map(src => `<img class="pdf-print-page" src="${src}" alt="Página do Orçamento" />`).join('')}
+        </body>
+        </html>
+    `);
+    doc.close();
+
+    setTimeout(() => {
+        try {
+            printFrame.contentWindow.focus();
+            printFrame.contentWindow.print();
+        } catch (e) {
+            console.warn('Erro ao disparar impressão de imagens no iframe:', e);
+        } finally {
+            setTimeout(() => {
+                if (document.body.contains(printFrame)) {
+                    document.body.removeChild(printFrame);
+                }
+            }, 5000);
+        }
+    }, 400);
+}
+
 function renderizarVisualizadorPdfOrcamento() {
     const dropzone = document.getElementById('orcPdfDropzone');
     const viewerCard = document.getElementById('orcPdfViewerContainer');
     const bannerExtracao = document.getElementById('orcPdfExtracaoBanner');
     const dadosWrap = document.getElementById('orcPdfDadosExtraidosWrap');
-    const iframe = document.getElementById('orcPdfIframe');
     const tituloTexto = document.getElementById('orcPdfTituloTexto');
     const valorDetectadoTexto = document.getElementById('orcPdfValorDetectadoTexto');
     const campoValorDireto = document.getElementById('itemValorDiretoPdf');
@@ -65,7 +361,12 @@ function renderizarVisualizadorPdfOrcamento() {
         if (viewerCard) viewerCard.style.display = 'none';
         if (bannerExtracao) bannerExtracao.style.display = 'none';
         if (dadosWrap) dadosWrap.style.display = 'none';
+        const wrapper = document.getElementById('orcPdfCanvasWrapper');
+        if (wrapper) wrapper.innerHTML = '';
+        const iframe = document.getElementById('orcPdfIframe');
         if (iframe) iframe.src = 'about:blank';
+        orcPdfCanvasesRenderizados = [];
+        orcPdfDocInstancia = null;
         return;
     }
 
@@ -73,7 +374,9 @@ function renderizarVisualizadorPdfOrcamento() {
     if (dropzone) dropzone.style.display = 'none';
     if (viewerCard) viewerCard.style.display = 'block';
     if (tituloTexto) tituloTexto.textContent = itensEditPdfPrincipal.nome || 'Proposta / Orçamento em PDF';
-    if (iframe) iframe.src = itensEditPdfPrincipal.dataUrl;
+
+    // Dispara renderização em alta fidelidade no Canvas
+    carregarERenderizarPdfCanvas(itensEditPdfPrincipal.dataUrl);
 
     const extraidos = itensEditPdfPrincipal.dadosExtraidos || {};
     const valorFinal = extraidos.totalComImpostos || itensEditPdfPrincipal.valorDetectado || 0;
@@ -849,6 +1152,7 @@ function salvarItensOrcamento() {
     lead.obsOrcamento = obsOrcamento;
     lead.valor = total;
     lead.atualizadoEm = new Date().toISOString();
+    lead._modificadoLocal = true;
 
     if (!lead.historico) lead.historico = [];
     lead.historico.push({
@@ -860,6 +1164,7 @@ function salvarItensOrcamento() {
             : `Orçamento atualizado, total ${formatarMoeda(total)}`
     });
 
+    if (typeof salvarCacheLocalImediato === 'function') salvarCacheLocalImediato();
     salvarDados();
     if (typeof salvarLeadNoBanco === 'function') {
         salvarLeadNoBanco(lead);
@@ -870,9 +1175,9 @@ function salvarItensOrcamento() {
 }
 
 function imprimirOrcamentoPDF() {
-    // Se o lead possui um PDF principal anexado, abre o próprio PDF original diretamente
+    // Se o lead possui um PDF principal anexado, dispara a impressão direta em alta fidelidade do documento original
     if (itensEditPdfPrincipal && itensEditPdfPrincipal.dataUrl) {
-        abrirPdfEmNovaAba();
+        imprimirPdfOrcamentoModal();
         return;
     }
 

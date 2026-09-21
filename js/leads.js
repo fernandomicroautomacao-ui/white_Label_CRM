@@ -110,7 +110,12 @@ function salvarLead(event) {
                 return;
             }
             const etapaAnterior = lead.etapa;
-            leads[index] = { ...lead, ...dados };
+            leads[index] = { 
+                ...lead, 
+                ...dados,
+                atualizadoEm: new Date().toISOString(),
+                _modificadoLocal: true
+            };
             leads[index].cliente = (leads[index].etapa === 'pedido');
             if (dados.etapa !== etapaAnterior) {
                 leads[index].dataEntradaEtapa = new Date().toISOString();
@@ -132,11 +137,14 @@ function salvarLead(event) {
             if (typeof registrarAuditoriaLocal === 'function') registrarAuditoriaLocal('Atualização', 'lead', leads[index].id, dados.empresa);
         }
     } else {
+        const agoraIso = new Date().toISOString();
         const novoLead = {
             id: gerarId(),
             ...dados,
-            dataCriacao: new Date().toISOString(),
-            dataEntradaEtapa: new Date().toISOString(),
+            dataCriacao: agoraIso,
+            atualizadoEm: agoraIso,
+            _modificadoLocal: true,
+            dataEntradaEtapa: agoraIso,
             cardObs: '',
             cliente: (dados.etapa === 'pedido'),
             recorrente: false,
@@ -152,7 +160,7 @@ function salvarLead(event) {
                 valor: dados.valor || 0,
                 itens: 0
             }] : [],
-            dataEntradaPedido: dados.etapa === 'pedido' ? new Date().toISOString() : '',
+            dataEntradaPedido: dados.etapa === 'pedido' ? agoraIso : '',
             dataPedido: dados.etapa === 'pedido' ? hoje() : '',
             proximaAcao: '',
             proximaData: '',
@@ -170,7 +178,12 @@ function salvarLead(event) {
         if (typeof registrarAuditoriaLocal === 'function') registrarAuditoriaLocal('Criação', 'lead', novoLead.id, dados.empresa);
     }
 
+    if (typeof salvarCacheLocalImediato === 'function') salvarCacheLocalImediato();
     salvarDados();
+    const leadSalvoRef = id ? leads.find(l => l.id === id) : leads[0];
+    if (leadSalvoRef && typeof salvarLeadNoBanco === 'function') {
+        salvarLeadNoBanco(leadSalvoRef);
+    }
     fecharModal('leadModal');
     renderizarAll();
 }
@@ -258,7 +271,14 @@ function salvarAtividade(event) {
         showToast('Movido para Orçamento');
     }
 
+    lead.atualizadoEm = new Date().toISOString();
+    lead._modificadoLocal = true;
+
+    if (typeof salvarCacheLocalImediato === 'function') salvarCacheLocalImediato();
     salvarDados();
+    if (typeof salvarLeadNoBanco === 'function') {
+        salvarLeadNoBanco(lead);
+    }
     if (typeof registrarAuditoriaLocal === 'function') registrarAuditoriaLocal('Atividade registrada', 'lead', lead.id, tipo);
     fecharModal('atividadeModal');
     renderizarAll();

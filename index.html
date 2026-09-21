@@ -3632,20 +3632,38 @@
                     </div>
                 </div>
 
-                <!-- Visualizador Incorporado do PDF -->
+                <!-- Visualizador Incorporado do PDF em Alta Fidelidade com Impressão Direta -->
                 <div id="orcPdfViewerContainer" class="pdf-preview-card" style="display:none;">
                     <div class="pdf-preview-header">
-                        <span class="pdf-name" id="orcPdfNomeArquivo">
-                            <span class="icon-sm" data-icone="nota"></span> <span id="orcPdfTituloTexto">proposta.pdf</span>
-                        </span>
-                        <div style="display:flex;gap:8px;align-items:center;">
-                            <button type="button" class="btn btn-outline btn-xs" onclick="abrirPdfEmNovaAba()">↗️ Abrir em nova aba</button>
-                            <button type="button" class="btn btn-outline btn-xs" onclick="document.getElementById('orcPdfInput').click()">🔄 Trocar PDF</button>
-                            <button type="button" class="btn btn-danger btn-xs" onclick="removerPdfVisualOrcamento()">🗑️ Remover</button>
+                        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                            <span class="pdf-name" id="orcPdfNomeArquivo">
+                                <span class="icon-sm" data-icone="nota"></span> <span id="orcPdfTituloTexto">proposta.pdf</span>
+                            </span>
+                            <span id="orcPdfPaginacaoTag" class="text-xs" style="background:var(--bg-card);padding:3px 8px;border-radius:12px;border:1px solid var(--border-color);font-weight:600;color:var(--text-secondary);">
+                                <span id="orcPdfPaginaInfo">Carregando páginas...</span>
+                            </span>
+                        </div>
+                        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                            <div class="btn-group" style="display:inline-flex;gap:2px;">
+                                <button type="button" class="btn btn-outline btn-xs" onclick="alterarZoomPdfViewer(-0.15)" title="Reduzir zoom">➖</button>
+                                <button type="button" class="btn btn-outline btn-xs" id="btnZoomPdf100" onclick="definirZoomPdfViewer(1.0)" title="Tamanho original">100%</button>
+                                <button type="button" class="btn btn-outline btn-xs" onclick="alterarZoomPdfViewer(0.15)" title="Aumentar zoom">➕</button>
+                                <button type="button" class="btn btn-outline btn-xs" onclick="ajustarPdfAoContainer()" title="Ajustar à largura">↔️ Ajustar</button>
+                            </div>
+                            <button type="button" class="btn btn-primary btn-xs" id="btnImprimirPdfModal" onclick="imprimirPdfOrcamentoModal()" title="Imprimir PDF original diretamente pelo navegador">🖨️ Imprimir PDF</button>
+                            <button type="button" class="btn btn-outline btn-xs" onclick="baixarPdfOrcamentoModal()" title="Baixar arquivo PDF">⬇️ Baixar</button>
+                            <button type="button" class="btn btn-outline btn-xs" onclick="abrirPdfEmNovaAba()" title="Abrir em aba do navegador">↗️ Nova Aba</button>
+                            <button type="button" class="btn btn-outline btn-xs" onclick="document.getElementById('orcPdfInput').click()" title="Substituir por outro arquivo PDF">🔄 Trocar</button>
+                            <button type="button" class="btn btn-danger btn-xs" onclick="removerPdfVisualOrcamento()" title="Remover PDF do orçamento">🗑️</button>
                         </div>
                     </div>
-                    <div class="pdf-preview-body">
-                        <iframe id="orcPdfIframe" class="pdf-preview-iframe" title="Visualizador de PDF"></iframe>
+                    <div class="pdf-preview-body" id="orcPdfPreviewBody">
+                        <div id="orcPdfCarregando" class="pdf-loading-box" style="display:none;">
+                            <div class="pdf-loading-spinner"></div>
+                            <span class="text-sm">Renderizando páginas em alta fidelidade...</span>
+                        </div>
+                        <div id="orcPdfCanvasWrapper" class="pdf-canvas-wrapper"></div>
+                        <iframe id="orcPdfIframe" class="pdf-preview-iframe" title="Visualizador de PDF" style="display:none;"></iframe>
                     </div>
                 </div>
             </div>
@@ -4142,14 +4160,30 @@ npx @open-wa/wa-automate -p 8080 --popup
                                 <span class="lp-tag-chip" onclick="inserirTagEditor('{{cnpj}}')" title="CNPJ formatado">{{cnpj}}</span>
                                 <span class="lp-tag-chip" onclick="inserirTagEditor('{{email}}')" title="E-mail do lead">{{email}}</span>
                                 <span class="lp-tag-chip" onclick="inserirTagEditor('{{telefone}}')" title="Telefone">{{telefone}}</span>
-                                <span class="lp-tag-chip" onclick="inserirTagEditor('{{cidade}}')" title="Cidade">{{cidade}}</span>
-                                <span class="lp-tag-chip" onclick="inserirTagEditor('{{estado}}')" title="Estado">{{estado}}</span>
+                                <span class="lp-tag-chip" onclick="inserirTagEditor('{{cidade_uf}}')" title="Cidade e Estado">{{cidade_uf}}</span>
                                 <span class="lp-tag-chip" onclick="inserirTagEditor('{{valor}}')" title="Valor formatado (R$)">{{valor}}</span>
+                                <span class="lp-tag-chip" onclick="inserirTagEditor('{{numero_orcamento}}')" title="Número da Proposta / Orçamento">{{numero_orcamento}}</span>
                                 <span class="lp-tag-chip" onclick="inserirTagEditor('{{itens_tabela}}')" title="Tabela com produtos/itens orçados">{{itens_tabela}}</span>
+                                <span class="lp-tag-chip" onclick="inserirTagEditor('{{data_hoje}}')" title="Data Atual">{{data_hoje}}</span>
                                 <span class="lp-tag-chip" onclick="inserirTagEditor('{{vendedor_nome}}')" title="Nome do consultor">{{vendedor_nome}}</span>
                                 <span class="lp-tag-chip" onclick="inserirTagEditor('{{vendedor_email}}')" title="E-mail do consultor">{{vendedor_email}}</span>
                                 <span class="lp-tag-chip" onclick="inserirTagEditor('{{vendedor_whatsapp}}')" title="WhatsApp do consultor">{{vendedor_whatsapp}}</span>
                                 <span class="lp-tag-chip" onclick="inserirTagEditor('{{whatsapp_link}}')" title="Link direto wa.me com mensagem pronta">{{whatsapp_link}}</span>
+                            </div>
+                        </div>
+
+                        <!-- Barra de Acesso Rápido a Modelos Base -->
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--bg-secondary, #f8fafc);padding:6px 12px;border-radius:6px;border:1px solid var(--border-color, #e2e8f0);flex-wrap:wrap;">
+                            <div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;">
+                                <span>⚡ Carregar Modelo Base no Editor:</span>
+                                <select id="lpEditorSelectPreset" class="form-control" style="padding:4px 8px;font-size:12px;width:auto;min-width:240px;">
+                                    <option value="lp_visualizador_orcamento">📄 Visualizador de Orçamento (PDF + Assinatura)</option>
+                                    <option value="lp_sopro_pet_oficial">🌐 Válvula de Sopro PET (Padrão MiCRO)</option>
+                                    <option value="lp_institucional_completa">🏢 Apresentação Geral & Portfólio</option>
+                                </select>
+                                <button type="button" class="btn btn-outline btn-xs" onclick="carregarPresetNoEditor()" title="Substitui o código atual pelo modelo selecionado">
+                                    Aplicar Modelo
+                                </button>
                             </div>
                         </div>
 

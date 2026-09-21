@@ -1144,6 +1144,1123 @@ const TEMPLATE_COMPLEMENTAR_INSTITUCIONAL = `<!DOCTYPE html>
 </html>`;
 
 // ================================================================
+// TEMPLATE: VISUALIZADOR DE ORÇAMENTO COM ASSINATURA DIGITAL & PORTAL DO CLIENTE
+// ================================================================
+const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proposta Comercial {{numero_orcamento}} | Portal do Cliente MiCRO Automação - {{empresa}}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        :root {
+            --micro-blue: #0057a8;
+            --micro-blue-dark: #00386b;
+            --micro-blue-light: #e6f0fa;
+            --micro-orange: #f26522;
+            --micro-orange-hover: #d95314;
+            --micro-gray-dark: #1e293b;
+            --micro-gray-medium: #64748b;
+            --micro-gray-light: #f1f5f9;
+            --micro-border: #cbd5e1;
+            --success: #16a34a;
+            --success-light: #dcfce7;
+        }
+        body {
+            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #e2e8f0;
+            color: #1e293b;
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        /* BARRA SUPERIOR DE SEGURANÇA SSL */
+        .ssl-bar {
+            background: #0f172a;
+            color: #94a3b8;
+            font-size: 11px;
+            padding: 6px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #1e293b;
+        }
+        .ssl-bar span { display: flex; align-items: center; gap: 6px; }
+
+        /* HEADER DO PORTAL DO CLIENTE */
+        .portal-header {
+            background: #ffffff;
+            border-bottom: 3px solid var(--micro-orange);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .portal-header-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .portal-brand {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .brand-logo-box {
+            background: var(--micro-blue);
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900;
+            font-size: 1.4rem;
+            letter-spacing: 2px;
+            line-height: 1;
+        }
+        .brand-logo-box span {
+            display: block;
+            font-size: 0.48rem;
+            font-weight: 500;
+            letter-spacing: 3px;
+            color: #e0f2fe;
+            margin-top: 3px;
+        }
+        .portal-title-block h1 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--micro-gray-dark);
+            font-family: 'Montserrat', sans-serif;
+        }
+        .portal-title-block p {
+            font-size: 12px;
+            color: var(--micro-gray-medium);
+        }
+
+        .portal-client-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: var(--micro-gray-light);
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--micro-border);
+        }
+        .client-avatar {
+            width: 40px;
+            height: 40px;
+            background: var(--micro-blue);
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 15px;
+        }
+        .client-meta strong {
+            display: block;
+            font-size: 13px;
+            color: var(--micro-gray-dark);
+        }
+        .client-meta span {
+            display: block;
+            font-size: 11px;
+            color: var(--micro-gray-medium);
+        }
+
+        .portal-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+        .portal-status-pill.aprovado {
+            background: var(--success-light);
+            color: var(--success);
+            border-color: #86efac;
+        }
+        .portal-status-pill .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #d97706;
+            box-shadow: 0 0 0 rgba(217, 119, 6, 0.4);
+            animation: pulseDot 2s infinite;
+        }
+        .portal-status-pill.aprovado .pulse-dot {
+            background: var(--success);
+            animation: none;
+        }
+        @keyframes pulseDot {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(217, 119, 6, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(217, 119, 6, 0); }
+        }
+
+        /* BARRA DE FERRAMENTAS DO VISUALIZADOR PDF */
+        .pdf-toolbar {
+            background: #334155;
+            color: #f8fafc;
+            padding: 10px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .pdf-file-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+        }
+        .pdf-badge {
+            background: #dc2626;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 3px 6px;
+            border-radius: 4px;
+            letter-spacing: 1px;
+        }
+        .pdf-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .btn-tool {
+            background: #475569;
+            color: #fff;
+            border: 1px solid #64748b;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .btn-tool:hover {
+            background: #64748b;
+        }
+        .btn-tool-print {
+            background: #0284c7;
+            border-color: #0369a1;
+        }
+        .btn-tool-print:hover {
+            background: #0369a1;
+        }
+        .btn-tool-sign {
+            background: var(--success);
+            border-color: #15803d;
+        }
+        .btn-tool-sign:hover {
+            background: #15803d;
+        }
+        .btn-tool-whatsapp {
+            background: #25d366;
+            color: #0b4a1b;
+            border-color: #22c55e;
+            font-weight: 700;
+        }
+        .btn-tool-whatsapp:hover {
+            background: #22c55e;
+        }
+
+        /* LAYOUT PRINCIPAL (DOCUMENTO + SIDEBAR LATERAL) */
+        .portal-layout {
+            max-width: 1400px;
+            margin: 24px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 24px;
+            align-items: start;
+        }
+        @media (max-width: 1100px) {
+            .portal-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ============================================================ */
+        /* FOLHA DE ORÇAMENTO (ANEXO PDF COM TIMBRADO OFICIAL E A4)    */
+        /* ============================================================ */
+        .pdf-page-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .folha-orcamento {
+            background: #ffffff;
+            width: 100%;
+            max-width: 860px;
+            min-height: 1100px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            border-radius: 6px;
+            padding: 45px 50px;
+            position: relative;
+            color: #1e293b;
+        }
+
+        /* CABEÇALHO DA FOLHA */
+        .folha-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid var(--micro-blue);
+            padding-bottom: 20px;
+            margin-bottom: 24px;
+            gap: 20px;
+        }
+        .folha-empresa-emissora {
+            flex: 1;
+        }
+        .folha-empresa-emissora h2 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.3rem;
+            color: var(--micro-blue);
+            font-weight: 900;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+        .folha-empresa-emissora p {
+            font-size: 11px;
+            color: var(--micro-gray-medium);
+            line-height: 1.4;
+        }
+
+        .folha-doc-box {
+            text-align: right;
+            background: var(--micro-gray-light);
+            border: 1px solid var(--micro-border);
+            padding: 12px 18px;
+            border-radius: 6px;
+            min-width: 220px;
+        }
+        .folha-doc-box .doc-numero {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--micro-orange);
+            display: block;
+        }
+        .folha-doc-box .doc-data {
+            font-size: 11px;
+            color: var(--micro-gray-medium);
+            margin-top: 4px;
+            display: block;
+        }
+
+        /* QUADRO DO CLIENTE (DESTINATÁRIO) */
+        .quadro-cliente {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-left: 4px solid var(--micro-blue);
+            border-radius: 6px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+        }
+        .quadro-cliente-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--micro-blue);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .quadro-cliente-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px 16px;
+            font-size: 12px;
+        }
+        .quadro-cliente-item strong {
+            display: block;
+            color: #64748b;
+            font-size: 10px;
+            text-transform: uppercase;
+        }
+        .quadro-cliente-item span {
+            color: #0f172a;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        /* SEÇÃO DE PRODUTOS E TABELA */
+        .secao-titulo {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--micro-blue-dark);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 20px 0 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .secao-titulo::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 14px;
+            background: var(--micro-orange);
+            border-radius: 2px;
+        }
+
+        /* CONDIÇÕES COMERCIAIS */
+        .condicoes-box {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 16px 20px;
+            margin-top: 15px;
+            font-size: 12px;
+        }
+        .condicoes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+        }
+        .condicao-item strong {
+            display: block;
+            color: var(--micro-gray-medium);
+            font-size: 10px;
+            text-transform: uppercase;
+        }
+        .condicao-item span {
+            font-weight: 600;
+            color: var(--micro-gray-dark);
+        }
+
+        /* ============================================================ */
+        /* SEÇÃO DE ASSINATURA DIGITAL / ACEITE ELETRÔNICO OFICIAL      */
+        /* ============================================================ */
+        .assinatura-digital-card {
+            margin-top: 30px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            border: 2px solid #0284c7;
+            border-radius: 8px;
+            padding: 24px;
+            position: relative;
+            box-shadow: 0 4px 15px rgba(2, 132, 199, 0.08);
+        }
+        .assinatura-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px dashed #cbd5e1;
+            padding-bottom: 14px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .assinatura-header h3 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+            font-weight: 800;
+            color: #0369a1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .assinatura-hash {
+            font-family: monospace;
+            font-size: 10px;
+            color: #64748b;
+            background: #e2e8f0;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
+        .assinatura-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 680px) {
+            .assinatura-grid { grid-template-columns: 1fr; }
+        }
+
+        .assinatura-box-emissor {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 16px;
+            position: relative;
+        }
+        .carimbo-emissor {
+            display: inline-block;
+            border: 2px solid var(--micro-blue);
+            color: var(--micro-blue);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .assinatura-box-cliente {
+            background: #ffffff;
+            border: 2px dashed #0284c7;
+            border-radius: 6px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .campo-assinatura-input {
+            margin-bottom: 10px;
+        }
+        .campo-assinatura-input label {
+            display: block;
+            font-size: 10px;
+            font-weight: 700;
+            color: #475569;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .campo-assinatura-input input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #1e293b;
+        }
+        .campo-assinatura-input input:focus {
+            outline: none;
+            border-color: #0284c7;
+            box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2);
+        }
+
+        .btn-assinar-digital {
+            background: var(--success);
+            color: #ffffff;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 800;
+            font-family: 'Montserrat', sans-serif;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            transition: background 0.2s, transform 0.1s;
+            box-shadow: 0 4px 10px rgba(22, 163, 74, 0.25);
+        }
+        .btn-assinar-digital:hover {
+            background: #15803d;
+            transform: translateY(-1px);
+        }
+
+        /* CARIMBO DE ASSINATURA CONCLUÍDA */
+        .carimbo-sucesso-box {
+            display: none;
+            background: var(--success-light);
+            border: 2px solid var(--success);
+            border-radius: 6px;
+            padding: 18px;
+            text-align: center;
+            animation: fadeIn 0.4s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.96); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .carimbo-selo {
+            display: inline-block;
+            border: 2px solid var(--success);
+            color: var(--success);
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        /* ============================================================ */
+        /* SIDEBAR LATERAL COM PROPAGANDAS DE PRODUTOS MiCRO & CTAs    */
+        /* ============================================================ */
+        .sidebar-propagandas {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .sidebar-section-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--micro-blue-dark);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 2px;
+        }
+
+        .ad-card {
+            background: #ffffff;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .ad-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        }
+        .ad-card-badge {
+            background: var(--micro-orange);
+            color: #ffffff;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 4px 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: inline-block;
+        }
+        .ad-card-badge.blue {
+            background: var(--micro-blue);
+        }
+        .ad-card-badge.dark {
+            background: #0f172a;
+        }
+        .ad-card-content {
+            padding: 16px 18px;
+        }
+        .ad-card h4 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 6px 0 8px;
+            line-height: 1.3;
+        }
+        .ad-card p {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 14px;
+            line-height: 1.45;
+        }
+        .ad-card-btn {
+            display: block;
+            text-align: center;
+            background: var(--micro-blue);
+            color: #ffffff;
+            text-decoration: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            transition: background 0.2s;
+        }
+        .ad-card-btn:hover {
+            background: var(--micro-blue-dark);
+        }
+        .ad-card-btn.orange {
+            background: var(--micro-orange);
+        }
+        .ad-card-btn.orange:hover {
+            background: var(--micro-orange-hover);
+        }
+
+        /* CARD DE CONTATO DO CONSULTOR RESPONSÁVEL */
+        .consultor-card {
+            background: linear-gradient(135deg, #0057a8, #00386b);
+            color: #ffffff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 87, 168, 0.2);
+            text-align: center;
+        }
+        .consultor-avatar-circle {
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            background: #ffffff;
+            color: var(--micro-blue);
+            margin: 0 auto 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 900;
+            border: 3px solid rgba(255,255,255,0.4);
+        }
+        .consultor-card h4 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 15px;
+            font-weight: 800;
+            margin-bottom: 2px;
+        }
+        .consultor-card .sub {
+            font-size: 11px;
+            color: #bae6fd;
+            margin-bottom: 14px;
+            display: block;
+        }
+        .consultor-contact-list {
+            text-align: left;
+            background: rgba(255,255,255,0.1);
+            border-radius: 6px;
+            padding: 10px 14px;
+            font-size: 11px;
+            margin-bottom: 14px;
+        }
+        .consultor-contact-item {
+            margin: 4px 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .btn-whatsapp-cta {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: #25d366;
+            color: #0b4a1b;
+            font-weight: 800;
+            font-size: 13px;
+            padding: 12px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);
+            transition: background 0.2s, transform 0.1s;
+        }
+        .btn-whatsapp-cta:hover {
+            background: #22c55e;
+            transform: translateY(-1px);
+        }
+
+        /* ============================================================ */
+        /* REGRAS EXCLUSIVAS DE IMPRESSÃO (@media print)                */
+        /* Imprime estritamente o documento A4 sem menus ou barras      */
+        /* ============================================================ */
+        @media print {
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .ssl-bar,
+            .portal-header,
+            .pdf-toolbar,
+            .sidebar-propagandas,
+            .btn-assinar-digital,
+            .campo-assinatura-input,
+            .btn-tool,
+            .btn-whatsapp-cta {
+                display: none !important;
+            }
+            .portal-layout {
+                display: block !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                max-width: 100% !important;
+            }
+            .folha-orcamento {
+                box-shadow: none !important;
+                border: none !important;
+                padding: 20px 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-height: auto !important;
+            }
+            .assinatura-digital-card {
+                border: 1px solid #94a3b8 !important;
+                box-shadow: none !important;
+            }
+            .itens-tabela-custom {
+                box-shadow: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. BARRA DE SEGURANÇA SSL -->
+    <div class="ssl-bar">
+        <span>🔒 Portal Seguro MiCRO Automação • Conexão Criptografada SSL 256-Bit</span>
+        <span>ID da Sessão: AUTH-{{ano_atual}}-{{numero_orcamento}}</span>
+    </div>
+
+    <!-- 2. HEADER PADRÃO ESTILO PORTAL -->
+    <header class="portal-header">
+        <div class="portal-header-container">
+            <!-- Brand Oficial MiCRO -->
+            <div class="portal-brand">
+                <div class="brand-logo-box">
+                    MiCRO
+                    <span>AUTOMAÇÃO INDUSTRIAL</span>
+                </div>
+                <div class="portal-title-block">
+                    <h1>Portal Comercial de Atendimento</h1>
+                    <p>Visualização e Aceite Eletrônico de Proposta Técnica</p>
+                </div>
+            </div>
+
+            <!-- Dados da Empresa Logada -->
+            <div class="portal-client-info">
+                <div class="client-avatar">
+                    🏢
+                </div>
+                <div class="client-meta">
+                    <strong>{{empresa}}</strong>
+                    <span>CNPJ: {{cnpj}} • Contato: {{decisor}}</span>
+                </div>
+                <div class="portal-status-pill" id="portalHeaderStatus">
+                    <span class="pulse-dot"></span>
+                    <span id="txtStatusPill">Aguardando Aceite</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 3. BARRA DE FERRAMENTAS DO VISUALIZADOR PDF -->
+    <div class="pdf-toolbar">
+        <div class="pdf-file-info">
+            <span class="pdf-badge">PDF</span>
+            <strong>Proposta_Comercial_{{numero_orcamento}}_{{empresa}}.pdf</strong>
+            <span style="color:#94a3b8;font-size:11px;">(Documento Oficial • 1 Folha)</span>
+        </div>
+        <div class="pdf-actions">
+            <button type="button" class="btn-tool btn-tool-print" onclick="window.print()" title="Imprimir Orçamento ou Salvar como PDF">
+                🖨️ Imprimir Orçamento
+            </button>
+            <button type="button" class="btn-tool" onclick="rolarParaAssinatura()" title="Ir para o campo de Assinatura">
+                ✍️ Assinar Documento
+            </button>
+            <a href="{{whatsapp_link}}" target="_blank" class="btn-tool btn-tool-whatsapp" title="Falar com Consultor no WhatsApp">
+                💬 WhatsApp Consultor
+            </a>
+        </div>
+    </div>
+
+    <!-- 4. LAYOUT PRINCIPAL (DOCUMENTO A4 + PROPAGANDAS LATERAIS) -->
+    <main class="portal-layout">
+
+        <!-- COLUNA 1: FOLHA DE ORÇAMENTO ESTILO PDF COM ASSINATURA DIGITAL -->
+        <section class="pdf-page-wrapper">
+            <article class="folha-orcamento" id="folhaOrcamento">
+                
+                <!-- Cabeçalho Timbrado do Documento -->
+                <div class="folha-header">
+                    <div class="folha-empresa-emissora">
+                        <h2>MiCRO AUTOMAÇÃO INDUSTRIAL</h2>
+                        <p><strong>MiCRO Automação Ltda.</strong> | Fabricação e Soluções Pneumáticas Industriais</p>
+                        <p>Vinhedo / Campinas - SP • CNPJ: 50.123.456/0001-89</p>
+                        <p>Telefone: {{vendedor_telefone}} • E-mail: {{vendedor_email}}</p>
+                    </div>
+                    <div class="folha-doc-box">
+                        <span style="font-size:10px;text-transform:uppercase;color:#64748b;font-weight:700;">Proposta Comercial</span>
+                        <span class="doc-numero">{{numero_orcamento}}</span>
+                        <span class="doc-data">Emissão: {{data_hoje}}</span>
+                        <span class="doc-data">Validade: 15 dias</span>
+                    </div>
+                </div>
+
+                <!-- Quadro de Destinatário / Cliente -->
+                <div class="quadro-cliente">
+                    <div class="quadro-cliente-title">
+                        <span>Dados do Cliente / Solicitante</span>
+                        <span style="font-size:10px;color:#64748b;">Ref: Cotação Comercial</span>
+                    </div>
+                    <div class="quadro-cliente-grid">
+                        <div class="quadro-cliente-item">
+                            <strong>Razão Social:</strong>
+                            <span>{{empresa}}</span>
+                        </div>
+                        <div class="quadro-cliente-item">
+                            <strong>CNPJ / Inscrição:</strong>
+                            <span>{{cnpj}}</span>
+                        </div>
+                        <div class="quadro-cliente-item">
+                            <strong>Aos Cuidados de:</strong>
+                            <span>{{decisor}}</span>
+                        </div>
+                        <div class="quadro-cliente-item">
+                            <strong>E-mail:</strong>
+                            <span>{{email}}</span>
+                        </div>
+                        <div class="quadro-cliente-item">
+                            <strong>Telefone / Celular:</strong>
+                            <span>{{telefone}}</span>
+                        </div>
+                        <div class="quadro-cliente-item">
+                            <strong>Localidade:</strong>
+                            <span>{{cidade_uf}}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção 1: Itens Orçados e Tabela de Produtos -->
+                <div class="secao-titulo">1. Especificações Técnicas e Itens Orçados</div>
+                <div style="margin: 12px 0;">
+                    {{itens_tabela}}
+                </div>
+
+                <!-- Seção 2: Condições Comerciais e Técnicas -->
+                <div class="secao-titulo">2. Condições Comerciais & Garantia MiCRO</div>
+                <div class="condicoes-box">
+                    <div class="condicoes-grid">
+                        <div class="condicao-item">
+                            <strong>Faturamento / Prazo:</strong>
+                            <span>28 DDL (ou à vista com 3% de desc.)</span>
+                        </div>
+                        <div class="condicao-item">
+                            <strong>Prazo de Entrega:</strong>
+                            <span>Pronta Entrega / Imediato</span>
+                        </div>
+                        <div class="condicao-item">
+                            <strong>Garantia Técnica:</strong>
+                            <span>12 Meses (Garantia Total MiCRO)</span>
+                        </div>
+                        <div class="condicao-item">
+                            <strong>Frete:</strong>
+                            <span>CIF Estado de SP / FOB outras regiões</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção 3: Assinatura Digital & Aceite Eletrônico Oficial -->
+                <div class="secao-titulo" id="secaoAssinatura">3. Assinatura Digital & Aceite Eletrônico</div>
+                
+                <div class="assinatura-digital-card">
+                    <div class="assinatura-header">
+                        <h3>
+                            <span>🛡️</span> Termo de Validação e Aceite Eletrônico
+                        </h3>
+                        <div class="assinatura-hash" id="docHashDisplay">
+                            HASH: SHA256-{{ano_atual}}-9F8B2C4E-MIC
+                        </div>
+                    </div>
+
+                    <div class="assinatura-grid">
+                        <!-- Assinatura Emissora (MiCRO) -->
+                        <div class="assinatura-box-emissor">
+                            <span class="carimbo-emissor">EMISSOR OFICIAL</span>
+                            <p style="font-size:12px;font-weight:700;color:#0f172a;margin-bottom:2px;">MiCRO Automação Industrial</p>
+                            <p style="font-size:11px;color:#64748b;">Consultor: <strong>{{vendedor_nome}}</strong></p>
+                            <p style="font-size:10px;color:#94a3b8;margin-top:8px;">Chave Eletrônica: CERT-MIC-BR-2026</p>
+                            <div style="margin-top:10px;padding-top:8px;border-top:1px solid #cbd5e1;font-size:10px;color:#15803d;font-weight:700;">
+                                ✓ Documento emitido e autorizado
+                            </div>
+                        </div>
+
+                        <!-- Assinatura do Cliente / Aceite Interativo -->
+                        <div class="assinatura-box-cliente" id="boxFormularioAssinatura">
+                            <div>
+                                <p style="font-size:11px;color:#475569;margin-bottom:10px;line-height:1.4;">
+                                    Ao clicar em aceitar, você confirma a exatidão dos itens, quantidades e valores descritos nesta proposta.
+                                </p>
+                                <div class="campo-assinatura-input">
+                                    <label>Nome do Signatário / Responsável:</label>
+                                    <input type="text" id="iptNomeSignatario" value="{{decisor}}" placeholder="Seu nome completo">
+                                </div>
+                                <div class="campo-assinatura-input">
+                                    <label>Cargo / Função:</label>
+                                    <input type="text" id="iptCargoSignatario" value="Diretoria / Compras" placeholder="Ex: Gerente de Manutenção, Comprador">
+                                </div>
+                            </div>
+                            <button type="button" class="btn-assinar-digital" onclick="confirmarAssinaturaDigital()">
+                                ✍️ Aceitar e Assinar Proposta
+                            </button>
+                        </div>
+
+                        <!-- Carimbo de Assinatura Concluída com Sucesso -->
+                        <div class="carimbo-sucesso-box" id="boxSucessoAssinatura" style="grid-column: 1 / -1;">
+                            <span class="carimbo-selo">✅ PROPOSTA ACEITA DIGITALMENTE</span>
+                            <h4 style="font-size:15px;color:#15803d;margin-bottom:6px;">Aceite Eletrônico Concluído com Sucesso!</h4>
+                            <p style="font-size:12px;color:#1e293b;" id="resumoAssinaturaConfirmada"></p>
+                            <div style="margin-top:14px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
+                                <button type="button" class="btn-tool btn-tool-print" onclick="window.print()">
+                                    🖨️ Imprimir Comprovante Assinado
+                                </button>
+                                <a id="btnNotificarWhatsAceite" href="#" target="_blank" class="btn-tool btn-tool-whatsapp">
+                                    📲 Notificar Consultor {{vendedor_nome}} no WhatsApp
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rodapé da Folha -->
+                <div style="margin-top:35px;border-top:1px solid #e2e8f0;padding-top:14px;display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;">
+                    <span>MiCRO Automação Industrial • Proposta {{numero_orcamento}}</span>
+                    <span>Página 1 de 1 • Gerado em {{data_hoje}}</span>
+                </div>
+            </article>
+        </section>
+
+        <!-- COLUNA 2: PROPAGANDAS DE PRODUTOS MiCRO & CTAs -->
+        <aside class="sidebar-propagandas">
+            
+            <div class="sidebar-section-title">
+                <span>⭐</span> Soluções MiCRO em Destaque
+            </div>
+
+            <!-- Card 1: Válvula de Sopro PET 40 Bar -->
+            <div class="ad-card">
+                <span class="ad-card-badge">Alta Performance</span>
+                <div class="ad-card-content">
+                    <h4>Válvula de Sopro PET 40 Bar</h4>
+                    <p>Tecnologia líder para sopradoras Sidel, Krones e KHS. Economize até 30% no consumo de ar comprimido com resposta ultrarrápida.</p>
+                    <a href="https://wa.me/{{vendedor_whatsapp_digits}}?text=Ol%C3%A1%2C%20gostaria%20de%20informa%C3%A7%C3%B5es%20t%C3%A9cnicas%20sobre%20a%20V%C3%A1lvula%20de%20Sopro%20PET%20da%20MiCRO." target="_blank" class="ad-card-btn orange">
+                        Solicitar Cotação de Sopro
+                    </a>
+                </div>
+            </div>
+
+            <!-- Card 2: Cilindros Pneumáticos ISO 15552 -->
+            <div class="ad-card">
+                <span class="ad-card-badge blue">Linha Pesada</span>
+                <div class="ad-card-content">
+                    <h4>Cilindros ISO 15552 & Guias Lineares</h4>
+                    <p>Construção robusta em perfil de alumínio anodizado, vedações de alto rendimento e montagem expressa de cursos customizados.</p>
+                    <a href="https://wa.me/{{vendedor_whatsapp_digits}}?text=Ol%C3%A1%2C%20gostaria%20de%20consultar%20o%20cat%C3%A1logo%20de%20Cilindros%20ISO%20MiCRO." target="_blank" class="ad-card-btn">
+                        Ver Linha de Cilindros
+                    </a>
+                </div>
+            </div>
+
+            <!-- Card 3: Tratamento de Ar FRL & Manifolds -->
+            <div class="ad-card">
+                <span class="ad-card-badge dark">Proteção & Pureza</span>
+                <div class="ad-card-content">
+                    <h4>Unidades de Preparação de Ar FRL</h4>
+                    <p>Filtros coalescentes de alta pureza, reguladores de pressão com trava e lubrificação proporcional para máxima vida útil dos equipamentos.</p>
+                    <a href="https://wa.me/{{vendedor_whatsapp_digits}}?text=Ol%C3%A1%2C%20gostaria%20de%20saber%20mais%20sobre%20as%20unidades%20FRL%20da%20MiCRO." target="_blank" class="ad-card-btn">
+                        Consultar Conjuntos FRL
+                    </a>
+                </div>
+            </div>
+
+            <!-- Card 4: Consultor Dedicado & Suporte Técnico Comercial -->
+            <div class="consultor-card">
+                <div class="consultor-avatar-circle">
+                    👨‍💼
+                </div>
+                <h4>{{vendedor_nome}}</h4>
+                <span class="sub">Consultor Especialista MiCRO</span>
+
+                <div class="consultor-contact-list">
+                    <div class="consultor-contact-item">
+                        📞 {{vendedor_whatsapp}}
+                    </div>
+                    <div class="consultor-contact-item">
+                        ✉️ {{vendedor_email}}
+                    </div>
+                </div>
+
+                <a href="{{whatsapp_link}}" target="_blank" class="btn-whatsapp-cta">
+                    <span>💬</span> Falar com Consultor Agora
+                </a>
+            </div>
+
+        </aside>
+
+    </main>
+
+    <!-- SCRIPT DE INTERAÇÃO, ASSINATURA DIGITAL E ROLAGEM -->
+    <script>
+        function rolarParaAssinatura() {
+            const el = document.getElementById('secaoAssinatura');
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth' });
+                const ipt = document.getElementById('iptNomeSignatario');
+                if (ipt) ipt.focus();
+            }
+        }
+
+        function confirmarAssinaturaDigital() {
+            const iptNome = document.getElementById('iptNomeSignatario');
+            const iptCargo = document.getElementById('iptCargoSignatario');
+            const nome = iptNome ? iptNome.value.trim() : '{{decisor}}';
+            const cargo = iptCargo ? iptCargo.value.trim() : 'Responsável Técnico / Compras';
+
+            if (!nome) {
+                alert('Por favor, informe seu nome completo para validação da assinatura.');
+                if (iptNome) iptNome.focus();
+                return;
+            }
+
+            const agora = new Date();
+            const dataHoraStr = agora.toLocaleDateString('pt-BR') + ' às ' + agora.toLocaleTimeString('pt-BR');
+            const protocolo = 'PROTOCOLO-MIC-' + Math.floor(100000 + Math.random() * 900000);
+
+            // Atualiza quadro de sucesso
+            const boxForm = document.getElementById('boxFormularioAssinatura');
+            const boxSucesso = document.getElementById('boxSucessoAssinatura');
+            const resumo = document.getElementById('resumoAssinaturaConfirmada');
+            const headerPill = document.getElementById('portalHeaderStatus');
+            const txtPill = document.getElementById('txtStatusPill');
+
+            if (resumo) {
+                resumo.innerHTML = 'Signatário: <strong>' + nome + '</strong> (' + cargo + ')<br>' +
+                                   'Empresa: <strong>{{empresa}}</strong> | CNPJ: {{cnpj}}<br>' +
+                                   'Data/Hora do Aceite: <strong>' + dataHoraStr + '</strong><br>' +
+                                   'Protocolo Digital Criptografado: <code>' + protocolo + '</code>';
+            }
+
+            if (boxForm) boxForm.style.display = 'none';
+            if (boxSucesso) boxSucesso.style.display = 'block';
+
+            if (headerPill) headerPill.classList.add('aprovado');
+            if (txtPill) txtPill.textContent = 'Proposta Aceita Digitalmente';
+
+            // Configura botão do WhatsApp com aviso de proposta aceita
+            const btnWhats = document.getElementById('btnNotificarWhatsAceite');
+            if (btnWhats) {
+                const msg = encodeURIComponent(
+                    'Olá, {{vendedor_nome}}! Confirmo que a proposta comercial {{numero_orcamento}} da MiCRO para a empresa {{empresa}} foi ACEITA E ASSINADA DIGITALMENTE por ' + nome + ' (' + cargo + ') sob o protocolo ' + protocolo + '.'
+                );
+                btnWhats.href = 'https://wa.me/{{vendedor_whatsapp_digits}}?text=' + msg;
+            }
+
+            // Exibe notificação no topo se possível
+            alert('✓ Proposta Comercial {{numero_orcamento}} aceita com sucesso por ' + nome + '! O consultor {{vendedor_nome}} receberá a notificação.');
+        }
+    </script>
+</body>
+</html>`;
+
+// ================================================================
 // INICIALIZAÇÃO DE MODELOS DE LANDING PAGE
 // ================================================================
 function inicializarModelosLandingPageExemplo() {
@@ -1155,6 +2272,18 @@ function inicializarModelosLandingPageExemplo() {
                 descricao: 'Modelo oficial MiCRO para indústrias de sopro PET com compatibilidade Norgren e argumentos de redução de custos.',
                 padrao: true,
                 html: TEMPLATE_PADRAO_SOPRO_PET,
+                css: '',
+                js: '',
+                imagens: [],
+                criadoEm: new Date().toISOString(),
+                atualizadoEm: new Date().toISOString()
+            },
+            {
+                id: 'lp_visualizador_orcamento',
+                nome: 'Visualizador de Orçamento',
+                descricao: 'Portal do cliente com visualizador de proposta em anexo estilo PDF, aceite/assinatura digital, impressão A4 e vitrine lateral de produtos MiCRO.',
+                padrao: false,
+                html: TEMPLATE_VISUALIZADOR_ORCAMENTO,
                 css: '',
                 js: '',
                 imagens: [],
@@ -1175,6 +2304,24 @@ function inicializarModelosLandingPageExemplo() {
             }
         ];
         if (typeof salvarDados === 'function') salvarDados();
+    } else {
+        // Garante que o novo modelo "Visualizador de Orçamento" exista mesmo se outros modelos já estiverem gravados
+        const existeVisualizador = modelosLandingPage.some(m => m.id === 'lp_visualizador_orcamento' || m.nome === 'Visualizador de Orçamento');
+        if (!existeVisualizador) {
+            modelosLandingPage.push({
+                id: 'lp_visualizador_orcamento',
+                nome: 'Visualizador de Orçamento',
+                descricao: 'Portal do cliente com visualizador de proposta em anexo estilo PDF, aceite/assinatura digital, impressão A4 e vitrine lateral de produtos MiCRO.',
+                padrao: false,
+                html: TEMPLATE_VISUALIZADOR_ORCAMENTO,
+                css: '',
+                js: '',
+                imagens: [],
+                criadoEm: new Date().toISOString(),
+                atualizadoEm: new Date().toISOString()
+            });
+            if (typeof salvarDados === 'function') salvarDados();
+        }
     }
 }
 
@@ -1514,6 +2661,47 @@ function abrirModalEditorLandingPage(modeloId = null) {
 
     // Abre o modal
     abrirModal('editorLandingPageModal');
+}
+
+function carregarPresetNoEditor() {
+    const sel = document.getElementById('lpEditorSelectPreset');
+    if (!sel) return;
+    const modeloId = sel.value;
+    let templateHtml = '';
+    let nomeSugerido = '';
+    let descSugerida = '';
+
+    if (modeloId === 'lp_visualizador_orcamento') {
+        templateHtml = TEMPLATE_VISUALIZADOR_ORCAMENTO;
+        nomeSugerido = 'Visualizador de Orçamento';
+        descSugerida = 'Portal do cliente com visualizador de proposta em anexo estilo PDF, aceite/assinatura digital, impressão A4 e vitrine lateral de produtos MiCRO.';
+    } else if (modeloId === 'lp_institucional_completa') {
+        templateHtml = TEMPLATE_COMPLEMENTAR_INSTITUCIONAL;
+        nomeSugerido = 'Apresentação Geral & Linha de Automação MiCRO';
+        descSugerida = 'Apresentação corporativa para clientes gerais e cotações de pneumática, FRL, atuadores e válvulas.';
+    } else {
+        templateHtml = TEMPLATE_PADRAO_SOPRO_PET;
+        nomeSugerido = 'Válvula de Sopro PET - Proposta Exclusiva MiCRO';
+        descSugerida = 'Modelo oficial MiCRO para indústrias de sopro PET com compatibilidade Norgren e argumentos de redução de custos.';
+    }
+
+    const txtHtml = document.getElementById('lpEditorHtml');
+    const inputNome = document.getElementById('lpEditorNome');
+    const inputDescricao = document.getElementById('lpEditorDescricao');
+
+    if (txtHtml) txtHtml.value = templateHtml;
+    if (inputNome && (!inputNome.value || inputNome.value.startsWith('Nova Proposta') || inputNome.value === 'Visualizador de Orçamento')) {
+        inputNome.value = nomeSugerido;
+    }
+    if (inputDescricao && (!inputDescricao.value || inputDescricao.value.startsWith('Modelo para') || inputDescricao.value.startsWith('Portal do cliente'))) {
+        inputDescricao.value = descSugerida;
+    }
+
+    alternarAbaEditorLP('html');
+    atualizarLivePreviewEditorLP();
+    if (typeof showToast === 'function') {
+        showToast(`Modelo "${nomeSugerido}" carregado no editor!`, 'success');
+    }
 }
 
 function popularSeletorLeadsSimulacaoEditor() {

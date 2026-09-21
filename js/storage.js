@@ -69,6 +69,11 @@ async function carregarLeadsDoIndexedDB() {
 function salvarCacheLocalImediato() {
     if (!Array.isArray(leads)) return;
 
+    const agora = new Date().toISOString();
+    leads.forEach(l => {
+        if (!l.atualizadoEm) l.atualizadoEm = agora;
+    });
+
     // 1. Salva de forma assíncrona no IndexedDB (sem limite de 5MB)
     salvarLeadsNoIndexedDB(leads);
 
@@ -169,7 +174,8 @@ function leadParaLinhaSupabase(l) {
         data_entrada_etapa: l.dataEntradaEtapa || l.dataCriacao || new Date().toISOString(),
         card_obs: l.cardObs || '',
         autorizacao_pedido_id: l.autorizacaoPedidoId || null,
-        autorizacao_pedido_status: l.autorizacaoPedidoStatus || null
+        autorizacao_pedido_status: l.autorizacaoPedidoStatus || null,
+        updated_at: l.atualizadoEm || new Date().toISOString()
     };
 }
 
@@ -349,16 +355,24 @@ async function carregarDados() {
                     return;
                 }
 
-                // Detecta se o cache local possui ações de orçamento mais recentes ou campos preenchidos que o banco não tem
+                // Critérios de reconciliação garantindo que edições do usuário nunca sejam revertidas
+                const localModificado = !!leadCache._modificadoLocal;
+                const timeCache = leadCache.atualizadoEm ? new Date(leadCache.atualizadoEm).getTime() : 0;
+                const timeBanco = leadBanco.atualizadoEm ? new Date(leadBanco.atualizadoEm).getTime() : 0;
+
                 const cacheTemOrcamento = !!(leadCache.orcamentoPdfPrincipal || (leadCache.itens && leadCache.itens.length > 0) || (leadCache.valor && leadCache.valor > 0) || leadCache.obsOrcamento);
                 const bancoSemOrcamento = !leadBanco.orcamentoPdfPrincipal && (!leadBanco.itens || leadBanco.itens.length === 0) && (!leadBanco.valor || leadBanco.valor === 0) && !leadBanco.obsOrcamento;
+                const cacheMaisHistorico = (leadCache.historico?.length || 0) > (leadBanco.historico?.length || 0);
 
-                const cacheMaisRecente = (leadCache.atualizadoEm && leadBanco.atualizadoEm && new Date(leadCache.atualizadoEm) > new Date(leadBanco.atualizadoEm))
-                    || (leadCache.historico && leadBanco.historico && leadCache.historico.length > leadBanco.historico.length)
+                // O cache local prevalece se foi editado localmente, se tem data igual ou superior, se tem orçamento ou mais histórico
+                const cachePrevalece = localModificado
+                    || (timeCache > 0 && timeCache >= timeBanco)
+                    || (timeBanco === 0 && timeCache > 0)
+                    || cacheMaisHistorico
                     || (cacheTemOrcamento && bancoSemOrcamento);
 
-                if (cacheMaisRecente) {
-                    // O cache local tem dados de orçamento ou edições mais recentes: preserva o lead local
+                if (cachePrevalece) {
+                    // O cache local tem alterações recentes do usuário: preserva o lead local como autoridade
                     const leadMesclado = { ...leadBanco, ...leadCache };
                     if (leadCache.orcamentoPdfPrincipal?.dataUrl && leadMesclado.orcamentoPdfPrincipal && !leadMesclado.orcamentoPdfPrincipal.dataUrl) {
                         leadMesclado.orcamentoPdfPrincipal.dataUrl = leadCache.orcamentoPdfPrincipal.dataUrl;
@@ -366,11 +380,16 @@ async function carregarDados() {
                     reconciliados.push(leadMesclado);
                     precisaPersistirNoBanco = true;
                 } else {
-                    // O banco é a versão mais recente. Preserva o dataUrl do PDF local para o visualizador não ficar em branco
-                    if (leadCache.orcamentoPdfPrincipal?.dataUrl && leadBanco.orcamentoPdfPrincipal && !leadBanco.orcamentoPdfPrincipal.dataUrl) {
-                        leadBanco.orcamentoPdfPrincipal.dataUrl = leadCache.orcamentoPdfPrincipal.dataUrl;
+                    // O banco tem timestamp estritamente mais novo e o lead local não possuía edições pendentes:
+                    // Preserva ainda assim dados pesados (como o dataUrl do PDF anexado) que o banco possa ter suprimido
+                    const leadFinalBanco = { ...leadBanco };
+                    if (leadCache.orcamentoPdfPrincipal?.dataUrl && leadFinalBanco.orcamentoPdfPrincipal && !leadFinalBanco.orcamentoPdfPrincipal.dataUrl) {
+                        leadFinalBanco.orcamentoPdfPrincipal.dataUrl = leadCache.orcamentoPdfPrincipal.dataUrl;
                     }
-                    reconciliados.push(leadBanco);
+                    if (leadCache.cardObs && !leadFinalBanco.cardObs) {
+                        leadFinalBanco.cardObs = leadCache.cardObs;
+                    }
+                    reconciliados.push(leadFinalBanco);
                 }
             });
 
@@ -603,7 +622,7 @@ async function upsertLeadsNoSupabaseEmLotes(linhas, tamanhoLote = 15) {
 async function salvarLeadNoBanco(lead) {
     if (!lead || !lead.id) return false;
     try {
-        if (!lead.atualizadoEm) lead.atualizadoEm = new Date().toISOString();
+        lead.atualizadoEm = new Date().toISOString();
         salvarCacheLocalImediato();
         const linha = leadParaLinhaSupabase(lead);
         let res = await supabaseClient.from('leads').upsert([linha], { onConflict: 'id' });
@@ -615,6 +634,7 @@ async function salvarLeadNoBanco(lead) {
             }
             let retry = await supabaseClient.from('leads').upsert([clone], { onConflict: 'id' });
             if (!retry.error) {
+                lead._modificadoLocal = false;
                 atualizarIndicadorStatusSync('sucesso');
                 return true;
             } else {
@@ -623,6 +643,7 @@ async function salvarLeadNoBanco(lead) {
                 return false;
             }
         } else {
+            lead._modificadoLocal = false;
             atualizarIndicadorStatusSync('sucesso');
             return true;
         }

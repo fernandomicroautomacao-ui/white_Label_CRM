@@ -217,6 +217,8 @@ function resetarContagemOrcamento(leadId) {
         return;
     }
     lead.orcamentoResetEm = new Date().toISOString();
+    lead.atualizadoEm = new Date().toISOString();
+    lead._modificadoLocal = true;
     lead.checkpointsComunicacao = {};
     if (lead.tarefas && typeof lead.tarefas === 'object') {
         lead.tarefas.checkpointsComunicacao = {};
@@ -227,7 +229,9 @@ function resetarContagemOrcamento(leadId) {
         data: new Date().toISOString(),
         descricao: `Contagem de dias na etapa Orçamento e alertas de comunicação resetados manualmente por ${usuarioAtual.nome || usuarioAtual.email}`
     });
+    if (typeof salvarCacheLocalImediato === 'function') salvarCacheLocalImediato();
     salvarDados();
+    if (typeof salvarLeadNoBanco === 'function') salvarLeadNoBanco(lead);
     renderizarAll();
     showToast('Contagem de dias do orçamento resetada.', 'success');
 }
@@ -502,6 +506,8 @@ function alterarClassificacaoRapida(e, leadId) {
     if (idx >= 0 && idx < CLASSIFICACOES_LEAD.length) {
         const novaClassif = CLASSIFICACOES_LEAD[idx].id;
         lead.classificacao = novaClassif;
+        lead.atualizadoEm = new Date().toISOString();
+        lead._modificadoLocal = true;
         if (!Array.isArray(lead.historico)) lead.historico = [];
         lead.historico.push({
             data: hoje(),
@@ -509,7 +515,9 @@ function alterarClassificacaoRapida(e, leadId) {
             tipo: 'Registro',
             descricao: `Classificação alterada para "${CLASSIFICACOES_LEAD[idx].label}" por ${usuarioAtual.nome || usuarioAtual.email}`
         });
+        if (typeof salvarCacheLocalImediato === 'function') salvarCacheLocalImediato();
         salvarDados();
+        if (typeof salvarLeadNoBanco === 'function') salvarLeadNoBanco(lead);
         renderizarAll();
         showToast(`Classificação alterada para ${CLASSIFICACOES_LEAD[idx].label}!`);
     } else {
@@ -527,7 +535,11 @@ function editarObsCard(leadId) {
     const valor = prompt('Observação rápida (máx. 14 caracteres):', lead.cardObs || '');
     if (valor === null) return;
     lead.cardObs = valor.trim().slice(0, 14);
+    lead.atualizadoEm = new Date().toISOString();
+    lead._modificadoLocal = true;
+    if (typeof salvarCacheLocalImediato === 'function') salvarCacheLocalImediato();
     salvarDados();
+    if (typeof salvarLeadNoBanco === 'function') salvarLeadNoBanco(lead);
     renderizarAll();
 }
 
@@ -695,7 +707,11 @@ function aplicarMovimentoPipeline(leadId, etapaAnterior, etapaId, autorizado = f
             ? `Venda desfeita: movido de ${ETAPA_NOMES[etapaAnterior]} para ${ETAPA_NOMES[etapaId]} com autorização`
             : `Movido de ${ETAPA_NOMES[etapaAnterior]} para ${ETAPA_NOMES[etapaId]}`
     });
+    lead.atualizadoEm = new Date().toISOString();
+    lead._modificadoLocal = true;
+    if (typeof salvarCacheLocalImediato === 'function') salvarCacheLocalImediato();
     salvarDados();
+    if (typeof salvarLeadNoBanco === 'function') salvarLeadNoBanco(lead);
     const leadIdMovido = lead.id;
     showToast(`Movido para ${ETAPA_NOMES[etapaId]}`, 'success', 'Desfazer', () => desfazerMovimentoPipeline(leadIdMovido, etapaAnterior));
     renderizarAll();
@@ -717,6 +733,8 @@ function desfazerMovimentoPipeline(leadId, etapaOriginal) {
         lead.dataPedido = '';
     }
     lead.cliente = (etapaOriginal === 'pedido');
+    lead.atualizadoEm = new Date().toISOString();
+    lead._modificadoLocal = true;
     lead.historico.push({
         data: hoje(),
         hora: new Date().toTimeString().slice(0, 5),
@@ -724,7 +742,9 @@ function desfazerMovimentoPipeline(leadId, etapaOriginal) {
         descricao: `Movimento desfeito: voltou de ${ETAPA_NOMES[etapaAtual]} para ${ETAPA_NOMES[etapaOriginal]}`
     });
 
+    if (typeof salvarCacheLocalImediato === 'function') salvarCacheLocalImediato();
     salvarDados();
+    if (typeof salvarLeadNoBanco === 'function') salvarLeadNoBanco(lead);
     renderizarAll();
     showToast('Movimento desfeito!');
 }
