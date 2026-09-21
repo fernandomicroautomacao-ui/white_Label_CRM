@@ -689,7 +689,7 @@ const TEMPLATE_PADRAO_SOPRO_PET = `<!DOCTYPE html>
                     </div>
                     <div class="hero-buttons">
                         <a href="#proposta" class="cta-button">QUERO UMA PROPOSTA</a>
-                        <a href="https://wa.me/{{vendedor_whatsapp_digits}}?text=Ol%C3%A1%20{{vendedor_nome}},%20sou%20da%20{{empresa}}%20e%20gostaria%20de%20saber%20mais%20sobre%20as%20v%C3%A1lvulas%20de%20sopro%20PET." class="cta-button outline" target="_blank">FALAR COM {{vendedor_nome}}</a>
+                        <a href="https://web.whatsapp.com/send?phone={{vendedor_whatsapp_digits}}&text=Ol%C3%A1%20{{vendedor_nome}},%20sou%20da%20{{empresa}}%20e%20gostaria%20de%20saber%20mais%20sobre%20as%20v%C3%A1lvulas%20de%20sopro%20PET." class="cta-button outline" target="_blank">FALAR COM {{vendedor_nome}}</a>
                     </div>
                 </div>
                 <div class="hero-image">
@@ -1001,7 +1001,7 @@ const TEMPLATE_PADRAO_SOPRO_PET = `<!DOCTYPE html>
                 <a href="mailto:{{vendedor_email}}?subject=Proposta%20Exclusiva%20{{empresa}}%20-%20V%C3%A1lvulas%20PET%20MiCRO&body=Ol%C3%A1%20{{vendedor_nome}},%20gostaria%20de%20receber%20a%20proposta%20exclusiva%20para%20a%20{{empresa}}." class="cta-button" style="padding:18px 36px;font-size:1.05em;">
                     ✉️ SOLICITAR PROPOSTA COMERCIAL
                 </a>
-                <a href="https://wa.me/{{vendedor_whatsapp_digits}}?text=Ol%C3%A1%20{{vendedor_nome}},%20sou%20da%20{{empresa}}%20e%20gostaria%20de%20conversar%20sobre%20a%20proposta%20de%20v%C3%A1lvulas%20PET." class="cta-button outline" style="padding:18px 36px;font-size:1.05em;" target="_blank">
+                <a href="https://web.whatsapp.com/send?phone={{vendedor_whatsapp_digits}}&text=Ol%C3%A1%20{{vendedor_nome}},%20sou%20da%20{{empresa}}%20e%20gostaria%20de%20conversar%20sobre%20a%20proposta%20de%20v%C3%A1lvulas%20PET." class="cta-button outline" style="padding:18px 36px;font-size:1.05em;" target="_blank">
                     📱 WHATSAPP {{vendedor_nome}}
                 </a>
             </div>
@@ -1052,7 +1052,7 @@ const TEMPLATE_PADRAO_SOPRO_PET = `<!DOCTYPE html>
                     <h4>Links Rápidos</h4>
                     <ul>
                         <li><a href="#proposta">Solicitar Proposta</a></li>
-                        <li><a href="https://wa.me/{{vendedor_whatsapp_digits}}" target="_blank">WhatsApp Direto</a></li>
+                        <li><a href="https://web.whatsapp.com/send?phone={{vendedor_whatsapp_digits}}" target="_blank">WhatsApp Direto</a></li>
                         <li><a href="https://www.microautomacao.com.br" target="_blank">Site MiCRO</a></li>
                         <li><a href="mailto:{{vendedor_email}}">E-mail Comercial</a></li>
                     </ul>
@@ -1138,7 +1138,7 @@ const TEMPLATE_COMPLEMENTAR_INSTITUCIONAL = `<!DOCTYPE html>
     <div class="cta" id="contato">
         <h2>Vamos otimizar sua linha de produção?</h2>
         <p>Consultor Comercial: <strong>{{vendedor_nome}}</strong> | {{vendedor_telefone}} | {{vendedor_email}}</p>
-        <a href="https://wa.me/{{vendedor_whatsapp_digits}}" class="btn-orange" target="_blank">Conversar pelo WhatsApp</a>
+        <a href="https://web.whatsapp.com/send?phone={{vendedor_whatsapp_digits}}" class="btn-orange" target="_blank">Conversar pelo WhatsApp</a>
     </div>
 </body>
 </html>`;
@@ -2025,7 +2025,7 @@ const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
                 <div class="ad-card-content">
                     <h4>Válvula de Sopro PET 40 Bar</h4>
                     <p>Tecnologia líder para sopradoras Sidel, Krones e KHS. Economize até 30% no consumo de ar comprimido com resposta ultrarrápida.</p>
-                    <a href="https://wa.me/{{vendedor_whatsapp_digits}}?text=Ol%C3%A1%2C%20gostaria%20de%20informa%C3%A7%C3%B5es%20t%C3%A9cnicas%20sobre%20a%20V%C3%A1lvula%20de%20Sopro%20PET%20da%20MiCRO." target="_blank" class="ad-card-btn orange">
+                    <a href="https://web.whatsapp.com/send?phone={{vendedor_whatsapp_digits}}&text=Ol%C3%A1%2C%20gostaria%20de%20informa%C3%A7%C3%B5es%20t%C3%A9cnicas%20sobre%20a%20V%C3%A1lvula%20de%20Sopro%20PET%20da%20MiCRO." target="_blank" class="ad-card-btn orange">
                         Solicitar Cotação de Sopro
                     </a>
                 </div>
@@ -2037,7 +2037,7 @@ const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
                 <div class="ad-card-content">
                     <h4>Cilindros ISO 15552 & Guias Lineares</h4>
                     <p>Construção robusta em perfil de alumínio anodizado, vedações de alto rendimento e montagem expressa de cursos customizados.</p>
-                    <a href="https://wa.me/{{vendedor_whatsapp_digits}}?text=Ol%C3%A1%2C%20gostaria%20de%20consultar%20o%20cat%C3%A1logo%20de%20Cilindros%20ISO%20MiCRO." target="_blank" class="ad-card-btn">
+                    <a href="https://web.whatsapp.com/send?phone={{vendedor_whatsapp_digits}}&text=Ol%C3%A1%2C%20gostaria%20de%20consultar%20o%20cat%C3%A1logo%20de%20Cilindros%20ISO%20MiCRO." target="_blank" class="ad-card-btn">
                         Ver Linha de Cilindros
                     </a>
                 </div>
@@ -2049,7 +2049,7 @@ const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
                 <div class="ad-card-content">
                     <h4>Unidades de Preparação de Ar FRL</h4>
                     <p>Filtros coalescentes de alta pureza, reguladores de pressão com trava e lubrificação proporcional para máxima vida útil dos equipamentos.</p>
-                    <a href="https://wa.me/{{vendedor_whatsapp_digits}}?text=Ol%C3%A1%2C%20gostaria%20de%20saber%20mais%20sobre%20as%20unidades%20FRL%20da%20MiCRO." target="_blank" class="ad-card-btn">
+                    <a href="https://web.whatsapp.com/send?phone={{vendedor_whatsapp_digits}}&text=Ol%C3%A1%2C%20gostaria%20de%20saber%20mais%20sobre%20as%20unidades%20FRL%20da%20MiCRO." target="_blank" class="ad-card-btn">
                         Consultar Conjuntos FRL
                     </a>
                 </div>
@@ -2431,7 +2431,7 @@ const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
                 const msg = encodeURIComponent(
                     'Olá, {{vendedor_nome}}! Confirmo que a proposta comercial {{numero_orcamento}} da MiCRO para a empresa {{empresa}} foi ASSINADA DIGITALMENTE via Assinador Oficial por ' + nome + ' (Método de Envio: ' + metodoEnvio + ') sob o certificado ' + hash + '.'
                 );
-                btnWhats.href = 'https://wa.me/{{vendedor_whatsapp_digits}}?text=' + msg;
+                btnWhats.href = 'https://web.whatsapp.com/send?phone={{vendedor_whatsapp_digits}}?text=' + msg;
             }
         }
 
@@ -3030,7 +3030,7 @@ function renderizarLandingPageJIT(modeloIdOuObjeto, lead) {
         vendedor_telefone: vendedorTelefone,
         vendedor_whatsapp: vendedorTelefone,
         vendedor_whatsapp_digits: vendedorWhatsappDigits,
-        whatsapp_link: `https://wa.me/${vendedorWhatsappDigits}?text=${encodeURIComponent('Olá, gostaria de falar sobre a proposta comercial da MiCRO Automação.')}`,
+        whatsapp_link: `https://web.whatsapp.com/send?phone=${vendedorWhatsappDigits}&text=${encodeURIComponent('Olá, gostaria de falar sobre a proposta comercial da MiCRO Automação.')}`,
         data_hoje: hojeStr,
         ano_atual: anoAtualStr,
         link_assinador_oficial: linkAssinadorOficial,
