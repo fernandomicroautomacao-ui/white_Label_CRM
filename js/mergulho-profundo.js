@@ -1520,8 +1520,13 @@ function mergulhoEscapar(str) {
         .replace(/'/g, '&#039;');
 }
 
-function mergulhoExportarDossiePDF() {
-    mergulhoExibirRelatorioModal(mergulhoLeadAtualId);
+function mergulhoExportarDossiePDF(leadId) {
+    const id = leadId || mergulhoLeadAtualId;
+    if (typeof mergulhoBaixarFichaLeadPDF === 'function') {
+        mergulhoBaixarFichaLeadPDF(id);
+    } else {
+        mergulhoExibirRelatorioModal(id);
+    }
 }
 
 // Abre o Relatório Completo do Lead diretamente em um Modal na tela (sem popup ou bloqueio de navegador)
@@ -1963,11 +1968,6 @@ function mergulhoBaixarFichaLeadPDF(leadId) {
     } else {
         mergulhoImprimirDossie(id);
     }
-}
-
-// Exporta o Dossiê completo do lead em PDF
-function mergulhoExportarDossiePDF(leadId) {
-    mergulhoBaixarFichaLeadPDF(leadId || mergulhoLeadAtualId);
 }
 
 // Copia resumo em texto do questionário e dados principais para WhatsApp ou Email

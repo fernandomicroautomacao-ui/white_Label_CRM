@@ -128,7 +128,7 @@ function sanitizarOrcamentoPdfParaBanco(pdf) {
         textoCompleto: (pdf.textoCompleto || '').slice(0, 3000)
     };
     // Se dataUrl for moderado (< 250KB), pode ir no banco
-    if (pdf.dataUrl && typeof pdf.dataUrl === 'string' && pdf.dataUrl.length < 250000) {
+    if (pdf.dataUrl && typeof pdf.dataUrl === 'string' && pdf.dataUrl.length < 6000000) {
         sanitizado.dataUrl = pdf.dataUrl;
     }
     return sanitizado;
@@ -173,8 +173,14 @@ function leadParaLinhaSupabase(l) {
         orcamento_reset_em: l.orcamentoResetEm || null,
         data_entrada_etapa: l.dataEntradaEtapa || l.dataCriacao || new Date().toISOString(),
         card_obs: l.cardObs || '',
+        valor_produtos: l.valorProdutos || 0,
+        landing_page_modelo_id: l.landingPageModeloId || null,
+        landing_page_mensagem: l.landingPageMensagem || null,
+        landing_page_views: l.landingPageViews || 0,
+        landing_page_ultimo_acesso: l.landingPageUltimoAcesso || null,
         autorizacao_pedido_id: l.autorizacaoPedidoId || null,
         autorizacao_pedido_status: l.autorizacaoPedidoStatus || null,
+        metodo_envio: l.metodoEnvio || l.metodo_envio || null,
         updated_at: l.atualizadoEm || new Date().toISOString()
     };
 }
@@ -218,8 +224,15 @@ function linhaSupabaseParaLead(r) {
         orcamentoResetEm: r.orcamento_reset_em || null,
         dataEntradaEtapa: r.data_entrada_etapa || r.data_criacao || new Date().toISOString(),
         cardObs: r.card_obs || '',
+        valorProdutos: r.valor_produtos || r.valorProdutos || 0,
+        landingPageModeloId: r.landing_page_modelo_id || r.landingPageModeloId || null,
+        landingPageMensagem: r.landing_page_mensagem || r.landingPageMensagem || null,
+        landingPageViews: r.landing_page_views || r.landingPageViews || 0,
+        landingPageUltimoAcesso: r.landing_page_ultimo_acesso || r.landingPageUltimoAcesso || null,
         autorizacaoPedidoId: r.autorizacao_pedido_id || null,
         autorizacaoPedidoStatus: r.autorizacao_pedido_status || null,
+        metodoEnvio: r.metodo_envio || r.metodoEnvio || '',
+        metodo_envio: r.metodo_envio || r.metodoEnvio || '',
         atualizadoEm: r.updated_at || r.atualizado_em || r.data_criacao || null
     };
 }
@@ -347,7 +360,7 @@ async function carregarDados() {
         } else {
             const reconciliados = [];
 
-            // A. Avalia cada lead vindo do banco
+            // A. Avalia cada lead vindo do banco com fusão à prova de regressão
             leadsDoBanco.forEach(leadBanco => {
                 const leadCache = mapaCache.get(leadBanco.id);
                 if (!leadCache) {
@@ -355,7 +368,7 @@ async function carregarDados() {
                     return;
                 }
 
-                // Critérios de reconciliação garantindo que edições do usuário nunca sejam revertidas
+                // Critérios de reconciliação garantindo que edições do usuário NUNCA sejam revertidas
                 const localModificado = !!leadCache._modificadoLocal;
                 const timeCache = leadCache.atualizadoEm ? new Date(leadCache.atualizadoEm).getTime() : 0;
                 const timeBanco = leadBanco.atualizadoEm ? new Date(leadBanco.atualizadoEm).getTime() : 0;
@@ -364,33 +377,63 @@ async function carregarDados() {
                 const bancoSemOrcamento = !leadBanco.orcamentoPdfPrincipal && (!leadBanco.itens || leadBanco.itens.length === 0) && (!leadBanco.valor || leadBanco.valor === 0) && !leadBanco.obsOrcamento;
                 const cacheMaisHistorico = (leadCache.historico?.length || 0) > (leadBanco.historico?.length || 0);
 
-                // O cache local prevalece se foi editado localmente, se tem data igual ou superior, se tem orçamento ou mais histórico
+                // O cache local prevalece se foi editado localmente, se tem data recente, se tem orçamento ou mais histórico
                 const cachePrevalece = localModificado
                     || (timeCache > 0 && timeCache >= timeBanco)
                     || (timeBanco === 0 && timeCache > 0)
                     || cacheMaisHistorico
                     || (cacheTemOrcamento && bancoSemOrcamento);
 
+                // Fusão não-destrutiva: o lead resultante sempre herda campos do cache e do banco
+                let leadFinal;
                 if (cachePrevalece) {
-                    // O cache local tem alterações recentes do usuário: preserva o lead local como autoridade
-                    const leadMesclado = { ...leadBanco, ...leadCache };
-                    if (leadCache.orcamentoPdfPrincipal?.dataUrl && leadMesclado.orcamentoPdfPrincipal && !leadMesclado.orcamentoPdfPrincipal.dataUrl) {
-                        leadMesclado.orcamentoPdfPrincipal.dataUrl = leadCache.orcamentoPdfPrincipal.dataUrl;
-                    }
-                    reconciliados.push(leadMesclado);
+                    leadFinal = { ...leadBanco, ...leadCache };
                     precisaPersistirNoBanco = true;
                 } else {
-                    // O banco tem timestamp estritamente mais novo e o lead local não possuía edições pendentes:
-                    // Preserva ainda assim dados pesados (como o dataUrl do PDF anexado) que o banco possa ter suprimido
-                    const leadFinalBanco = { ...leadBanco };
-                    if (leadCache.orcamentoPdfPrincipal?.dataUrl && leadFinalBanco.orcamentoPdfPrincipal && !leadFinalBanco.orcamentoPdfPrincipal.dataUrl) {
-                        leadFinalBanco.orcamentoPdfPrincipal.dataUrl = leadCache.orcamentoPdfPrincipal.dataUrl;
-                    }
-                    if (leadCache.cardObs && !leadFinalBanco.cardObs) {
-                        leadFinalBanco.cardObs = leadCache.cardObs;
-                    }
-                    reconciliados.push(leadFinalBanco);
+                    leadFinal = { ...leadCache, ...leadBanco };
                 }
+
+                // Blindagem absoluta de anexos, PDF original e itens contra exclusão involuntária
+                if (leadCache.orcamentoPdfPrincipal) {
+                    if (!leadFinal.orcamentoPdfPrincipal) {
+                        leadFinal.orcamentoPdfPrincipal = leadCache.orcamentoPdfPrincipal;
+                    } else if (leadCache.orcamentoPdfPrincipal.dataUrl && !leadFinal.orcamentoPdfPrincipal.dataUrl) {
+                        leadFinal.orcamentoPdfPrincipal = {
+                            ...leadFinal.orcamentoPdfPrincipal,
+                            dataUrl: leadCache.orcamentoPdfPrincipal.dataUrl
+                        };
+                    }
+                }
+                if (Array.isArray(leadCache.orcamentoAnexos) && leadCache.orcamentoAnexos.length > 0) {
+                    if (!Array.isArray(leadFinal.orcamentoAnexos) || leadFinal.orcamentoAnexos.length === 0) {
+                        leadFinal.orcamentoAnexos = leadCache.orcamentoAnexos;
+                    }
+                }
+                if (Array.isArray(leadCache.itens) && leadCache.itens.length > 0) {
+                    if (!Array.isArray(leadFinal.itens) || leadFinal.itens.length === 0) {
+                        leadFinal.itens = leadCache.itens;
+                    }
+                }
+                if (leadCache.valorProdutos && !leadFinal.valorProdutos) {
+                    leadFinal.valorProdutos = leadCache.valorProdutos;
+                }
+                if (leadCache.cardObs && !leadFinal.cardObs) {
+                    leadFinal.cardObs = leadCache.cardObs;
+                }
+                if (leadCache.obsOrcamento && !leadFinal.obsOrcamento) {
+                    leadFinal.obsOrcamento = leadCache.obsOrcamento;
+                }
+                if (leadCache.condicoes && !leadFinal.condicoes) {
+                    leadFinal.condicoes = leadCache.condicoes;
+                }
+                if (leadCache.landingPageModeloId && !leadFinal.landingPageModeloId) {
+                    leadFinal.landingPageModeloId = leadCache.landingPageModeloId;
+                }
+                if (leadCache.landingPageMensagem && !leadFinal.landingPageMensagem) {
+                    leadFinal.landingPageMensagem = leadCache.landingPageMensagem;
+                }
+
+                reconciliados.push(leadFinal);
             });
 
             // B. Adiciona leads presentes apenas no cache local (ex: restaurados de backup ou criados offline)

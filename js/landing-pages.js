@@ -1153,6 +1153,7 @@ const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Proposta Comercial {{numero_orcamento}} | Portal do Cliente MiCRO Automação - {{empresa}}</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
         :root {
@@ -1170,7 +1171,7 @@ const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
         }
         body {
             font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #e2e8f0;
+            background: #0f172a;
             color: #1e293b;
             line-height: 1.5;
             min-height: 100vh;
@@ -1178,10 +1179,10 @@ const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
 
         /* BARRA SUPERIOR DE SEGURANÇA SSL */
         .ssl-bar {
-            background: #0f172a;
+            background: #090d16;
             color: #94a3b8;
             font-size: 11px;
-            padding: 6px 20px;
+            padding: 7px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -1193,19 +1194,19 @@ const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
         .portal-header {
             background: #ffffff;
             border-bottom: 3px solid var(--micro-orange);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
             position: sticky;
             top: 0;
             z-index: 100;
         }
         .portal-header-container {
-            max-width: 1400px;
+            max-width: 1440px;
             margin: 0 auto;
-            padding: 12px 24px;
+            padding: 10px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 20px;
+            gap: 18px;
             flex-wrap: wrap;
         }
         .portal-brand {
@@ -1220,7 +1221,7 @@ const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
             border-radius: 6px;
             font-family: 'Montserrat', sans-serif;
             font-weight: 900;
-            font-size: 1.4rem;
+            font-size: 1.35rem;
             letter-spacing: 2px;
             line-height: 1;
         }
@@ -1246,15 +1247,15 @@ const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
         .portal-client-info {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 14px;
             background: var(--micro-gray-light);
-            padding: 8px 16px;
+            padding: 6px 14px;
             border-radius: 8px;
             border: 1px solid var(--micro-border);
         }
         .client-avatar {
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
             background: var(--micro-blue);
             color: #fff;
             border-radius: 50%;
@@ -1262,11 +1263,11 @@ const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
             align-items: center;
             justify-content: center;
             font-weight: 800;
-            font-size: 15px;
+            font-size: 14px;
         }
         .client-meta strong {
             display: block;
-            font-size: 13px;
+            font-size: 12px;
             color: var(--micro-gray-dark);
         }
         .client-meta span {
@@ -1279,7 +1280,7 @@ const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 6px 12px;
+            padding: 5px 12px;
             border-radius: 20px;
             font-size: 11px;
             font-weight: 700;
@@ -1310,17 +1311,21 @@ const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
             100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(217, 119, 6, 0); }
         }
 
-        /* BARRA DE FERRAMENTAS DO VISUALIZADOR PDF */
+        /* BARRA DE FERRAMENTAS DO VISUALIZADOR PDF (ESTILO ITENS/ORÇAMENTO) */
         .pdf-toolbar {
-            background: #334155;
+            background: #1e293b;
             color: #f8fafc;
-            padding: 10px 24px;
+            padding: 9px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
             flex-wrap: wrap;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+            border-bottom: 1px solid #334155;
+            position: sticky;
+            top: 61px;
+            z-index: 90;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
         .pdf-file-info {
             display: flex;
@@ -1337,43 +1342,66 @@ const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
             border-radius: 4px;
             letter-spacing: 1px;
         }
+        .pdf-page-count-badge {
+            background: #334155;
+            color: #cbd5e1;
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            border: 1px solid #475569;
+            font-weight: 600;
+        }
         .pdf-actions {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             flex-wrap: wrap;
         }
+        .btn-group-zoom {
+            display: inline-flex;
+            gap: 2px;
+            background: #0f172a;
+            padding: 2px;
+            border-radius: 6px;
+            border: 1px solid #334155;
+        }
         .btn-tool {
-            background: #475569;
-            color: #fff;
-            border: 1px solid #64748b;
-            padding: 6px 12px;
-            border-radius: 4px;
+            background: #334155;
+            color: #f1f5f9;
+            border: 1px solid #475569;
+            padding: 6px 11px;
+            border-radius: 5px;
             font-size: 12px;
             font-weight: 600;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
             text-decoration: none;
-            transition: all 0.2s;
+            transition: all 0.15s;
+            white-space: nowrap;
         }
         .btn-tool:hover {
-            background: #64748b;
+            background: #475569;
+            border-color: #64748b;
         }
         .btn-tool-print {
-            background: #0284c7;
-            border-color: #0369a1;
+            background: #0057a8;
+            border-color: #0284c7;
+            color: #fff;
+            font-weight: 700;
         }
         .btn-tool-print:hover {
-            background: #0369a1;
+            background: #0284c7;
         }
         .btn-tool-sign {
-            background: var(--success);
-            border-color: #15803d;
+            background: var(--micro-orange);
+            border-color: #ea580c;
+            color: #fff;
+            font-weight: 700;
         }
         .btn-tool-sign:hover {
-            background: #15803d;
+            background: #ea580c;
         }
         .btn-tool-whatsapp {
             background: #25d366;
@@ -1385,14 +1413,14 @@ const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
             background: #22c55e;
         }
 
-        /* LAYOUT PRINCIPAL (DOCUMENTO + SIDEBAR LATERAL) */
+        /* LAYOUT PRINCIPAL (VISUALIZADOR DO ARQUIVO PDF + SIDEBAR LATERAL) */
         .portal-layout {
-            max-width: 1400px;
-            margin: 24px auto;
-            padding: 0 20px;
+            max-width: 1480px;
+            margin: 18px auto 30px;
+            padding: 0 16px;
             display: grid;
             grid-template-columns: 1fr 340px;
-            gap: 24px;
+            gap: 20px;
             align-items: start;
         }
         @media (max-width: 1100px) {
@@ -1401,248 +1429,179 @@ const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
             }
         }
 
-        /* ============================================================ */
-        /* FOLHA DE ORÇAMENTO (ANEXO PDF COM TIMBRADO OFICIAL E A4)    */
-        /* ============================================================ */
-        .pdf-page-wrapper {
+        /* CONTAINER DO VISUALIZADOR DE PDF */
+        .pdf-viewer-container-card {
+            background: #1e293b;
+            border-radius: 8px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+            border: 1px solid #334155;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pdf-preview-body {
+            background: #2b3035;
+            min-height: 600px;
+            max-height: 82vh;
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
             align-items: center;
+            padding: 24px 16px 40px;
+            position: relative;
         }
-        .folha-orcamento {
-            background: #ffffff;
+
+        .pdf-preview-iframe {
             width: 100%;
-            max-width: 860px;
-            min-height: 1100px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-            border-radius: 6px;
-            padding: 45px 50px;
-            position: relative;
-            color: #1e293b;
-        }
-
-        /* CABEÇALHO DA FOLHA */
-        .folha-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            border-bottom: 2px solid var(--micro-blue);
-            padding-bottom: 20px;
-            margin-bottom: 24px;
-            gap: 20px;
-        }
-        .folha-empresa-emissora {
-            flex: 1;
-        }
-        .folha-empresa-emissora h2 {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 1.3rem;
-            color: var(--micro-blue);
-            font-weight: 900;
-            letter-spacing: 1px;
-            margin-bottom: 4px;
-        }
-        .folha-empresa-emissora p {
-            font-size: 11px;
-            color: var(--micro-gray-medium);
-            line-height: 1.4;
-        }
-
-        .folha-doc-box {
-            text-align: right;
-            background: var(--micro-gray-light);
-            border: 1px solid var(--micro-border);
-            padding: 12px 18px;
-            border-radius: 6px;
-            min-width: 220px;
-        }
-        .folha-doc-box .doc-numero {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 15px;
-            font-weight: 800;
-            color: var(--micro-orange);
-            display: block;
-        }
-        .folha-doc-box .doc-data {
-            font-size: 11px;
-            color: var(--micro-gray-medium);
-            margin-top: 4px;
-            display: block;
-        }
-
-        /* QUADRO DO CLIENTE (DESTINATÁRIO) */
-        .quadro-cliente {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-left: 4px solid var(--micro-blue);
-            border-radius: 6px;
-            padding: 16px 20px;
-            margin-bottom: 24px;
-        }
-        .quadro-cliente-title {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--micro-blue);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-        }
-        .quadro-cliente-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 10px 16px;
-            font-size: 12px;
-        }
-        .quadro-cliente-item strong {
-            display: block;
-            color: #64748b;
-            font-size: 10px;
-            text-transform: uppercase;
-        }
-        .quadro-cliente-item span {
-            color: #0f172a;
-            font-weight: 600;
-            font-size: 12px;
-        }
-
-        /* SEÇÃO DE PRODUTOS E TABELA */
-        .secao-titulo {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 13px;
-            font-weight: 800;
-            color: var(--micro-blue-dark);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin: 20px 0 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .secao-titulo::before {
-            content: '';
-            display: inline-block;
-            width: 4px;
-            height: 14px;
-            background: var(--micro-orange);
-            border-radius: 2px;
-        }
-
-        /* CONDIÇÕES COMERCIAIS */
-        .condicoes-box {
+            height: 700px;
+            border: none;
+            border-radius: 4px;
             background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            padding: 16px 20px;
-            margin-top: 15px;
-            font-size: 12px;
-        }
-        .condicoes-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 12px;
-        }
-        .condicao-item strong {
-            display: block;
-            color: var(--micro-gray-medium);
-            font-size: 10px;
-            text-transform: uppercase;
-        }
-        .condicao-item span {
-            font-weight: 600;
-            color: var(--micro-gray-dark);
         }
 
-        /* ============================================================ */
-        /* SEÇÃO DE ASSINATURA DIGITAL / ACEITE ELETRÔNICO OFICIAL      */
-        /* ============================================================ */
-        .assinatura-digital-card {
-            margin-top: 30px;
-            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-            border: 2px solid #0284c7;
-            border-radius: 8px;
-            padding: 24px;
+        .pdf-canvas-wrapper {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 22px;
+        }
+
+        .pdf-page-wrapper {
+            background: #ffffff;
+            box-shadow: 0 8px 26px rgba(0, 0, 0, 0.45);
+            border-radius: 3px;
             position: relative;
-            box-shadow: 0 4px 15px rgba(2, 132, 199, 0.08);
+            max-width: 100%;
+            transition: transform 0.15s ease-out;
+            display: flex;
+            justify-content: center;
+        }
+
+        .pdf-page-canvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            border-radius: 3px;
+            background: #fff;
+        }
+
+        .pdf-page-number-tag {
+            position: absolute;
+            bottom: -10px;
+            right: 14px;
+            background: rgba(15, 23, 42, 0.85);
+            color: #f1f5f9;
+            font-size: 10px;
+            padding: 3px 9px;
+            border-radius: 10px;
+            font-family: monospace;
+            pointer-events: none;
+            border: 1px solid #334155;
+        }
+
+        .pdf-loading-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px;
+            color: #f8fafc;
+            gap: 14px;
+            text-align: center;
+        }
+        .pdf-loading-spinner {
+            width: 38px;
+            height: 38px;
+            border: 3px solid rgba(255, 255, 255, 0.15);
+            border-top-color: var(--micro-orange);
+            border-radius: 50%;
+            animation: pdfSpin 0.8s linear infinite;
+        }
+        @keyframes pdfSpin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* CARD DE ASSINATURA DIGITAL & ACEITE ELETRÔNICO */
+        .assinatura-digital-card {
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.15);
+            border: 1px solid #cbd5e1;
+            padding: 20px 24px;
+            margin-top: 20px;
         }
         .assinatura-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px dashed #cbd5e1;
-            padding-bottom: 14px;
-            margin-bottom: 18px;
+            border-bottom: 2px solid var(--micro-blue);
+            padding-bottom: 12px;
+            margin-bottom: 16px;
             flex-wrap: wrap;
             gap: 10px;
         }
         .assinatura-header h3 {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 14px;
+            font-size: 16px;
             font-weight: 800;
-            color: #0369a1;
+            color: var(--micro-blue-dark);
             display: flex;
             align-items: center;
             gap: 8px;
+            font-family: 'Montserrat', sans-serif;
         }
         .assinatura-hash {
             font-family: monospace;
-            font-size: 10px;
-            color: #64748b;
-            background: #e2e8f0;
-            padding: 3px 8px;
+            font-size: 11px;
+            color: var(--micro-gray-medium);
+            background: var(--micro-gray-light);
+            padding: 4px 8px;
             border-radius: 4px;
+            border: 1px solid var(--micro-border);
         }
-
         .assinatura-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            gap: 18px;
         }
-        @media (max-width: 680px) {
+        @media (max-width: 768px) {
             .assinatura-grid { grid-template-columns: 1fr; }
         }
-
         .assinatura-box-emissor {
-            background: #f1f5f9;
-            border: 1px solid #cbd5e1;
+            background: var(--micro-gray-light);
+            border: 1px dashed var(--micro-border);
             border-radius: 6px;
             padding: 16px;
             position: relative;
         }
         .carimbo-emissor {
             display: inline-block;
-            border: 2px solid var(--micro-blue);
-            color: var(--micro-blue);
-            padding: 4px 8px;
-            border-radius: 4px;
+            background: #dbeafe;
+            color: #1e40af;
             font-size: 10px;
             font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            padding: 2px 6px;
+            border-radius: 4px;
             margin-bottom: 8px;
         }
-
         .assinatura-box-cliente {
-            background: #ffffff;
-            border: 2px dashed #0284c7;
+            border: 2px dashed #3b82f6;
+            background: #f8fafc;
             border-radius: 6px;
             padding: 16px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
         }
-
         .campo-assinatura-input {
             margin-bottom: 10px;
         }
         .campo-assinatura-input label {
             display: block;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 700;
             color: #475569;
-            text-transform: uppercase;
             margin-bottom: 4px;
         }
         .campo-assinatura-input input {
@@ -1650,142 +1609,114 @@ const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
             padding: 8px 10px;
             border: 1px solid #cbd5e1;
             border-radius: 4px;
-            font-size: 12px;
-            color: #1e293b;
+            font-size: 13px;
         }
-        .campo-assinatura-input input:focus {
-            outline: none;
-            border-color: #0284c7;
-            box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2);
-        }
-
         .btn-assinar-digital {
             background: var(--success);
-            color: #ffffff;
+            color: #fff;
             border: none;
-            padding: 12px 18px;
+            padding: 11px 16px;
             border-radius: 6px;
             font-size: 13px;
             font-weight: 800;
-            font-family: 'Montserrat', sans-serif;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
             width: 100%;
-            transition: background 0.2s, transform 0.1s;
-            box-shadow: 0 4px 10px rgba(22, 163, 74, 0.25);
+            margin-top: 6px;
+            transition: background 0.2s;
+            text-align: center;
         }
         .btn-assinar-digital:hover {
             background: #15803d;
-            transform: translateY(-1px);
         }
 
-        /* CARIMBO DE ASSINATURA CONCLUÍDA */
         .carimbo-sucesso-box {
             display: none;
-            background: var(--success-light);
-            border: 2px solid var(--success);
-            border-radius: 6px;
+            background: #f0fdf4;
+            border: 2px solid #86efac;
+            border-radius: 8px;
             padding: 18px;
             text-align: center;
-            animation: fadeIn 0.4s ease;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.96); }
-            to { opacity: 1; transform: scale(1); }
         }
         .carimbo-selo {
             display: inline-block;
-            border: 2px solid var(--success);
-            color: var(--success);
-            padding: 6px 14px;
-            border-radius: 6px;
+            background: #15803d;
+            color: #fff;
             font-size: 12px;
-            font-weight: 900;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            margin-bottom: 8px;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
         }
 
-        /* ============================================================ */
-        /* SIDEBAR LATERAL COM PROPAGANDAS DE PRODUTOS MiCRO & CTAs    */
-        /* ============================================================ */
+        /* SIDEBAR DE PROPAGANDAS E PRODUTOS MiCRO */
         .sidebar-propagandas {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 16px;
         }
-
         .sidebar-section-title {
-            font-family: 'Montserrat', sans-serif;
             font-size: 13px;
             font-weight: 800;
-            color: var(--micro-blue-dark);
+            color: #f1f5f9;
             text-transform: uppercase;
             letter-spacing: 1px;
             display: flex;
             align-items: center;
-            gap: 8px;
-            margin-bottom: 2px;
+            gap: 6px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--micro-orange);
         }
-
         .ad-card {
             background: #ffffff;
             border-radius: 8px;
-            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            border: 1px solid #cbd5e1;
             overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
             transition: transform 0.2s, box-shadow 0.2s;
         }
         .ad-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.22);
         }
         .ad-card-badge {
             background: var(--micro-orange);
-            color: #ffffff;
+            color: #fff;
             font-size: 10px;
             font-weight: 800;
-            padding: 4px 12px;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            padding: 4px 10px;
             display: inline-block;
+            letter-spacing: 0.5px;
         }
-        .ad-card-badge.blue {
-            background: var(--micro-blue);
-        }
-        .ad-card-badge.dark {
-            background: #0f172a;
-        }
+        .ad-card-badge.blue { background: var(--micro-blue); }
+        .ad-card-badge.dark { background: #1e293b; }
         .ad-card-content {
-            padding: 16px 18px;
+            padding: 14px;
         }
-        .ad-card h4 {
-            font-family: 'Montserrat', sans-serif;
+        .ad-card-content h4 {
             font-size: 14px;
             font-weight: 800;
-            color: #0f172a;
-            margin: 6px 0 8px;
+            color: var(--micro-gray-dark);
+            margin-bottom: 6px;
             line-height: 1.3;
         }
-        .ad-card p {
-            font-size: 12px;
-            color: #64748b;
-            margin-bottom: 14px;
-            line-height: 1.45;
+        .ad-card-content p {
+            font-size: 11px;
+            color: var(--micro-gray-medium);
+            line-height: 1.4;
+            margin-bottom: 12px;
         }
         .ad-card-btn {
             display: block;
             text-align: center;
             background: var(--micro-blue);
-            color: #ffffff;
-            text-decoration: none;
-            padding: 8px 14px;
-            border-radius: 6px;
-            font-size: 12px;
+            color: #fff;
+            font-size: 11px;
             font-weight: 700;
+            padding: 7px 10px;
+            border-radius: 4px;
+            text-decoration: none;
             transition: background 0.2s;
         }
         .ad-card-btn:hover {
@@ -1798,85 +1729,78 @@ const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
             background: var(--micro-orange-hover);
         }
 
-        /* CARD DE CONTATO DO CONSULTOR RESPONSÁVEL */
+        /* CARD DE CONTATO DO CONSULTOR */
         .consultor-card {
-            background: linear-gradient(135deg, #0057a8, #00386b);
-            color: #ffffff;
+            background: #ffffff;
             border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 4px 15px rgba(0, 87, 168, 0.2);
+            border: 2px solid var(--micro-blue);
+            padding: 16px;
             text-align: center;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
         }
         .consultor-avatar-circle {
-            width: 58px;
-            height: 58px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
-            background: #ffffff;
+            background: var(--micro-blue-light);
             color: var(--micro-blue);
-            margin: 0 auto 12px;
+            font-size: 24px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
-            font-weight: 900;
-            border: 3px solid rgba(255,255,255,0.4);
+            margin: 0 auto 10px;
+            border: 2px solid var(--micro-blue);
         }
         .consultor-card h4 {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 800;
+            color: var(--micro-gray-dark);
             margin-bottom: 2px;
         }
         .consultor-card .sub {
             font-size: 11px;
-            color: #bae6fd;
-            margin-bottom: 14px;
+            color: var(--micro-orange);
+            font-weight: 700;
             display: block;
+            margin-bottom: 10px;
         }
         .consultor-contact-list {
             text-align: left;
-            background: rgba(255,255,255,0.1);
+            background: #f8fafc;
+            padding: 10px;
             border-radius: 6px;
-            padding: 10px 14px;
+            margin-bottom: 12px;
             font-size: 11px;
-            margin-bottom: 14px;
+            color: #475569;
         }
         .consultor-contact-item {
-            margin: 4px 0;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            margin-bottom: 4px;
+            word-break: break-all;
         }
         .btn-whatsapp-cta {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 6px;
             background: #25d366;
             color: #0b4a1b;
+            font-size: 12px;
             font-weight: 800;
-            font-size: 13px;
-            padding: 12px 16px;
+            padding: 10px 14px;
             border-radius: 6px;
             text-decoration: none;
-            box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);
-            transition: background 0.2s, transform 0.1s;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(37, 211, 102, 0.35);
         }
         .btn-whatsapp-cta:hover {
-            background: #22c55e;
-            transform: translateY(-1px);
+            background: #20ba5a;
         }
 
-        /* ============================================================ */
-        /* REGRAS EXCLUSIVAS DE IMPRESSÃO (@media print)                */
-        /* Imprime estritamente o documento A4 sem menus ou barras      */
-        /* ============================================================ */
+        /* REGRAS DE IMPRESSÃO PURA (@MEDIA PRINT) */
         @media print {
             body {
                 background: #ffffff !important;
                 color: #000000 !important;
-                margin: 0 !important;
-                padding: 0 !important;
             }
             .ssl-bar,
             .portal-header,
@@ -1885,7 +1809,8 @@ const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
             .btn-assinar-digital,
             .campo-assinatura-input,
             .btn-tool,
-            .btn-whatsapp-cta {
+            .btn-whatsapp-cta,
+            .pdf-page-number-tag {
                 display: none !important;
             }
             .portal-layout {
@@ -1894,20 +1819,32 @@ const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
                 padding: 0 !important;
                 max-width: 100% !important;
             }
-            .folha-orcamento {
-                box-shadow: none !important;
+            .pdf-viewer-container-card {
                 border: none !important;
-                padding: 20px 0 !important;
-                width: 100% !important;
-                max-width: 100% !important;
+                box-shadow: none !important;
+                background: transparent !important;
+            }
+            .pdf-preview-body {
+                background: #ffffff !important;
+                max-height: none !important;
                 min-height: auto !important;
+                overflow: visible !important;
+                padding: 0 !important;
+            }
+            .pdf-page-wrapper {
+                box-shadow: none !important;
+                margin-bottom: 0 !important;
+                page-break-after: always;
+                break-after: page;
+            }
+            .pdf-page-canvas {
+                width: 100% !important;
+                height: auto !important;
             }
             .assinatura-digital-card {
                 border: 1px solid #94a3b8 !important;
                 box-shadow: none !important;
-            }
-            .itens-tabela-custom {
-                box-shadow: none !important;
+                page-break-inside: avoid;
             }
         }
     </style>
@@ -1917,10 +1854,10 @@ const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
     <!-- 1. BARRA DE SEGURANÇA SSL -->
     <div class="ssl-bar">
         <span>🔒 Portal Seguro MiCRO Automação • Conexão Criptografada SSL 256-Bit</span>
-        <span>ID da Sessão: AUTH-{{ano_atual}}-{{numero_orcamento}}</span>
+        <span>ID do Documento: AUTH-{{ano_atual}}-{{numero_orcamento}}</span>
     </div>
 
-    <!-- 2. HEADER PADRÃO ESTILO PORTAL -->
+    <!-- 2. HEADER PADRÃO ESTILO PORTAL DO CLIENTE -->
     <header class="portal-header">
         <div class="portal-header-container">
             <!-- Brand Oficial MiCRO -->
@@ -1931,7 +1868,7 @@ const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
                 </div>
                 <div class="portal-title-block">
                     <h1>Portal Comercial de Atendimento</h1>
-                    <p>Visualização e Aceite Eletrônico de Proposta Técnica</p>
+                    <p>Visualização e Aceite Eletrônico de Proposta Comercial</p>
                 </div>
             </div>
 
@@ -1942,7 +1879,7 @@ const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
                 </div>
                 <div class="client-meta">
                     <strong>{{empresa}}</strong>
-                    <span>CNPJ: {{cnpj}} • Contato: {{decisor}}</span>
+                    <span>CNPJ: {{cnpj}} • Aos cuidados: {{decisor}}</span>
                 </div>
                 <div class="portal-status-pill" id="portalHeaderStatus">
                     <span class="pulse-dot"></span>
@@ -1952,19 +1889,33 @@ const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
         </div>
     </header>
 
-    <!-- 3. BARRA DE FERRAMENTAS DO VISUALIZADOR PDF -->
+    <!-- 3. BARRA DE FERRAMENTAS DO VISUALIZADOR PDF (IDÊNTICA À ABA ITENS/ORÇAMENTO) -->
     <div class="pdf-toolbar">
         <div class="pdf-file-info">
             <span class="pdf-badge">PDF</span>
-            <strong>Proposta_Comercial_{{numero_orcamento}}_{{empresa}}.pdf</strong>
-            <span style="color:#94a3b8;font-size:11px;">(Documento Oficial • 1 Folha)</span>
+            <strong id="lpPdfNomeArquivo">{{pdf_nome_arquivo}}</strong>
+            <span id="orcPdfPaginaInfo" class="pdf-page-count-badge">Carregando páginas...</span>
         </div>
         <div class="pdf-actions">
-            <button type="button" class="btn-tool btn-tool-print" onclick="window.print()" title="Imprimir Orçamento ou Salvar como PDF">
-                🖨️ Imprimir Orçamento
+            <!-- Grupo de Zoom Interativo -->
+            <div class="btn-group-zoom">
+                <button type="button" class="btn-tool" onclick="alterarZoomPdfViewer(-0.15)" title="Reduzir zoom">➖</button>
+                <button type="button" class="btn-tool" id="btnZoomPdf100" onclick="definirZoomPdfViewer(1.0)" title="Zoom original 100%">100%</button>
+                <button type="button" class="btn-tool" onclick="alterarZoomPdfViewer(0.15)" title="Aumentar zoom">➕</button>
+                <button type="button" class="btn-tool" onclick="ajustarPdfAoContainer()" title="Ajustar à largura">↔️ Ajustar</button>
+            </div>
+            
+            <button type="button" class="btn-tool btn-tool-print" onclick="imprimirPdfOrcamentoOriginal()" title="Imprimir PDF original diretamente">
+                🖨️ Imprimir PDF
             </button>
-            <button type="button" class="btn-tool" onclick="rolarParaAssinatura()" title="Ir para o campo de Assinatura">
-                ✍️ Assinar Documento
+            <button type="button" class="btn-tool" onclick="baixarPdfOrcamentoOriginal()" title="Baixar arquivo original em PDF">
+                ⬇️ Baixar
+            </button>
+            <button type="button" class="btn-tool" onclick="abrirPdfEmNovaAbaOriginal()" title="Abrir PDF em nova aba">
+                ↗️ Nova Aba
+            </button>
+            <button type="button" class="btn-tool btn-tool-sign" id="btnTopoAssinar" onclick="abrirAssinadorOficialNovaAba()" title="Abrir assinador de proposta oficial em nova aba">
+                ✍️ Assinar Proposta Oficial
             </button>
             <a href="{{whatsapp_link}}" target="_blank" class="btn-tool btn-tool-whatsapp" title="Falar com Consultor no WhatsApp">
                 💬 WhatsApp Consultor
@@ -1972,160 +1923,93 @@ const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
         </div>
     </div>
 
-    <!-- 4. LAYOUT PRINCIPAL (DOCUMENTO A4 + PROPAGANDAS LATERAIS) -->
+    <!-- 4. LAYOUT PRINCIPAL (DOCUMENTO PDF ORIGINAL + VITRINE LATERAL) -->
     <main class="portal-layout">
 
-        <!-- COLUNA 1: FOLHA DE ORÇAMENTO ESTILO PDF COM ASSINATURA DIGITAL -->
-        <section class="pdf-page-wrapper">
-            <article class="folha-orcamento" id="folhaOrcamento">
-                
-                <!-- Cabeçalho Timbrado do Documento -->
-                <div class="folha-header">
-                    <div class="folha-empresa-emissora">
-                        <h2>MiCRO AUTOMAÇÃO INDUSTRIAL</h2>
-                        <p><strong>MiCRO Automação Ltda.</strong> | Fabricação e Soluções Pneumáticas Industriais</p>
-                        <p>Vinhedo / Campinas - SP • CNPJ: 50.123.456/0001-89</p>
-                        <p>Telefone: {{vendedor_telefone}} • E-mail: {{vendedor_email}}</p>
+        <!-- COLUNA 1: VISUALIZADOR REAL DO ARQUIVO PDF (MESMO DA ABA ITENS/ORÇAMENTO) -->
+        <section class="pdf-coluna-documento">
+            
+            <div class="pdf-viewer-container-card">
+                <div class="pdf-preview-body" id="orcPdfPreviewBody">
+                    <div id="orcPdfCarregando" class="pdf-loading-box">
+                        <div class="pdf-loading-spinner"></div>
+                        <span style="font-size:14px;font-weight:700;">Carregando e renderizando arquivo PDF original...</span>
+                        <span style="font-size:11px;opacity:0.8;">Processamento de alta fidelidade em execução</span>
                     </div>
-                    <div class="folha-doc-box">
-                        <span style="font-size:10px;text-transform:uppercase;color:#64748b;font-weight:700;">Proposta Comercial</span>
-                        <span class="doc-numero">{{numero_orcamento}}</span>
-                        <span class="doc-data">Emissão: {{data_hoje}}</span>
-                        <span class="doc-data">Validade: 15 dias</span>
+                    <div id="orcPdfCanvasWrapper" class="pdf-canvas-wrapper"></div>
+                    <iframe id="orcPdfIframe" class="pdf-preview-iframe" title="Visualizador de PDF" style="display:none;"></iframe>
+                </div>
+            </div>
+
+            <!-- Seção de Assinatura Digital & Aceite Eletrônico Oficial -->
+            <div class="assinatura-digital-card" id="secaoAssinatura">
+                <div class="assinatura-header">
+                    <h3>
+                        <span>🛡️</span> Autorização de Emissão de Pedido & Assinatura Oficial
+                    </h3>
+                    <div class="assinatura-hash" id="docHashDisplay">
+                        CHAVE: {{autorizacao_token}}
                     </div>
                 </div>
 
-                <!-- Quadro de Destinatário / Cliente -->
-                <div class="quadro-cliente">
-                    <div class="quadro-cliente-title">
-                        <span>Dados do Cliente / Solicitante</span>
-                        <span style="font-size:10px;color:#64748b;">Ref: Cotação Comercial</span>
-                    </div>
-                    <div class="quadro-cliente-grid">
-                        <div class="quadro-cliente-item">
-                            <strong>Razão Social:</strong>
-                            <span>{{empresa}}</span>
-                        </div>
-                        <div class="quadro-cliente-item">
-                            <strong>CNPJ / Inscrição:</strong>
-                            <span>{{cnpj}}</span>
-                        </div>
-                        <div class="quadro-cliente-item">
-                            <strong>Aos Cuidados de:</strong>
-                            <span>{{decisor}}</span>
-                        </div>
-                        <div class="quadro-cliente-item">
-                            <strong>E-mail:</strong>
-                            <span>{{email}}</span>
-                        </div>
-                        <div class="quadro-cliente-item">
-                            <strong>Telefone / Celular:</strong>
-                            <span>{{telefone}}</span>
-                        </div>
-                        <div class="quadro-cliente-item">
-                            <strong>Localidade:</strong>
-                            <span>{{cidade_uf}}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Seção 1: Itens Orçados e Tabela de Produtos -->
-                <div class="secao-titulo">1. Especificações Técnicas e Itens Orçados</div>
-                <div style="margin: 12px 0;">
-                    {{itens_tabela}}
-                </div>
-
-                <!-- Seção 2: Condições Comerciais e Técnicas -->
-                <div class="secao-titulo">2. Condições Comerciais & Garantia MiCRO</div>
-                <div class="condicoes-box">
-                    <div class="condicoes-grid">
-                        <div class="condicao-item">
-                            <strong>Faturamento / Prazo:</strong>
-                            <span>28 DDL (ou à vista com 3% de desc.)</span>
-                        </div>
-                        <div class="condicao-item">
-                            <strong>Prazo de Entrega:</strong>
-                            <span>Pronta Entrega / Imediato</span>
-                        </div>
-                        <div class="condicao-item">
-                            <strong>Garantia Técnica:</strong>
-                            <span>12 Meses (Garantia Total MiCRO)</span>
-                        </div>
-                        <div class="condicao-item">
-                            <strong>Frete:</strong>
-                            <span>CIF Estado de SP / FOB outras regiões</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Seção 3: Assinatura Digital & Aceite Eletrônico Oficial -->
-                <div class="secao-titulo" id="secaoAssinatura">3. Assinatura Digital & Aceite Eletrônico</div>
-                
-                <div class="assinatura-digital-card">
-                    <div class="assinatura-header">
-                        <h3>
-                            <span>🛡️</span> Termo de Validação e Aceite Eletrônico
-                        </h3>
-                        <div class="assinatura-hash" id="docHashDisplay">
-                            HASH: SHA256-{{ano_atual}}-9F8B2C4E-MIC
+                <div class="assinatura-grid">
+                    <!-- Assinatura Emissora (MiCRO) -->
+                    <div class="assinatura-box-emissor">
+                        <span class="carimbo-emissor">EMISSOR OFICIAL</span>
+                        <p style="font-size:12px;font-weight:700;color:#0f172a;margin-bottom:2px;">MiCRO Automação Industrial</p>
+                        <p style="font-size:11px;color:#64748b;">Consultor: <strong>{{vendedor_nome}}</strong></p>
+                        <p style="font-size:10px;color:#94a3b8;margin-top:8px;">Chave Eletrônica: CERT-MIC-BR-{{ano_atual}}</p>
+                        <div style="margin-top:10px;padding-top:8px;border-top:1px solid #cbd5e1;font-size:10px;color:#15803d;font-weight:700;">
+                            ✓ Documento emitido e autorizado
                         </div>
                     </div>
 
-                    <div class="assinatura-grid">
-                        <!-- Assinatura Emissora (MiCRO) -->
-                        <div class="assinatura-box-emissor">
-                            <span class="carimbo-emissor">EMISSOR OFICIAL</span>
-                            <p style="font-size:12px;font-weight:700;color:#0f172a;margin-bottom:2px;">MiCRO Automação Industrial</p>
-                            <p style="font-size:11px;color:#64748b;">Consultor: <strong>{{vendedor_nome}}</strong></p>
-                            <p style="font-size:10px;color:#94a3b8;margin-top:8px;">Chave Eletrônica: CERT-MIC-BR-2026</p>
-                            <div style="margin-top:10px;padding-top:8px;border-top:1px solid #cbd5e1;font-size:10px;color:#15803d;font-weight:700;">
-                                ✓ Documento emitido e autorizado
+                    <!-- Assinatura do Cliente / Assinador Oficial em Nova Aba -->
+                    <div class="assinatura-box-cliente" id="boxFormularioAssinatura">
+                        <div>
+                            <span style="display:inline-block;background:#eff6ff;color:#0057a8;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;margin-bottom:8px;">
+                                📜 ASSINADOR DE PROPOSTA OFICIAL
+                            </span>
+                            <p style="font-size:12px;color:#1e293b;font-weight:700;margin-bottom:4px;">
+                                Autorização de Pedido com Certificação Jurídica
+                            </p>
+                            <p style="font-size:11px;color:#475569;margin-bottom:12px;line-height:1.4;">
+                                A assinatura desta proposta utiliza o <strong>Assinador Oficial MiCRO</strong> em uma nova aba segura, certificando seu nome completo, carimbo oficial de data/hora, endereço IP e gerando o Certificado Digital de Autenticação.
+                            </p>
+                            <div style="background:#f8fafc;padding:10px 12px;border-radius:6px;border:1px solid #e2e8f0;margin-bottom:14px;font-size:11px;color:#334155;">
+                                <div><strong>Cliente:</strong> {{empresa}}</div>
+                                <div><strong>Decisor / Signatário:</strong> {{decisor}}</div>
+                                <div><strong>Status:</strong> <span id="txtStatusAssinaturaCard" style="color:#d97706;font-weight:700;">Pendente de assinatura</span></div>
                             </div>
                         </div>
+                        <button type="button" class="btn-assinar-digital" onclick="abrirAssinadorOficialNovaAba()" style="display:flex;align-items:center;justify-content:center;gap:8px;">
+                            <span>✍️</span> Abrir Assinador em Nova Aba para Assinar
+                        </button>
+                        <div style="font-size:10px;color:#64748b;text-align:center;margin-top:6px;">
+                            🔒 Ao concluir a assinatura na nova aba, este portal atualiza automaticamente para <strong>Assinado</strong>.
+                        </div>
+                    </div>
 
-                        <!-- Assinatura do Cliente / Aceite Interativo -->
-                        <div class="assinatura-box-cliente" id="boxFormularioAssinatura">
-                            <div>
-                                <p style="font-size:11px;color:#475569;margin-bottom:10px;line-height:1.4;">
-                                    Ao clicar em aceitar, você confirma a exatidão dos itens, quantidades e valores descritos nesta proposta.
-                                </p>
-                                <div class="campo-assinatura-input">
-                                    <label>Nome do Signatário / Responsável:</label>
-                                    <input type="text" id="iptNomeSignatario" value="{{decisor}}" placeholder="Seu nome completo">
-                                </div>
-                                <div class="campo-assinatura-input">
-                                    <label>Cargo / Função:</label>
-                                    <input type="text" id="iptCargoSignatario" value="Diretoria / Compras" placeholder="Ex: Gerente de Manutenção, Comprador">
-                                </div>
-                            </div>
-                            <button type="button" class="btn-assinar-digital" onclick="confirmarAssinaturaDigital()">
-                                ✍️ Aceitar e Assinar Proposta
+                    <!-- Carimbo de Assinatura Concluída com Sucesso -->
+                    <div class="carimbo-sucesso-box" id="boxSucessoAssinatura" style="grid-column: 1 / -1; display:none;">
+                        <span class="carimbo-selo">✅ PROPOSTA ASSINADA DIGITALMENTE</span>
+                        <h4 style="font-size:16px;color:#15803d;margin-bottom:6px;font-weight:700;">Aceite Eletrônico & Pedido Autorizado com Sucesso!</h4>
+                        <p style="font-size:12px;color:#1e293b;" id="resumoAssinaturaConfirmada"></p>
+                        <div style="margin-top:14px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
+                            <button type="button" class="btn-tool btn-tool-sign" onclick="abrirAssinadorOficialNovaAba()" style="background:#0057a8;">
+                                📜 Ver Certificado Digital na Nova Aba
                             </button>
-                        </div>
-
-                        <!-- Carimbo de Assinatura Concluída com Sucesso -->
-                        <div class="carimbo-sucesso-box" id="boxSucessoAssinatura" style="grid-column: 1 / -1;">
-                            <span class="carimbo-selo">✅ PROPOSTA ACEITA DIGITALMENTE</span>
-                            <h4 style="font-size:15px;color:#15803d;margin-bottom:6px;">Aceite Eletrônico Concluído com Sucesso!</h4>
-                            <p style="font-size:12px;color:#1e293b;" id="resumoAssinaturaConfirmada"></p>
-                            <div style="margin-top:14px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
-                                <button type="button" class="btn-tool btn-tool-print" onclick="window.print()">
-                                    🖨️ Imprimir Comprovante Assinado
-                                </button>
-                                <a id="btnNotificarWhatsAceite" href="#" target="_blank" class="btn-tool btn-tool-whatsapp">
-                                    📲 Notificar Consultor {{vendedor_nome}} no WhatsApp
-                                </a>
-                            </div>
+                            <button type="button" class="btn-tool btn-tool-print" onclick="window.print()">
+                                🖨️ Imprimir Comprovante
+                            </button>
+                            <a id="btnNotificarWhatsAceite" href="#" target="_blank" class="btn-tool btn-tool-whatsapp">
+                                📲 Notificar Consultor {{vendedor_nome}} no WhatsApp
+                            </a>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Rodapé da Folha -->
-                <div style="margin-top:35px;border-top:1px solid #e2e8f0;padding-top:14px;display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;">
-                    <span>MiCRO Automação Industrial • Proposta {{numero_orcamento}}</span>
-                    <span>Página 1 de 1 • Gerado em {{data_hoje}}</span>
-                </div>
-            </article>
         </section>
 
         <!-- COLUNA 2: PROPAGANDAS DE PRODUTOS MiCRO & CTAs -->
@@ -2197,65 +2081,513 @@ const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
 
     </main>
 
-    <!-- SCRIPT DE INTERAÇÃO, ASSINATURA DIGITAL E ROLAGEM -->
+    <!-- SCRIPT DE PROCESSAMENTO, RENDERIZAÇÃO DO PDF ORIGINAL E ASSINATURA DIGITAL -->
     <script>
+        /*__ORCAMENTO_PDF_INJECT__*/
+
+        let orcPdfZoomAtual = 1.0;
+        let orcPdfDocInstancia = null;
+        let orcPdfCanvasesRenderizados = [];
+        let orcPdfRenderId = 0;
+        let orcPdfDataUrlAtivo = (typeof window.ORCAMENTO_PDF_DATA_URL !== 'undefined') ? window.ORCAMENTO_PDF_DATA_URL : '';
+        let orcPdfNomeAtivo = (typeof window.ORCAMENTO_PDF_NOME !== 'undefined' && window.ORCAMENTO_PDF_NOME) ? window.ORCAMENTO_PDF_NOME : '{{pdf_nome_arquivo}}';
+
+        function dataUrlParaUint8Array(dataUrl) {
+            if (!dataUrl) return new Uint8Array(0);
+            const partes = dataUrl.split(',');
+            const base64 = partes.length > 1 ? partes[1] : partes[0];
+            const raw = atob(base64.replace(/\\s/g, ''));
+            const bytes = new Uint8Array(raw.length);
+            for (let i = 0; i < raw.length; i++) {
+                bytes[i] = raw.charCodeAt(i);
+            }
+            return bytes;
+        }
+
+        function dataUrlParaBlob(dataUrl, mimePadrao = 'application/pdf') {
+            const partes = dataUrl.split(',');
+            const mimeMatch = partes[0].match(/:(.*?);/);
+            const mime = mimeMatch ? mimeMatch[1] : mimePadrao;
+            const bytes = dataUrlParaUint8Array(dataUrl);
+            return new Blob([bytes], { type: mime });
+        }
+
+        async function carregarERenderizarPdfCanvas(dataUrl) {
+            const currentRenderId = ++orcPdfRenderId;
+            const wrapper = document.getElementById('orcPdfCanvasWrapper');
+            const spinner = document.getElementById('orcPdfCarregando');
+            const iframe = document.getElementById('orcPdfIframe');
+            const infoTag = document.getElementById('orcPdfPaginaInfo');
+            const btn100 = document.getElementById('btnZoomPdf100');
+
+            orcPdfCanvasesRenderizados = [];
+
+            if (btn100) btn100.textContent = Math.round(orcPdfZoomAtual * 100) + '%';
+
+            if (!window.pdfjsLib) {
+                console.warn('pdfjsLib não disponível. Utilizando visualizador embutido.');
+                if (spinner) spinner.style.display = 'none';
+                if (wrapper) wrapper.style.display = 'none';
+                if (iframe) {
+                    iframe.src = dataUrl;
+                    iframe.style.display = 'block';
+                }
+                if (infoTag) infoTag.textContent = 'Modo Navegador';
+                return;
+            }
+
+            try {
+                if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                }
+
+                if (spinner) spinner.style.display = 'flex';
+                if (wrapper) {
+                    wrapper.innerHTML = '';
+                    wrapper.style.display = 'flex';
+                }
+                if (iframe) iframe.style.display = 'none';
+                if (infoTag) infoTag.textContent = 'Carregando documento...';
+
+                const bytes = dataUrlParaUint8Array(dataUrl);
+                const loadingTask = pdfjsLib.getDocument({ data: bytes });
+                const pdfDoc = await loadingTask.promise;
+
+                if (currentRenderId !== orcPdfRenderId) return;
+
+                orcPdfDocInstancia = pdfDoc;
+                const totalPaginas = pdfDoc.numPages;
+                if (infoTag) infoTag.textContent = '1 a ' + totalPaginas + ' de ' + totalPaginas + ' ' + (totalPaginas === 1 ? 'página' : 'páginas');
+
+                const containerWidth = (wrapper && wrapper.clientWidth > 100) ? wrapper.clientWidth : 780;
+                const targetWidthBase = Math.min(containerWidth - 24, 820);
+
+                for (let num = 1; num <= totalPaginas; num++) {
+                    if (currentRenderId !== orcPdfRenderId) return;
+
+                    const page = await pdfDoc.getPage(num);
+                    const unscaledViewport = page.getViewport({ scale: 1.0 });
+
+                    const pixelRatio = Math.min(window.devicePixelRatio || 1.5, 2.0);
+                    const baseScale = (targetWidthBase / unscaledViewport.width);
+                    const renderScale = baseScale * orcPdfZoomAtual * pixelRatio;
+                    const viewport = page.getViewport({ scale: renderScale });
+
+                    const pageWrap = document.createElement('div');
+                    pageWrap.className = 'pdf-page-wrapper';
+                    pageWrap.id = 'pdfPageWrap_' + num;
+
+                    const canvas = document.createElement('canvas');
+                    canvas.className = 'pdf-page-canvas';
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
+                    canvas.style.width = (viewport.width / pixelRatio) + 'px';
+                    canvas.style.height = (viewport.height / pixelRatio) + 'px';
+
+                    const ctx = canvas.getContext('2d', { alpha: false });
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
+
+                    pageWrap.appendChild(canvas);
+
+                    if (totalPaginas > 1) {
+                        const badge = document.createElement('span');
+                        badge.className = 'pdf-page-number-tag';
+                        badge.textContent = 'Pág. ' + num + '/' + totalPaginas;
+                        pageWrap.appendChild(badge);
+                    }
+
+                    if (wrapper) wrapper.appendChild(pageWrap);
+
+                    const renderContext = {
+                        canvasContext: ctx,
+                        viewport: viewport
+                    };
+
+                    await page.render(renderContext).promise;
+                    orcPdfCanvasesRenderizados.push(canvas);
+                }
+
+                if (spinner) spinner.style.display = 'none';
+                if (infoTag) infoTag.textContent = '1 a ' + totalPaginas + ' de ' + totalPaginas + ' ' + (totalPaginas === 1 ? 'página' : 'páginas');
+            } catch (err) {
+                console.warn('Falha na renderização de canvas via PDF.js, utilizando fallback em iframe:', err);
+                if (spinner) spinner.style.display = 'none';
+                if (wrapper) wrapper.style.display = 'none';
+                if (iframe) {
+                    iframe.src = dataUrl;
+                    iframe.style.display = 'block';
+                }
+                if (infoTag) infoTag.textContent = 'Visualizador Integrado';
+            }
+        }
+
+        function alterarZoomPdfViewer(delta) {
+            orcPdfZoomAtual = Math.max(0.4, Math.min(2.5, +(orcPdfZoomAtual + delta).toFixed(2)));
+            const btn100 = document.getElementById('btnZoomPdf100');
+            if (btn100) btn100.textContent = Math.round(orcPdfZoomAtual * 100) + '%';
+
+            if (orcPdfDataUrlAtivo) {
+                carregarERenderizarPdfCanvas(orcPdfDataUrlAtivo);
+            }
+        }
+
+        function definirZoomPdfViewer(zoom = 1.0) {
+            orcPdfZoomAtual = zoom;
+            const btn100 = document.getElementById('btnZoomPdf100');
+            if (btn100) btn100.textContent = Math.round(orcPdfZoomAtual * 100) + '%';
+
+            if (orcPdfDataUrlAtivo) {
+                carregarERenderizarPdfCanvas(orcPdfDataUrlAtivo);
+            }
+        }
+
+        function ajustarPdfAoContainer() {
+            const wrapper = document.getElementById('orcPdfCanvasWrapper');
+            if (!wrapper || !orcPdfDocInstancia) {
+                definirZoomPdfViewer(1.0);
+                return;
+            }
+            const containerWidth = wrapper.clientWidth || 760;
+            const targetWidth = Math.max(380, containerWidth - 36);
+            const zoomCalculado = +(targetWidth / 800).toFixed(2);
+            definirZoomPdfViewer(Math.max(0.5, Math.min(2.0, zoomCalculado)));
+        }
+
+        function baixarPdfOrcamentoOriginal() {
+            if (!orcPdfDataUrlAtivo) {
+                alert('Nenhum PDF disponível para download.');
+                return;
+            }
+            const blob = dataUrlParaBlob(orcPdfDataUrlAtivo);
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = orcPdfNomeAtivo || 'Proposta_Comercial_{{numero_orcamento}}_{{empresa}}.pdf';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 1000);
+        }
+
+        function abrirPdfEmNovaAbaOriginal() {
+            if (!orcPdfDataUrlAtivo) {
+                alert('Nenhum PDF disponível.');
+                return;
+            }
+            const blob = dataUrlParaBlob(orcPdfDataUrlAtivo);
+            const url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+        }
+
+        function imprimirPdfOrcamentoOriginal() {
+            if (!orcPdfCanvasesRenderizados || orcPdfCanvasesRenderizados.length === 0) {
+                window.print();
+                return;
+            }
+
+            const iframe = document.createElement('iframe');
+            iframe.style.position = 'fixed';
+            iframe.style.right = '0';
+            iframe.style.bottom = '0';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            iframe.style.border = '0';
+            document.body.appendChild(iframe);
+
+            const doc = iframe.contentWindow.document;
+            doc.open();
+            doc.write('<!DOCTYPE html><html><head><title>' + (orcPdfNomeAtivo || 'Orçamento MiCRO') + '</title>');
+            doc.write('<style>');
+            doc.write('@page { size: A4 portrait; margin: 0; }');
+            doc.write('html, body { margin: 0; padding: 0; background: #fff; }');
+            doc.write('.print-page { width: 100vw; height: auto; page-break-after: always; break-after: page; display: flex; justify-content: center; align-items: flex-start; }');
+            doc.write('.print-page img { width: 100%; height: auto; display: block; }');
+            doc.write('</style></head><body>');
+
+            orcPdfCanvasesRenderizados.forEach((c) => {
+                try {
+                    const imgUrl = c.toDataURL('image/png', 1.0);
+                    doc.write('<div class="print-page"><img src="' + imgUrl + '" /></div>');
+                } catch (e) {
+                    console.warn('Erro ao extrair imagem do canvas:', e);
+                }
+            });
+
+            doc.write('</body></html>');
+            doc.close();
+
+            setTimeout(() => {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+                setTimeout(() => {
+                    document.body.removeChild(iframe);
+                }, 3000);
+            }, 600);
+        }
+
         function rolarParaAssinatura() {
             const el = document.getElementById('secaoAssinatura');
             if (el) {
                 el.scrollIntoView({ behavior: 'smooth' });
-                const ipt = document.getElementById('iptNomeSignatario');
-                if (ipt) ipt.focus();
             }
         }
 
-        function confirmarAssinaturaDigital() {
-            const iptNome = document.getElementById('iptNomeSignatario');
-            const iptCargo = document.getElementById('iptCargoSignatario');
-            const nome = iptNome ? iptNome.value.trim() : '{{decisor}}';
-            const cargo = iptCargo ? iptCargo.value.trim() : 'Responsável Técnico / Compras';
+        function abrirAssinadorOficialNovaAba() {
+            const url = '{{link_assinador_oficial}}';
+            if (url) {
+                window.open(url, '_blank');
+            } else {
+                alert('Link oficial de autorização/assinatura não disponível.');
+            }
+        }
 
-            if (!nome) {
-                alert('Por favor, informe seu nome completo para validação da assinatura.');
-                if (iptNome) iptNome.focus();
+        function verificarCertificacaoAssinatura(eventoOuDados) {
+            const statusInicial = '{{autorizacao_status}}';
+            if (statusInicial === 'assinado' || (eventoOuDados && eventoOuDados.status === 'assinado')) {
+                aplicarVisualAssinado(eventoOuDados);
                 return;
             }
 
-            const agora = new Date();
-            const dataHoraStr = agora.toLocaleDateString('pt-BR') + ' às ' + agora.toLocaleTimeString('pt-BR');
-            const protocolo = 'PROTOCOLO-MIC-' + Math.floor(100000 + Math.random() * 900000);
+            // Verifica no localStorage se foi assinado na nova aba
+            try {
+                const raw = localStorage.getItem('feitosacrm_dados');
+                if (raw) {
+                    const db = JSON.parse(raw);
+                    const leadIdAtual = '{{lead_id}}';
+                    const tokenAtual = '{{autorizacao_token}}';
+                    const l = (db.leads || []).find(it => (leadIdAtual && it.id === leadIdAtual) || (tokenAtual && it.autorizacaoPedidoId === tokenAtual));
+                    if (l && l.autorizacaoPedidoStatus === 'assinado') {
+                        aplicarVisualAssinado(l.autorizacaoAssinatura || { nome: l.decisor });
+                        return;
+                    }
+                }
+            } catch (e) {}
 
-            // Atualiza quadro de sucesso
+            // Verifica evento recente de assinatura disparado pela aba de autorização
+            try {
+                const rawEvt = localStorage.getItem('feitosacrm_evento_assinatura');
+                if (rawEvt) {
+                    const evt = JSON.parse(rawEvt);
+                    const tokenAtual = '{{autorizacao_token}}';
+                    const leadIdAtual = '{{lead_id}}';
+                    if (evt && evt.status === 'assinado' && (evt.token === tokenAtual || evt.leadId === leadIdAtual)) {
+                        aplicarVisualAssinado(evt);
+                        return;
+                    }
+                }
+            } catch (e) {}
+        }
+
+        function aplicarVisualAssinado(dadosAssinatura) {
             const boxForm = document.getElementById('boxFormularioAssinatura');
             const boxSucesso = document.getElementById('boxSucessoAssinatura');
             const resumo = document.getElementById('resumoAssinaturaConfirmada');
             const headerPill = document.getElementById('portalHeaderStatus');
             const txtPill = document.getElementById('txtStatusPill');
-
-            if (resumo) {
-                resumo.innerHTML = 'Signatário: <strong>' + nome + '</strong> (' + cargo + ')<br>' +
-                                   'Empresa: <strong>{{empresa}}</strong> | CNPJ: {{cnpj}}<br>' +
-                                   'Data/Hora do Aceite: <strong>' + dataHoraStr + '</strong><br>' +
-                                   'Protocolo Digital Criptografado: <code>' + protocolo + '</code>';
-            }
+            const btnTopo = document.getElementById('btnTopoAssinar');
+            const txtStatusCard = document.getElementById('txtStatusAssinaturaCard');
 
             if (boxForm) boxForm.style.display = 'none';
             if (boxSucesso) boxSucesso.style.display = 'block';
 
             if (headerPill) headerPill.classList.add('aprovado');
-            if (txtPill) txtPill.textContent = 'Proposta Aceita Digitalmente';
+            if (txtPill) txtPill.textContent = 'Proposta Assinada Digitalmente';
 
-            // Configura botão do WhatsApp com aviso de proposta aceita
+            if (btnTopo) {
+                btnTopo.textContent = '✓ Proposta Assinada';
+                btnTopo.style.background = '#15803d';
+            }
+
+            if (txtStatusCard) {
+                txtStatusCard.textContent = 'Assinado digitalmente';
+                txtStatusCard.style.color = '#15803d';
+            }
+
+            const nome = (dadosAssinatura && dadosAssinatura.nome) ? dadosAssinatura.nome : '{{decisor}}';
+            const dataHora = (dadosAssinatura && (dadosAssinatura.dataHora || dadosAssinatura.data_hora))
+                ? (dadosAssinatura.dataHora || dadosAssinatura.data_hora)
+                : new Date().toLocaleString('pt-BR');
+            const hash = (dadosAssinatura && (dadosAssinatura.hash || dadosAssinatura.assinatura_hash))
+                ? (dadosAssinatura.hash || dadosAssinatura.assinatura_hash)
+                : '{{autorizacao_token}}';
+
+            const metodoEnvio = (dadosAssinatura && (dadosAssinatura.metodoEnvio || dadosAssinatura.metodo_envio))
+                ? (dadosAssinatura.metodoEnvio || dadosAssinatura.metodo_envio)
+                : ('{{metodo_envio}}' || 'Não informado');
+
+            if (resumo) {
+                resumo.innerHTML = 'Signatário Certificado: <strong>' + nome + '</strong><br>' +
+                                   'Empresa: <strong>{{empresa}}</strong> | CNPJ: {{cnpj}}<br>' +
+                                   'Método de Envio: <strong style="color:#0057a8;">' + metodoEnvio + '</strong><br>' +
+                                   'Data/Hora da Assinatura: <strong>' + dataHora + '</strong><br>' +
+                                   'Chave do Certificado Digital: <code>' + hash + '</code>';
+            }
+
             const btnWhats = document.getElementById('btnNotificarWhatsAceite');
             if (btnWhats) {
                 const msg = encodeURIComponent(
-                    'Olá, {{vendedor_nome}}! Confirmo que a proposta comercial {{numero_orcamento}} da MiCRO para a empresa {{empresa}} foi ACEITA E ASSINADA DIGITALMENTE por ' + nome + ' (' + cargo + ') sob o protocolo ' + protocolo + '.'
+                    'Olá, {{vendedor_nome}}! Confirmo que a proposta comercial {{numero_orcamento}} da MiCRO para a empresa {{empresa}} foi ASSINADA DIGITALMENTE via Assinador Oficial por ' + nome + ' (Método de Envio: ' + metodoEnvio + ') sob o certificado ' + hash + '.'
                 );
                 btnWhats.href = 'https://wa.me/{{vendedor_whatsapp_digits}}?text=' + msg;
             }
-
-            // Exibe notificação no topo se possível
-            alert('✓ Proposta Comercial {{numero_orcamento}} aceita com sucesso por ' + nome + '! O consultor {{vendedor_nome}} receberá a notificação.');
         }
+
+        // Listener de sincronização multi-abas em tempo real para certificar a assinatura
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'feitosacrm_evento_assinatura' || e.key === 'feitosacrm_dados') {
+                verificarCertificacaoAssinatura();
+            }
+        });
+
+        window.addEventListener('focus', function() {
+            verificarCertificacaoAssinatura();
+        });
+
+        setTimeout(function() {
+            verificarCertificacaoAssinatura();
+        }, 300);
+
+        setInterval(function() {
+            verificarCertificacaoAssinatura();
+        }, 2000);
+
+        // ---------- GERADOR DE DOCUMENTO OFICIAL MiCRO CASO NÃO HAJA PDF ANEXADO ----------
+        function renderizarDocumentoOficialFallback() {
+            const wrapper = document.getElementById('orcPdfCanvasWrapper');
+            const spinner = document.getElementById('orcPdfCarregando');
+            const infoTag = document.getElementById('orcPdfPaginaInfo');
+            if (spinner) spinner.style.display = 'none';
+            if (!wrapper) return;
+
+            wrapper.innerHTML = '';
+
+            const canvas = document.createElement('canvas');
+            const pixelRatio = Math.min(window.devicePixelRatio || 1.5, 2.0);
+            const a4Width = 820;
+            const a4Height = 1160;
+
+            canvas.width = a4Width * pixelRatio;
+            canvas.height = a4Height * pixelRatio;
+            canvas.style.width = a4Width + 'px';
+            canvas.style.height = a4Height + 'px';
+            canvas.className = 'pdf-page-canvas';
+
+            const ctx = canvas.getContext('2d');
+            ctx.scale(pixelRatio, pixelRatio);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, a4Width, a4Height);
+
+            ctx.fillStyle = '#0057a8';
+            ctx.fillRect(40, 36, 120, 38);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 22px "Montserrat", sans-serif';
+            ctx.fillText('MiCRO', 52, 63);
+
+            ctx.fillStyle = '#f26522';
+            ctx.fillRect(40, 78, a4Width - 80, 3);
+
+            ctx.fillStyle = '#1e293b';
+            ctx.font = 'bold 15px "Montserrat", sans-serif';
+            ctx.fillText('MICROMECANICA IND. COM. IMP. E EXP. LTDA', 175, 52);
+            ctx.font = '11px "Roboto", sans-serif';
+            ctx.fillStyle = '#475569';
+            ctx.fillText('Soluções Pneumáticas Industriais • Vinhedo / Campinas - SP • CNPJ: 50.123.456/0001-89', 175, 68);
+
+            ctx.fillStyle = '#0f172a';
+            ctx.font = 'bold 13px "Montserrat", sans-serif';
+            ctx.fillText('Orçamento: {{numero_orcamento}} - Pagina: 001', a4Width - 320, 48);
+            ctx.font = '11px "Roboto", sans-serif';
+            ctx.fillStyle = '#64748b';
+            ctx.fillText('Data Emissão: {{data_hoje}}', a4Width - 320, 64);
+            ctx.fillText('Validade da Proposta: 15 dias', a4Width - 320, 78);
+
+            ctx.fillStyle = '#f8fafc';
+            ctx.fillRect(40, 95, a4Width - 80, 80);
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(40, 95, a4Width - 80, 80);
+
+            ctx.fillStyle = '#0057a8';
+            ctx.font = 'bold 11px "Montserrat", sans-serif';
+            ctx.fillText('DESTINATÁRIO / CLIENTE', 54, 112);
+
+            ctx.fillStyle = '#1e293b';
+            ctx.font = 'bold 12px "Roboto", sans-serif';
+            ctx.fillText('Empresa: {{empresa}}', 54, 130);
+            ctx.font = '11px "Roboto", sans-serif';
+            ctx.fillStyle = '#475569';
+            ctx.fillText('CNPJ: {{cnpj}}', 54, 146);
+            ctx.fillText('Cidade / UF: {{cidade_uf}}', 54, 162);
+
+            ctx.fillText('Aos Cuidados de: {{decisor}}', a4Width / 2, 130);
+            ctx.fillText('E-mail: {{email}}', a4Width / 2, 146);
+            ctx.fillText('Telefone / WhatsApp: {{telefone}}', a4Width / 2, 162);
+
+            ctx.fillStyle = '#0057a8';
+            ctx.fillRect(40, 190, a4Width - 80, 24);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 10px "Montserrat", sans-serif';
+            ctx.fillText('ITEM', 50, 206);
+            ctx.fillText('CÓDIGO', 90, 206);
+            ctx.fillText('DESCRIÇÃO DO PRODUTO / ESPECIFICAÇÃO TÉCNICA', 180, 206);
+            ctx.fillText('QTD', 540, 206);
+            ctx.fillText('UNITÁRIO', 600, 206);
+            ctx.fillText('TOTAL COM IMPOSTOS', 690, 206);
+
+            ctx.fillStyle = '#1e293b';
+            ctx.font = '11px monospace';
+            ctx.fillText('01', 52, 235);
+            ctx.fillText('0259000144', 90, 235);
+            ctx.font = '11px "Roboto", sans-serif';
+            ctx.fillText('VÁLVULA DE SOPRO PET HIGH-FLOW 40 BAR MiCRO COMPATÍVEL', 180, 235);
+            ctx.fillText('1 UN', 542, 235);
+            ctx.fillText('{{valor_formatado}}', 596, 235);
+            ctx.font = 'bold 11px "Roboto", sans-serif';
+            ctx.fillStyle = '#0057a8';
+            ctx.fillText('{{valor_formatado}}', 700, 235);
+
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.strokeRect(40, 214, a4Width - 80, 36);
+
+            ctx.fillStyle = '#f1f5f9';
+            ctx.fillRect(40, a4Height - 160, a4Width - 80, 60);
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.strokeRect(40, a4Height - 160, a4Width - 80, 60);
+
+            ctx.fillStyle = '#475569';
+            ctx.font = 'bold 11px "Roboto", sans-serif';
+            ctx.fillText('Condição de Pagamento: 28 DDL', 54, a4Height - 140);
+            ctx.fillText('Prazo de Entrega: Pronta Entrega', 54, a4Height - 120);
+
+            ctx.fillStyle = '#1e293b';
+            ctx.font = 'bold 13px "Montserrat", sans-serif';
+            ctx.fillText('Total Geral da Proposta: {{valor_formatado}}', a4Width - 360, a4Height - 126);
+
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '10px "Roboto", sans-serif';
+            ctx.fillText('Documento Eletrônico Oficial MiCRO Automação • Emitido por: {{vendedor_nome}} ({{vendedor_email}})', 40, a4Height - 40);
+            ctx.fillText('Página 1 de 1', a4Width - 110, a4Height - 40);
+
+            const pageWrap = document.createElement('div');
+            pageWrap.className = 'pdf-page-wrapper';
+            pageWrap.appendChild(canvas);
+            wrapper.appendChild(pageWrap);
+
+            orcPdfCanvasesRenderizados = [canvas];
+            if (infoTag) infoTag.textContent = '1 a 1 de 1 página';
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            if (orcPdfDataUrlAtivo && orcPdfDataUrlAtivo.length > 50) {
+                carregarERenderizarPdfCanvas(orcPdfDataUrlAtivo);
+            } else {
+                renderizarDocumentoOficialFallback();
+            }
+        });
     </script>
 </body>
 </html>`;
@@ -2305,13 +2637,13 @@ function inicializarModelosLandingPageExemplo() {
         ];
         if (typeof salvarDados === 'function') salvarDados();
     } else {
-        // Garante que o novo modelo "Visualizador de Orçamento" exista mesmo se outros modelos já estiverem gravados
-        const existeVisualizador = modelosLandingPage.some(m => m.id === 'lp_visualizador_orcamento' || m.nome === 'Visualizador de Orçamento');
-        if (!existeVisualizador) {
+        // Garante que o modelo "Visualizador de Orçamento" exista e esteja sempre com o visualizador PDF original atualizado
+        const idxVis = modelosLandingPage.findIndex(m => m.id === 'lp_visualizador_orcamento' || m.nome === 'Visualizador de Orçamento');
+        if (idxVis === -1) {
             modelosLandingPage.push({
                 id: 'lp_visualizador_orcamento',
                 nome: 'Visualizador de Orçamento',
-                descricao: 'Portal do cliente com visualizador de proposta em anexo estilo PDF, aceite/assinatura digital, impressão A4 e vitrine lateral de produtos MiCRO.',
+                descricao: 'Portal do cliente com visualizador de proposta em anexo estilo PDF em alta fidelidade com PDF.js, aceite/assinatura digital, impressão A4 e vitrine lateral de produtos MiCRO.',
                 padrao: false,
                 html: TEMPLATE_VISUALIZADOR_ORCAMENTO,
                 css: '',
@@ -2321,6 +2653,10 @@ function inicializarModelosLandingPageExemplo() {
                 atualizadoEm: new Date().toISOString()
             });
             if (typeof salvarDados === 'function') salvarDados();
+        } else {
+            modelosLandingPage[idxVis].html = TEMPLATE_VISUALIZADOR_ORCAMENTO;
+            modelosLandingPage[idxVis].descricao = 'Portal do cliente com visualizador de proposta em anexo estilo PDF em alta fidelidade com PDF.js, aceite/assinatura digital, impressão A4 e vitrine lateral de produtos MiCRO.';
+            modelosLandingPage[idxVis].atualizadoEm = new Date().toISOString();
         }
     }
 }
@@ -2448,8 +2784,57 @@ function renderizarLandingPageJIT(modeloIdOuObjeto, lead) {
     const anoAtualStr = String(new Date().getFullYear());
     const cidadeUf = [leadData.cidade, leadData.estado].filter(Boolean).join(' - ') || 'Brasil';
 
+    // Obtenção robusta do PDF original anexo ao lead (o mesmo da aba Itens/Orçamento)
+    let pdfDataUrl = '';
+    let pdfNomeArquivo = leadData.numeroPedido ? `078311avance.pdf` : 'Proposta_Comercial_MiCRO.pdf';
+
+    if (leadData.orcamentoPdfPrincipal && leadData.orcamentoPdfPrincipal.dataUrl) {
+        pdfDataUrl = leadData.orcamentoPdfPrincipal.dataUrl;
+        if (leadData.orcamentoPdfPrincipal.nome) pdfNomeArquivo = leadData.orcamentoPdfPrincipal.nome;
+    } else if (Array.isArray(leadData.orcamentoAnexos) && leadData.orcamentoAnexos.length > 0) {
+        const anexoPdf = leadData.orcamentoAnexos.find(a => a.tipo === 'application/pdf' || (a.nome && a.nome.toLowerCase().endsWith('.pdf')));
+        if (anexoPdf && anexoPdf.dataUrl) {
+            pdfDataUrl = anexoPdf.dataUrl;
+            pdfNomeArquivo = anexoPdf.nome || pdfNomeArquivo;
+        }
+    }
+
+    // Se leadData for clone sem dataUrl, busca no array leads global
+    if (!pdfDataUrl && leadData.id && typeof leads !== 'undefined' && Array.isArray(leads)) {
+        const leadCompleto = leads.find(l => l.id === leadData.id);
+        if (leadCompleto?.orcamentoPdfPrincipal?.dataUrl) {
+            pdfDataUrl = leadCompleto.orcamentoPdfPrincipal.dataUrl;
+            if (leadCompleto.orcamentoPdfPrincipal.nome) pdfNomeArquivo = leadCompleto.orcamentoPdfPrincipal.nome;
+        } else if (Array.isArray(leadCompleto?.orcamentoAnexos)) {
+            const anexo = leadCompleto.orcamentoAnexos.find(a => a.tipo === 'application/pdf' || (a.nome && a.nome.toLowerCase().endsWith('.pdf')));
+            if (anexo?.dataUrl) {
+                pdfDataUrl = anexo.dataUrl;
+                if (anexo.nome) pdfNomeArquivo = anexo.nome;
+            }
+        }
+    }
+
+    // Se estiver no modal de itens no momento
+    if (!pdfDataUrl && typeof itensEditLeadId !== 'undefined' && itensEditLeadId === leadData.id && typeof itensEditPdfPrincipal !== 'undefined' && itensEditPdfPrincipal?.dataUrl) {
+        pdfDataUrl = itensEditPdfPrincipal.dataUrl;
+        if (itensEditPdfPrincipal.nome) pdfNomeArquivo = itensEditPdfPrincipal.nome;
+    }
+
+    // Link oficial de autorização/assinatura de pedido (o mesmo da aba Itens/Orçamento)
+    let tokenAutorizacao = leadData.autorizacaoPedidoId;
+    if (!tokenAutorizacao && leadData.id) {
+        tokenAutorizacao = 'AUT-' + String(leadData.id).slice(0, 8) + '-' + Math.abs(String(leadData.id).split('').reduce((a,b)=>(((a<<5)-a)+b.charCodeAt(0))|0,0)).toString(36).toUpperCase();
+        leadData.autorizacaoPedidoId = tokenAutorizacao;
+        if (!leadData.autorizacaoPedidoStatus) {
+            leadData.autorizacaoPedidoStatus = 'pendente';
+        }
+    }
+    const baseUrlOrigin = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : '';
+    const linkAssinadorOficial = `${baseUrlOrigin}/autorizacao.html?token=${encodeURIComponent(tokenAutorizacao || leadData.id || '')}&leadId=${encodeURIComponent(leadData.id || '')}`;
+
     // Mapa de interpolação
     const variaveis = {
+        pdf_nome_arquivo: pdfNomeArquivo,
         empresa: leadData.empresa || 'Sua Empresa',
         decisor: leadData.decisor || 'Thomaz',
         cnpj: cnpjFormatado || 'Consulte seu consultor',
@@ -2473,16 +2858,30 @@ function renderizarLandingPageJIT(modeloIdOuObjeto, lead) {
         vendedor_whatsapp_digits: vendedorWhatsappDigits,
         whatsapp_link: `https://wa.me/${vendedorWhatsappDigits}?text=${encodeURIComponent('Olá, gostaria de falar sobre a proposta comercial da MiCRO Automação.')}`,
         data_hoje: hojeStr,
-        ano_atual: anoAtualStr
+        ano_atual: anoAtualStr,
+        link_assinador_oficial: linkAssinadorOficial,
+        autorizacao_token: tokenAutorizacao || 'AUT-PENDENTE',
+        autorizacao_status: leadData.autorizacaoPedidoStatus || 'pendente',
+        autorizacao_status_label: (leadData.autorizacaoPedidoStatus === 'assinado') ? 'Assinado Digitalmente' : 'Pendente de Assinatura',
+        metodo_envio: leadData.metodoEnvio || leadData.metodo_envio || '',
+        lead_id: leadData.id || ''
     };
 
-    let htmlFinal = modelo.html || TEMPLATE_PADRAO_SOPRO_PET;
+    let htmlFinal = (modelo?.id === 'lp_visualizador_orcamento' || modeloIdOuObjeto === 'lp_visualizador_orcamento' || modelo?.nome === 'Visualizador de Orçamento')
+        ? TEMPLATE_VISUALIZADOR_ORCAMENTO
+        : (modelo.html || TEMPLATE_PADRAO_SOPRO_PET);
 
     // Substituição das variáveis em regex case-insensitive {{ variavel }}
     Object.keys(variaveis).forEach(key => {
         const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'gi');
         htmlFinal = htmlFinal.replace(regex, variaveis[key]);
     });
+
+    // Injeção do PDF original diretamente no script da página
+    if (htmlFinal.includes('/*__ORCAMENTO_PDF_INJECT__*/')) {
+        const scriptInjecao = `window.ORCAMENTO_PDF_DATA_URL = ${JSON.stringify(pdfDataUrl)};\nwindow.ORCAMENTO_PDF_NOME = ${JSON.stringify(pdfNomeArquivo)};`;
+        htmlFinal = htmlFinal.replace('/*__ORCAMENTO_PDF_INJECT__*/', scriptInjecao);
+    }
 
     // Injeção de CSS adicional se houver
     if (modelo.css && modelo.css.trim()) {
@@ -3188,13 +3587,13 @@ function copiarConviteWhatsAppLead() {
     const cnpjSenha = lead.cnpj || 'seu CNPJ';
     const msgCustom = document.getElementById('lpLeadMensagemCustomizada')?.value.trim();
 
-    let texto = `Olá, ${decisor}! Preparamos uma proposta comercial personalizada e exclusiva para a ${lead.empresa} na MiCRO Automação.\n\n🌐 Acesse seu portal seguro: ${clientUrl}\n🔐 Login: ${emailLogin}\n🔑 Senha (CNPJ): ${cnpjSenha}`;
+    let texto = `Olá, ${decisor}! Preparamos uma proposta comercial personalizada e exclusiva para a ${lead.empresa} na MiCRO Automação.\n\n🌐 Acesse sua proposta comercial: ${clientUrl}`;
 
     if (msgCustom) {
         texto += `\n\n📌 Observação do Consultor: ${msgCustom}`;
     }
 
-    texto += `\n\nQualquer dúvida sobre as especificações técnicas, fico à disposição!`;
+    texto += `\n\nVocê pode analisar as especificações e autorizar o pedido com assinatura digital no próprio link. Qualquer dúvida, estou à disposição!`;
 
     navigator.clipboard.writeText(texto).then(() => {
         showToast('Mensagem de convite copiada! Pronta para colar no WhatsApp.', 'success');
@@ -3240,7 +3639,54 @@ const abrirNovaAbaPreviewModal = abrirPreviewEmNovaAba;
 // ================================================================
 // PORTAL DO CLIENTE COM LOGIN (E-MAIL) E SENHA (CNPJ)
 // ================================================================
+// ACESSO DIRETO AO PORTAL DO CLIENTE (SEM LOGIN/SENHA)
+// ================================================================
 let leadClienteAutenticado = null;
+
+async function buscarLeadParaAcessoDireto(leadId) {
+    if (!leadId) return null;
+    if (typeof leads !== 'undefined' && Array.isArray(leads) && leads.length > 0) {
+        const l = leads.find(it => it.id === leadId);
+        if (l) return l;
+    }
+    try {
+        const raw = localStorage.getItem('feitosacrm_dados');
+        if (raw) {
+            const db = JSON.parse(raw);
+            const l = (db.leads || []).find(it => it.id === leadId);
+            if (l) return l;
+        }
+    } catch (e) {}
+
+    if (typeof supabaseClient !== 'undefined' && supabaseClient.from) {
+        try {
+            const { data } = await supabaseClient.from('leads').select('*').eq('id', leadId).limit(1);
+            if (data && data.length > 0) {
+                const r = data[0];
+                return (typeof linhaSupabaseParaLead === 'function') ? linhaSupabaseParaLead(r) : {
+                    id: r.id,
+                    empresa: r.empresa,
+                    decisor: r.decisor,
+                    email: r.email,
+                    telefone: r.telefone,
+                    cnpj: r.cnpj,
+                    cidade: r.cidade,
+                    estado: r.estado,
+                    valor: r.valor,
+                    condicoes: r.condicoes || r.card_obs || '',
+                    obsOrcamento: r.obs_orcamento || '',
+                    metodoEnvio: r.metodo_envio || '',
+                    orcamentoPdfPrincipal: r.orcamento_pdf_principal,
+                    orcamentoAnexos: r.orcamento_anexos,
+                    autorizacaoPedidoId: r.autorizacao_pedido_id,
+                    autorizacaoPedidoStatus: r.autorizacao_pedido_status,
+                    landingPageModeloId: r.landing_page_modelo_id || 'lp_visualizador_orcamento'
+                };
+            }
+        } catch (e) {}
+    }
+    return null;
+}
 
 async function verificarAcessoPortalCliente() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -3252,134 +3698,52 @@ async function verificarAcessoPortalCliente() {
         leadIdDetectado = hash.replace('#lp/', '').trim();
     }
 
-    // Verifica se já existe sessão de cliente autenticada no sessionStorage
-    const sessaoSalva = sessionStorage.getItem('crm_cliente_sessao');
-    if (sessaoSalva) {
-        try {
-            const sessao = JSON.parse(sessaoSalva);
-            if (sessao && sessao.leadId) {
-                // Aguarda leads estarem disponíveis
-                if (typeof leads !== 'undefined' && leads.length > 0) {
-                    const lead = leads.find(l => l.id === sessao.leadId);
-                    if (lead) {
-                        iniciarSessaoPortalCliente(lead, false);
-                        return true;
-                    }
-                }
-            }
-        } catch (e) {}
+    if (!leadIdDetectado) {
+        return false;
     }
 
-    if (leadIdDetectado) {
-        // Exibe a tela de login exclusiva do portal do cliente
-        exibirTelaLoginCliente(leadIdDetectado);
-        return true;
-    }
-
-    return false;
-}
-
-function exibirTelaLoginCliente(leadIdOpcional) {
+    // Quem tem o link abre a página diretamente sem login nem senha
     const crmLogin = document.getElementById('loginScreen');
     const appWrapper = document.getElementById('appWrapper');
     const portalLogin = document.getElementById('clientePortalLoginScreen');
-    const portalView = document.getElementById('clientePortalView');
-
     if (crmLogin) crmLogin.style.display = 'none';
     if (appWrapper) appWrapper.style.display = 'none';
-    if (portalView) portalView.style.display = 'none';
-    if (portalLogin) portalLogin.style.display = 'flex';
+    if (portalLogin) portalLogin.style.display = 'none';
 
-    const inputLeadId = document.getElementById('clienteLoginLeadId');
-    const infoEmpresa = document.getElementById('clienteLoginInfoEmpresa');
-    const errEl = document.getElementById('clienteLoginError');
+    let lead = await buscarLeadParaAcessoDireto(leadIdDetectado);
+    if (lead) {
+        iniciarSessaoPortalCliente(lead, true);
+        return true;
+    }
 
-    if (errEl) errEl.style.display = 'none';
-
-    if (inputLeadId) inputLeadId.value = leadIdOpcional || '';
-
-    // Se o lead for localizado, podemos cumprimentar a empresa
-    if (leadIdOpcional && typeof leads !== 'undefined' && leads.length > 0) {
-        const lead = leads.find(l => l.id === leadIdOpcional);
-        if (lead && infoEmpresa) {
-            infoEmpresa.textContent = `Área Exclusiva: ${lead.empresa}`;
-            infoEmpresa.style.display = 'block';
-            if (lead.email) {
-                const inputEmail = document.getElementById('clienteLoginEmail');
-                if (inputEmail && !inputEmail.value) inputEmail.value = lead.email;
-            }
+    // Aguarda sincronização assíncrona dos dados e abre assim que estiver pronto
+    setTimeout(async () => {
+        lead = await buscarLeadParaAcessoDireto(leadIdDetectado);
+        if (lead) {
+            iniciarSessaoPortalCliente(lead, true);
         }
+    }, 700);
+
+    return true;
+}
+
+function exibirTelaLoginCliente(leadIdOpcional) {
+    // Mantido apenas como compatibilidade caso chamado manualmente
+    if (leadIdOpcional) {
+        buscarLeadParaAcessoDireto(leadIdOpcional).then(l => {
+            if (l) iniciarSessaoPortalCliente(l, true);
+        });
     }
 }
 
 function autenticarClientePortal(event) {
     if (event) event.preventDefault();
     const inputLeadId = document.getElementById('clienteLoginLeadId')?.value.trim();
-    const inputEmail = document.getElementById('clienteLoginEmail')?.value.trim().toLowerCase();
-    const inputCnpj = document.getElementById('clienteLoginCnpj')?.value.trim();
-    const errEl = document.getElementById('clienteLoginError');
-
-    if (!inputEmail || !inputCnpj) {
-        if (errEl) {
-            errEl.textContent = 'Por favor, informe seu e-mail corporativo e o CNPJ da empresa.';
-            errEl.style.display = 'block';
-        }
-        return;
-    }
-
-    const cnpjDigitos = inputCnpj.replace(/\D/g, '');
-    const leadsLista = (typeof leads !== 'undefined' ? leads : []);
-
-    let leadEncontrado = null;
-
-    // 1. Se veio lead ID específico no link, valida contra ele
     if (inputLeadId) {
-        const leadCandidato = leadsLista.find(l => l.id === inputLeadId);
-        if (leadCandidato) {
-            const leadCnpjLimpo = (leadCandidato.cnpj || '').replace(/\D/g, '');
-            const leadEmailLimpo = (leadCandidato.email || '').trim().toLowerCase();
-
-            // Valida CNPJ (aceita se bater, ou se o lead não tiver CNPJ ainda)
-            const cnpjBate = !leadCnpjLimpo || cnpjDigitos === leadCnpjLimpo || cnpjDigitos.includes(leadCnpjLimpo) || leadCnpjLimpo.includes(cnpjDigitos);
-            const emailBate = !leadEmailLimpo || leadEmailLimpo.includes(inputEmail) || inputEmail.includes(leadEmailLimpo);
-
-            if (cnpjBate || emailBate) {
-                leadEncontrado = leadCandidato;
-            }
-        }
-    }
-
-    // 2. Se não encontrou pelo ID ou não veio ID, procura em todos os leads por CNPJ e E-mail
-    if (!leadEncontrado) {
-        leadEncontrado = leadsLista.find(l => {
-            const lCnpj = (l.cnpj || '').replace(/\D/g, '');
-            const lEmail = (l.email || '').trim().toLowerCase();
-
-            const matchCnpj = cnpjDigitos && lCnpj && (cnpjDigitos === lCnpj);
-            const matchEmail = inputEmail && lEmail && (inputEmail === lEmail || lEmail.includes(inputEmail));
-
-            return matchCnpj && matchEmail;
+        buscarLeadParaAcessoDireto(inputLeadId).then(l => {
+            if (l) iniciarSessaoPortalCliente(l, true);
         });
-
-        // 3. Fallback: procura apenas por CNPJ exato
-        if (!leadEncontrado && cnpjDigitos.length >= 8) {
-            leadEncontrado = leadsLista.find(l => {
-                const lCnpj = (l.cnpj || '').replace(/\D/g, '');
-                return lCnpj && (lCnpj === cnpjDigitos || lCnpj.slice(0, 8) === cnpjDigitos.slice(0, 8));
-            });
-        }
     }
-
-    if (!leadEncontrado) {
-        if (errEl) {
-            errEl.innerHTML = 'Credenciais não localizadas.<br><span style="font-size:12px;font-weight:400;opacity:0.9;">Verifique o e-mail e o CNPJ digitados ou contate seu consultor MiCRO: Fernando Feitosa (19) 98440-0195.</span>';
-            errEl.style.display = 'block';
-        }
-        return;
-    }
-
-    // Sucesso na autenticação!
-    iniciarSessaoPortalCliente(leadEncontrado, true);
 }
 
 function iniciarSessaoPortalCliente(lead, registrarAcesso = true) {
