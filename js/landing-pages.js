@@ -3851,6 +3851,144 @@ const copiarLinkLandingPageLead = copiarLinkAcessoLead;
 const abrirLandingPageComoCliente = visualizarLandingPageLeadComoCliente;
 const abrirNovaAbaPreviewModal = abrirPreviewEmNovaAba;
 
+// ================================================================
+// CONTROLE DA LANDING PAGE NA TELA DE ITENS / ORÇAMENTO
+// ================================================================
+function atualizarUILandingPageOrcamento(lead) {
+    const wrap = document.getElementById('orcamentoLpEnvioWrap');
+    if (!wrap) return;
+
+    if (!lead) {
+        wrap.style.display = 'none';
+        return;
+    }
+    wrap.style.display = 'block';
+
+    inicializarModelosLandingPageExemplo();
+
+    const select = document.getElementById('orcLpModeloSelect');
+    const inputUrl = document.getElementById('orcLpUrlInput');
+    const viewsEl = document.getElementById('orcLpViewsQtd');
+    const ultimoAcessoEl = document.getElementById('orcLpUltimoAcesso');
+
+    // Modelo ativo do lead ou padrão do sistema
+    const modeloPadrao = (modelosLandingPage || []).find(m => m.padrao) || (modelosLandingPage || [])[0];
+    const modeloAtualId = lead.landingPageModeloId || (modeloPadrao ? modeloPadrao.id : 'lp_visualizador_orcamento');
+
+    if (select) {
+        select.innerHTML = (modelosLandingPage || []).map(m => {
+            const isSelected = m.id === modeloAtualId;
+            return `<option value="${m.id}" ${isSelected ? 'selected' : ''}>${m.nome} ${m.padrao ? '(Padrão Admin)' : ''}</option>`;
+        }).join('');
+    }
+
+    const baseUrl = `${window.location.origin}${window.location.pathname}`;
+    const clientUrl = `${baseUrl}?lp=${lead.id}`;
+    if (inputUrl) {
+        inputUrl.value = clientUrl;
+    }
+
+    if (viewsEl) {
+        viewsEl.textContent = lead.landingPageViews || 0;
+    }
+    if (ultimoAcessoEl) {
+        ultimoAcessoEl.textContent = lead.landingPageUltimoAcesso
+            ? new Date(lead.landingPageUltimoAcesso).toLocaleString('pt-BR')
+            : 'Nunca acessou';
+    }
+}
+
+function alterarModeloLpOrcamentoAtual() {
+    const lead = (typeof leads !== 'undefined' && Array.isArray(leads) && typeof itensEditLeadId !== 'undefined')
+        ? leads.find(l => l.id === itensEditLeadId)
+        : null;
+    if (!lead) return;
+
+    const select = document.getElementById('orcLpModeloSelect');
+    if (!select) return;
+
+    lead.landingPageModeloId = select.value;
+    lead.atualizadoEm = new Date().toISOString();
+    lead._modificadoLocal = true;
+
+    if (typeof salvarCacheLocalImediato === 'function') salvarCacheLocalImediato();
+    if (typeof salvarDados === 'function') salvarDados();
+    if (typeof salvarLeadNoBanco === 'function') salvarLeadNoBanco(lead);
+
+    const modeloObj = (modelosLandingPage || []).find(m => m.id === select.value);
+    showToast(`Modelo de Landing Page do orçamento alterado para "${modeloObj ? modeloObj.nome : select.value}"!`, 'info');
+}
+
+function copiarLinkLpOrcamentoAtual() {
+    const inputUrl = document.getElementById('orcLpUrlInput');
+    const url = inputUrl?.value;
+    if (!url) return;
+
+    navigator.clipboard.writeText(url).then(() => {
+        showToast('Link da Landing Page / Visualização copiado!', 'success');
+    }).catch(() => {
+        if (inputUrl) {
+            inputUrl.select();
+            document.execCommand('copy');
+            showToast('Link da Landing Page copiado!', 'success');
+        }
+    });
+}
+
+function visualizarLpOrcamentoAtual() {
+    const lead = (typeof leads !== 'undefined' && Array.isArray(leads) && typeof itensEditLeadId !== 'undefined')
+        ? leads.find(l => l.id === itensEditLeadId)
+        : null;
+    if (!lead) return;
+
+    const select = document.getElementById('orcLpModeloSelect');
+    const modeloId = select ? select.value : (lead.landingPageModeloId || 'lp_visualizador_orcamento');
+
+    const rendered = renderizarLandingPageJIT(modeloId, lead);
+    const win = window.open('', '_blank');
+    if (win) {
+        win.document.open();
+        win.document.write(rendered);
+        win.document.close();
+    } else {
+        const blob = new Blob([rendered], { type: 'text/html;charset=utf-8' });
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
+    }
+}
+
+function enviarLpOrcamentoWhatsApp() {
+    const lead = (typeof leads !== 'undefined' && Array.isArray(leads) && typeof itensEditLeadId !== 'undefined')
+        ? leads.find(l => l.id === itensEditLeadId)
+        : null;
+    if (!lead) return;
+
+    const baseUrl = `${window.location.origin}${window.location.pathname}`;
+    const clientUrl = `${baseUrl}?lp=${lead.id}`;
+    const decisor = lead.decisor || 'Diretoria';
+    const orcNumero = lead.numeroPedido || lead.orcamentoPdfPrincipal?.dadosExtraidos?.numero || 'da sua cotação';
+
+    const texto = `Olá, ${decisor}! Preparamos a proposta comercial personalizada (${orcNumero}) para a ${lead.empresa} na MiCRO Automação.\n\n🌐 Acesse sua proposta com visualizador e aprovação digital no link:\n${clientUrl}\n\nVocê pode analisar todas as especificações técnicas e assinar digitalmente o documento diretamente no portal. Qualquer dúvida, estou à disposição!`;
+
+    // Se o lead tiver telefone ou WhatsApp cadastrado, tenta abrir direto
+    const telefone = lead.whatsapp || lead.telefone;
+    const digits = telefone ? telefone.replace(/\D/g, '') : '';
+    let waUrl = '';
+    if (digits.length >= 10) {
+        const ddi = digits.startsWith('55') ? digits : ('55' + digits);
+        waUrl = `https://wa.me/${ddi}?text=${encodeURIComponent(texto)}`;
+    } else {
+        waUrl = `https://wa.me/?text=${encodeURIComponent(texto)}`;
+    }
+
+    navigator.clipboard.writeText(texto).then(() => {
+        showToast('Texto copiado! Abrindo WhatsApp...', 'success');
+        window.open(waUrl, '_blank');
+    }).catch(() => {
+        window.open(waUrl, '_blank');
+    });
+}
+
 
 // ================================================================
 // PORTAL DO CLIENTE COM LOGIN (E-MAIL) E SENHA (CNPJ)

@@ -45,6 +45,9 @@ function abrirItens(leadId, tipo) {
     renderizarAnexosOrcamento();
     renderizarVisualizadorPdfOrcamento();
     atualizarUIAutorizacao(lead);
+    if (typeof atualizarUILandingPageOrcamento === 'function') {
+        atualizarUILandingPageOrcamento(lead);
+    }
 
     abrirModal('itensModal');
 }
@@ -1150,6 +1153,12 @@ function salvarItensOrcamento() {
     lead.orcamentoModo = 'pdf';
     lead.condicoes = condicoes;
     lead.obsOrcamento = obsOrcamento;
+
+    const selectLpModelo = document.getElementById('orcLpModeloSelect');
+    if (selectLpModelo && selectLpModelo.value) {
+        lead.landingPageModeloId = selectLpModelo.value;
+    }
+
     lead.valor = total;
     lead.atualizadoEm = new Date().toISOString();
     lead._modificadoLocal = true;

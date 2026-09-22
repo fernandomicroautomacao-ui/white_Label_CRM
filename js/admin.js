@@ -10,6 +10,7 @@ function renderizarAdmin() {
     renderizarUsuariosAdmin();
     if (typeof renderizarEmpresaAdmin === 'function') renderizarEmpresaAdmin();
     renderizarCheckpointsAdmin();
+    renderizarLandingPagePadraoAdmin();
     popularAnoMetas();
     renderizarMetasAdmin();
     popularMesMetasVendedor();
@@ -230,5 +231,93 @@ function restaurarCheckpointsPadraoAdmin() {
     }
 
     showToast('Checkpoints restaurados para o padrão (2, 5, 9 e 14 dias).', 'info');
+}
+
+// ============================================
+// CONFIGURAÇÃO DA LANDING PAGE PADRÃO (ADMIN)
+// ============================================
+function renderizarLandingPagePadraoAdmin() {
+    const select = document.getElementById('adminSelectLpPadrao');
+    if (!select) return;
+
+    if (typeof inicializarModelosLandingPageExemplo === 'function') {
+        inicializarModelosLandingPageExemplo();
+    }
+
+    const modelos = (typeof modelosLandingPage !== 'undefined' && Array.isArray(modelosLandingPage)) ? modelosLandingPage : [];
+    if (modelos.length === 0) {
+        select.innerHTML = '<option value="">Nenhum modelo cadastrado</option>';
+        return;
+    }
+
+    const modeloPadrao = modelos.find(m => m.padrao) || modelos[0];
+
+    select.innerHTML = modelos.map(m => `
+        <option value="${m.id}" ${m.id === (modeloPadrao ? modeloPadrao.id : '') ? 'selected' : ''}>
+            ${m.nome} ${m.padrao ? '★ (Padrão Atual)' : ''}
+        </option>
+    `).join('');
+
+    atualizarDescricaoLpPadraoAdmin();
+}
+
+function atualizarDescricaoLpPadraoAdmin() {
+    const select = document.getElementById('adminSelectLpPadrao');
+    const descEl = document.getElementById('adminDescricaoLpPadrao');
+    if (!select || !descEl) return;
+
+    const modeloId = select.value;
+    const modelos = (typeof modelosLandingPage !== 'undefined' && Array.isArray(modelosLandingPage)) ? modelosLandingPage : [];
+    const modelo = modelos.find(m => m.id === modeloId);
+
+    if (modelo) {
+        descEl.innerHTML = `<strong>Descrição:</strong> ${modelo.descricao || 'Sem descrição.'} &nbsp;|&nbsp; <em>Última atualização: ${modelo.atualizadoEm ? new Date(modelo.atualizadoEm).toLocaleDateString('pt-BR') : 'Original'}</em>`;
+    } else {
+        descEl.textContent = 'Selecione um modelo para ver os detalhes.';
+    }
+}
+
+function salvarModeloLandingPagePadraoAdmin(event) {
+    if (event) event.preventDefault();
+
+    const select = document.getElementById('adminSelectLpPadrao');
+    if (!select) return;
+    const modeloId = select.value;
+
+    const modelos = (typeof modelosLandingPage !== 'undefined' && Array.isArray(modelosLandingPage)) ? modelosLandingPage : [];
+    const modelo = modelos.find(m => m.id === modeloId);
+    if (!modelo) {
+        showToast('Selecione um modelo válido!', 'error');
+        return;
+    }
+
+    // Define este modelo como padrao e remove dos demais
+    modelos.forEach(m => {
+        m.padrao = (m.id === modeloId);
+    });
+
+    if (typeof salvarCacheLocalImediato === 'function') salvarCacheLocalImediato();
+    if (typeof salvarDados === 'function') salvarDados();
+
+    renderizarLandingPagePadraoAdmin();
+    if (typeof renderizarModelosLandingPage === 'function') {
+        renderizarModelosLandingPage();
+    }
+
+    showToast(`O modelo "${modelo.nome}" foi definido como a Landing Page padrão com sucesso!`, 'success');
+}
+
+function testarModeloSelecionadoAdmin() {
+    const select = document.getElementById('adminSelectLpPadrao');
+    if (!select || !select.value) {
+        showToast('Nenhum modelo selecionado para teste.', 'warning');
+        return;
+    }
+
+    if (typeof abrirPreviewLandingPage === 'function') {
+        abrirPreviewLandingPage(select.value, null);
+    } else {
+        showToast('Abrindo simulação do modelo...', 'info');
+    }
 }
 

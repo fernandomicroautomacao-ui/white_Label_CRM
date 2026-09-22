@@ -2397,6 +2397,36 @@
                 </form>
             </div>
 
+            <h3 class="admin-section-title">Landing Page Padrão do Sistema (Propostas e Orçamentos)</h3>
+            <div class="admin-card" style="width:100%; margin-bottom:24px;">
+                <div class="admin-card-header flex flex-between" style="align-items:center;">
+                    <span>Modelo de Landing Page Padrão</span>
+                    <span class="badge" style="background:#0057a8;color:#fff;font-size:11px;padding:3px 8px;border-radius:12px;">Marketing & Clientes</span>
+                </div>
+                <p class="text-sm text-muted mb-16">
+                    Selecione qual Landing Page será o modelo padrão ativo para visualização de propostas comerciais e envio aos clientes. Esta escolha define o modelo pré-selecionado na tela de <strong>Itens / Orçamento</strong> e no portal exclusivo do cliente.
+                </p>
+
+                <form id="formAdminLpPadrao" onsubmit="salvarModeloLandingPagePadraoAdmin(event)">
+                    <div class="form-row" style="grid-template-columns: 2fr 1fr auto; gap:12px; align-items:flex-end;">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label for="adminSelectLpPadrao" style="font-weight:700;font-size:13px;">Modelo de Landing Page</label>
+                            <select id="adminSelectLpPadrao" class="form-control" onchange="atualizarDescricaoLpPadraoAdmin()" style="width:100%;padding:8px 12px;border:1px solid var(--border-color);border-radius:var(--radius-sm);background:var(--bg-primary);color:var(--text-primary);"></select>
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label style="font-weight:600;font-size:12px;color:var(--text-secondary);">Ações Rápidas</label>
+                            <div style="display:flex;gap:6px;">
+                                <button type="button" class="btn btn-outline btn-sm" onclick="testarModeloSelecionadoAdmin()" style="width:100%;">👁️ Simular Modelo</button>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <button type="submit" class="btn btn-primary btn-sm" style="white-space:nowrap;">Salvar como Padrão</button>
+                        </div>
+                    </div>
+                    <div id="adminDescricaoLpPadrao" class="text-xs text-muted" style="margin-top:10px;padding:10px 12px;background:var(--bg-primary);border-radius:var(--radius-sm);border:1px solid var(--border-color);line-height:1.5;"></div>
+                </form>
+            </div>
+
             <h3 class="admin-section-title">Metas (Vendas e Orçamento)</h3>
             <div class="admin-card" style="width:100%;">
                 <div class="admin-card-header flex flex-between" style="align-items:center;">
@@ -3709,6 +3739,43 @@
                     <button type="button" class="btn btn-outline btn-sm" id="btnGerarAutorizacao" onclick="gerarAutorizacaoPedido()">Gerar link de autorização</button>
                 </div>
                 <div id="autorizacaoStatusInfo" class="text-sm text-muted mt-8"></div>
+            </div>
+
+            <!-- PAINEL: ENVIO DO LINK DA LANDING PAGE (VISUALIZAÇÃO DE ORÇAMENTO) -->
+            <div class="form-group" id="orcamentoLpEnvioWrap" style="background:var(--bg-primary);border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:14px;margin-top:14px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:18px;">🌐</span>
+                        <div>
+                            <strong style="font-size:13.5px;color:var(--text-primary);">Link da Landing Page / Portal do Cliente</strong>
+                            <div class="text-xs text-muted">Envie a proposta comercial personalizada para visualização e assinatura online pelo cliente.</div>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                        <button type="button" class="btn btn-outline btn-xs" onclick="visualizarLpOrcamentoAtual()" title="Visualizar exatamente como o cliente verá">👁️ Visualizar LP</button>
+                        <button type="button" class="btn btn-outline btn-xs" onclick="copiarLinkLpOrcamentoAtual()" title="Copiar URL direta da landing page">📋 Copiar Link</button>
+                        <button type="button" class="btn btn-success btn-xs" onclick="enviarLpOrcamentoWhatsApp()" style="font-weight:700;" title="Enviar mensagem formatada com o link pelo WhatsApp">💬 Enviar no WhatsApp</button>
+                    </div>
+                </div>
+
+                <div class="form-row" style="grid-template-columns: 1.4fr 2.6fr; gap:10px; margin-bottom:8px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label for="orcLpModeloSelect" style="font-size:12px;font-weight:600;">Modelo de Landing Page</label>
+                        <select id="orcLpModeloSelect" class="form-control" onchange="alterarModeloLpOrcamentoAtual()" style="width:100%;font-size:12px;padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-card);color:var(--text-primary);"></select>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label for="orcLpUrlInput" style="font-size:12px;font-weight:600;">Link Direto de Acesso do Cliente</label>
+                        <div class="input-with-action">
+                            <input type="text" id="orcLpUrlInput" readonly style="font-size:12px;background:var(--bg-card);color:var(--text-primary);cursor:pointer;" onclick="this.select();" title="Clique para selecionar">
+                            <button type="button" class="btn btn-outline btn-xs" onclick="copiarLinkLpOrcamentoAtual()">Copiar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="orcLpStatusInfo" class="text-xs text-muted" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-top:4px;">
+                    <span>👁️ Visualizações: <strong id="orcLpViewsQtd">0</strong></span>
+                    <span>🕒 Último acesso: <strong id="orcLpUltimoAcesso">Nunca acessou</strong></span>
+                </div>
             </div>
 
             <div class="meta-row" style="margin-top:14px;background:var(--bg-primary);padding:14px;border-radius:var(--radius-sm);">
