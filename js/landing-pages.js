@@ -1144,6 +1144,698 @@ const TEMPLATE_COMPLEMENTAR_INSTITUCIONAL = `<!DOCTYPE html>
 </html>`;
 
 // ================================================================
+// TEMPLATE: TECNOLOGIA DE VÁCUO SCHMALZ & MICRO AUTOMAÇÃO
+// ================================================================
+const TEMPLATE_SCHMALZ_MICRO_VACUO = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tecnologia em Vácuo Schmalz & MiCRO Automação | Proposta Exclusiva para {{empresa}}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --schmalz-blue: #005aa9;
+            --schmalz-dark: #0a2540;
+            --schmalz-light-blue: #0080f0;
+            --micro-orange: #f26522;
+            --schmalz-gray-bg: #f4f7fb;
+            --schmalz-card-border: #e2e8f0;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter', sans-serif; color:var(--text-dark); background:var(--schmalz-gray-bg); line-height:1.6; }
+        h1, h2, h3, h4 { font-family:'Montserrat', sans-serif; font-weight:800; }
+        
+        /* HEADER / NAVBAR */
+        .schmalz-nav {
+            background:#ffffff;
+            border-bottom:3px solid var(--schmalz-blue);
+            padding:16px 32px;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            box-shadow:0 2px 10px rgba(0,0,0,0.05);
+            position:sticky;
+            top:0;
+            z-index:100;
+        }
+        .schmalz-logos {
+            display:flex;
+            align-items:center;
+            gap:18px;
+        }
+        .brand-pill {
+            background:var(--schmalz-blue);
+            color:#fff;
+            padding:6px 14px;
+            border-radius:4px;
+            font-family:'Montserrat', sans-serif;
+            font-weight:900;
+            font-size:1.15em;
+            letter-spacing:1px;
+            display:flex;
+            align-items:center;
+            gap:6px;
+        }
+        .brand-pill.micro {
+            background:#0057a8;
+            border-left:4px solid var(--micro-orange);
+        }
+        .brand-separator {
+            color:#cbd5e1;
+            font-size:1.4em;
+            font-weight:300;
+        }
+        .nav-contact-btn {
+            background:var(--micro-orange);
+            color:#fff;
+            padding:10px 22px;
+            border-radius:6px;
+            text-decoration:none;
+            font-weight:700;
+            font-size:0.9em;
+            transition:background 0.2s, transform 0.1s;
+            display:inline-flex;
+            align-items:center;
+            gap:8px;
+        }
+        .nav-contact-btn:hover {
+            background:#d95413;
+            transform:translateY(-1px);
+        }
+
+        /* HERO SECTION */
+        .schmalz-hero {
+            background:linear-gradient(135deg, #07192f 0%, #0a2540 60%, #005aa9 100%);
+            color:#ffffff;
+            padding:80px 24px 70px;
+            position:relative;
+            overflow:hidden;
+        }
+        .schmalz-hero::after {
+            content:'';
+            position:absolute;
+            bottom:0;
+            left:0;
+            right:0;
+            height:6px;
+            background:linear-gradient(90deg, var(--schmalz-blue), var(--schmalz-light-blue), var(--micro-orange));
+        }
+        .hero-container {
+            max-width:1140px;
+            margin:0 auto;
+            display:grid;
+            grid-template-columns:1.3fr 0.9fr;
+            gap:40px;
+            align-items:center;
+        }
+        .hero-badge {
+            display:inline-flex;
+            align-items:center;
+            gap:8px;
+            background:rgba(255,255,255,0.12);
+            border:1px solid rgba(255,255,255,0.25);
+            padding:6px 14px;
+            border-radius:20px;
+            font-size:0.85em;
+            font-weight:700;
+            text-transform:uppercase;
+            letter-spacing:1px;
+            color:#bae6fd;
+            margin-bottom:20px;
+        }
+        .schmalz-hero h1 {
+            font-size:2.6em;
+            line-height:1.2;
+            margin-bottom:18px;
+            letter-spacing:-0.5px;
+        }
+        .schmalz-hero h1 span {
+            color:var(--schmalz-light-blue);
+        }
+        .schmalz-hero p {
+            font-size:1.15em;
+            line-height:1.7;
+            color:#cbd5e1;
+            margin-bottom:30px;
+        }
+        .hero-actions {
+            display:flex;
+            gap:14px;
+            flex-wrap:wrap;
+        }
+        .btn-schmalz-primary {
+            background:var(--schmalz-light-blue);
+            color:#ffffff;
+            font-weight:700;
+            padding:14px 28px;
+            border-radius:6px;
+            text-decoration:none;
+            display:inline-flex;
+            align-items:center;
+            gap:8px;
+            transition:all 0.2s;
+        }
+        .btn-schmalz-primary:hover {
+            background:#006ecc;
+            transform:translateY(-2px);
+        }
+        .btn-schmalz-whatsapp {
+            background:#25d366;
+            color:#ffffff;
+            font-weight:700;
+            padding:14px 28px;
+            border-radius:6px;
+            text-decoration:none;
+            display:inline-flex;
+            align-items:center;
+            gap:8px;
+            transition:all 0.2s;
+        }
+        .btn-schmalz-whatsapp:hover {
+            background:#1eb956;
+            transform:translateY(-2px);
+        }
+        
+        .hero-card-destaque {
+            background:rgba(255,255,255,0.08);
+            border:1px solid rgba(255,255,255,0.18);
+            border-radius:12px;
+            padding:28px;
+            backdrop-filter:blur(8px);
+        }
+        .hero-card-destaque h3 {
+            font-size:1.25em;
+            color:#fff;
+            margin-bottom:14px;
+            display:flex;
+            align-items:center;
+            gap:10px;
+        }
+        .hero-card-destaque ul {
+            list-style:none;
+            margin-bottom:20px;
+        }
+        .hero-card-destaque li {
+            padding:8px 0;
+            border-bottom:1px solid rgba(255,255,255,0.08);
+            color:#e2e8f0;
+            font-size:0.95em;
+            display:flex;
+            align-items:center;
+            gap:10px;
+        }
+        .hero-card-destaque li:last-child { border-bottom:none; }
+        
+        /* CONTAINER PRINCIPAL */
+        .container {
+            max-width:1140px;
+            margin:0 auto;
+            padding:60px 24px;
+        }
+        
+        .section-header {
+            text-align:center;
+            max-width:760px;
+            margin:0 auto 45px;
+        }
+        .section-header .tag {
+            color:var(--schmalz-blue);
+            font-weight:800;
+            text-transform:uppercase;
+            font-size:0.85em;
+            letter-spacing:1.5px;
+            margin-bottom:8px;
+            display:block;
+        }
+        .section-header h2 {
+            font-size:2.2em;
+            color:var(--schmalz-dark);
+            margin-bottom:12px;
+        }
+        .section-header p {
+            color:var(--text-muted);
+            font-size:1.05em;
+        }
+
+        /* GRID DE PRODUTOS / PILARES SCHMALZ */
+        .schmalz-grid {
+            display:grid;
+            grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));
+            gap:24px;
+            margin-bottom:50px;
+        }
+        .schmalz-card {
+            background:#ffffff;
+            border:1px solid var(--schmalz-card-border);
+            border-radius:10px;
+            padding:26px;
+            box-shadow:0 4px 15px rgba(0,0,0,0.03);
+            border-top:4px solid var(--schmalz-blue);
+            transition:transform 0.2s, box-shadow 0.2s;
+            display:flex;
+            flex-direction:column;
+        }
+        .schmalz-card:hover {
+            transform:translateY(-4px);
+            box-shadow:0 8px 24px rgba(0,90,169,0.12);
+        }
+        .card-icon {
+            font-size:2em;
+            margin-bottom:14px;
+            display:inline-block;
+        }
+        .schmalz-card h3 {
+            font-size:1.2em;
+            color:var(--schmalz-dark);
+            margin-bottom:10px;
+        }
+        .schmalz-card p {
+            color:var(--text-muted);
+            font-size:0.92em;
+            line-height:1.6;
+            margin-bottom:16px;
+            flex-grow:1;
+        }
+        .card-features {
+            font-size:0.82em;
+            color:var(--schmalz-blue);
+            font-weight:700;
+            list-style:none;
+            padding-top:10px;
+            border-top:1px dashed #e2e8f0;
+        }
+        .card-features li {
+            padding:3px 0;
+            display:flex;
+            align-items:center;
+            gap:6px;
+        }
+
+        /* CARD DE PROPOSTA PERSONALIZADA (ITENS COTADOS) */
+        .proposta-container {
+            background:#ffffff;
+            border-radius:12px;
+            border:1px solid var(--schmalz-card-border);
+            box-shadow:0 8px 30px rgba(0,0,0,0.06);
+            padding:36px;
+            margin-top:20px;
+            position:relative;
+            overflow:hidden;
+        }
+        .proposta-container::before {
+            content:'';
+            position:absolute;
+            top:0;
+            left:0;
+            right:0;
+            height:5px;
+            background:linear-gradient(90deg, var(--schmalz-blue), var(--micro-orange));
+        }
+        .proposta-meta {
+            display:flex;
+            justify-content:space-between;
+            align-items:flex-start;
+            flex-wrap:wrap;
+            gap:20px;
+            padding-bottom:24px;
+            margin-bottom:24px;
+            border-bottom:1px solid #e2e8f0;
+        }
+        .proposta-meta h3 {
+            font-size:1.6em;
+            color:var(--schmalz-dark);
+            margin-bottom:6px;
+        }
+        .proposta-meta p {
+            color:var(--text-muted);
+            font-size:0.95em;
+        }
+        .proposta-pill {
+            background:#e0f2fe;
+            color:#0369a1;
+            padding:8px 16px;
+            border-radius:20px;
+            font-weight:700;
+            font-size:0.9em;
+            border:1px solid #bae6fd;
+        }
+
+        /* TABELA DE ITENS ESTILIZADA SCHMALZ */
+        .itens-tabela-custom {
+            width:100%;
+            border-collapse:collapse;
+            margin-top:16px;
+            font-size:0.92em;
+        }
+        .itens-tabela-custom th {
+            background:#f1f5f9;
+            color:var(--schmalz-dark);
+            font-weight:700;
+            text-align:left;
+            padding:12px 14px;
+            border-bottom:2px solid var(--schmalz-blue);
+        }
+        .itens-tabela-custom td {
+            padding:12px 14px;
+            border-bottom:1px solid #e2e8f0;
+            color:#334155;
+        }
+        .itens-tabela-custom tr:hover {
+            background:#f8fafc;
+        }
+
+        /* SEÇÃO DIFERENCIAIS SCHMALZ */
+        .diferenciais-strip {
+            background:linear-gradient(135deg, #0a2540, #005aa9);
+            color:#fff;
+            padding:50px 24px;
+            border-radius:12px;
+            margin-top:50px;
+        }
+        .diferenciais-grid {
+            display:grid;
+            grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+            gap:24px;
+            margin-top:30px;
+        }
+        .diferencial-item {
+            background:rgba(255,255,255,0.07);
+            border:1px solid rgba(255,255,255,0.15);
+            border-radius:8px;
+            padding:20px;
+            text-align:center;
+        }
+        .diferencial-item .num {
+            font-size:2.2em;
+            font-weight:900;
+            color:var(--schmalz-light-blue);
+            margin-bottom:6px;
+            font-family:'Montserrat',sans-serif;
+        }
+        .diferencial-item h4 {
+            font-size:1.05em;
+            margin-bottom:6px;
+        }
+        .diferencial-item p {
+            font-size:0.85em;
+            color:#cbd5e1;
+        }
+
+        /* CTA FINAL & CONSULTOR */
+        .schmalz-cta-box {
+            background:#ffffff;
+            border:2px solid var(--schmalz-blue);
+            border-radius:12px;
+            padding:40px;
+            text-align:center;
+            margin-top:50px;
+            box-shadow:0 10px 30px rgba(0,90,169,0.08);
+        }
+        .schmalz-cta-box h2 {
+            font-size:2em;
+            color:var(--schmalz-dark);
+            margin-bottom:12px;
+        }
+        .schmalz-cta-box p {
+            font-size:1.05em;
+            color:var(--text-muted);
+            max-width:650px;
+            margin:0 auto 24px;
+        }
+        .consultor-card {
+            display:inline-flex;
+            align-items:center;
+            gap:14px;
+            background:#f8fafc;
+            border:1px solid #e2e8f0;
+            padding:12px 24px;
+            border-radius:30px;
+            margin-bottom:24px;
+        }
+        .consultor-avatar {
+            width:40px;
+            height:40px;
+            background:var(--schmalz-blue);
+            color:#fff;
+            border-radius:50%;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-weight:800;
+        }
+        .consultor-info {
+            text-align:left;
+            font-size:0.9em;
+        }
+        .consultor-info strong {
+            display:block;
+            color:var(--schmalz-dark);
+        }
+
+        /* FOOTER */
+        .schmalz-footer {
+            background:#07192f;
+            color:#94a3b8;
+            padding:40px 24px 30px;
+            margin-top:70px;
+            font-size:0.9em;
+        }
+        .footer-content {
+            max-width:1140px;
+            margin:0 auto;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            flex-wrap:wrap;
+            gap:20px;
+            border-bottom:1px solid #1e293b;
+            padding-bottom:24px;
+            margin-bottom:20px;
+        }
+        .footer-legal {
+            max-width:1140px;
+            margin:0 auto;
+            text-align:center;
+            font-size:0.8em;
+            color:#64748b;
+        }
+
+        @media (max-width: 768px) {
+            .hero-container { grid-template-columns:1fr; }
+            .schmalz-hero h1 { font-size:2em; }
+            .proposta-container { padding:20px; }
+            .schmalz-cta-box { padding:24px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <header class="schmalz-nav">
+        <div class="schmalz-logos">
+            <div class="brand-pill">SCHMALZ</div>
+            <span class="brand-separator">&amp;</span>
+            <div class="brand-pill micro">MiCRO</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+            <div style="font-size:0.85em;color:var(--text-muted);display:none;font-weight:600;" id="clientNotice">Proposta Exclusiva {{empresa}}</div>
+            <a href="https://web.whatsapp.com/send?phone={{vendedor_whatsapp_digits}}&text={{whatsapp_link}}" target="_blank" class="nav-contact-btn">
+                💬 Falar com Especialista
+            </a>
+        </div>
+    </header>
+
+    <!-- HERO SECTION -->
+    <section class="schmalz-hero">
+        <div class="hero-container">
+            <div>
+                <div class="hero-badge">⚡ Engenharia em Automação por Vácuo</div>
+                <h1>Soluções em Vácuo Schmalz &amp; MiCRO para <span>{{empresa}}</span></h1>
+                <p>Prezado(a) <strong>{{decisor}}</strong>, aumente a eficiência, a segurança de pega e a produtividade da sua linha com a líder mundial em tecnologia de vácuo Schmalz, distribuída com o suporte de engenharia especializada da MiCRO Automação.</p>
+                <div class="hero-actions">
+                    <a href="#proposta" class="btn-schmalz-primary">🔍 Visualizar Proposta Comercial</a>
+                    <a href="https://web.whatsapp.com/send?phone={{vendedor_whatsapp_digits}}&text=Ol%C3%A1%20{{vendedor_nome}}%2C%20gostaria%20de%20tirar%20d%C3%BAvidas%20sobre%20as%20solu%C3%A7%C3%B5es%20em%20V%C3%A1cuo%20Schmalz%20para%20a%20{{empresa}}." target="_blank" class="btn-schmalz-whatsapp">
+                        📱 WhatsApp {{vendedor_nome}}
+                    </a>
+                </div>
+            </div>
+
+            <div class="hero-card-destaque">
+                <h3>💎 Pilares Tecnológicos Schmalz</h3>
+                <ul>
+                    <li>🔹 <strong>Ventosas Industriais de Alta Precisão:</strong> Aplicações em embalagens, chapas metálicas, vidro, plástico e madeira.</li>
+                    <li>🔹 <strong>Geradores de Vácuo Ecoeficientes:</strong> Ejetores com silenciamento e economia de ar comprimido de até 80%.</li>
+                    <li>🔹 <strong>Garras de Vácuo de Área Extensa:</strong> Manipulação confiável de camadas completas de caixas e produtos irregulares.</li>
+                    <li>🔹 <strong>Suporte Técnico e Peças Originais:</strong> Dimensionamento assertivo com atendimento MiCRO nacional.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="container">
+
+        <!-- INTRODUÇÃO À LINHA SCHMALZ -->
+        <div class="section-header">
+            <span class="tag">Portfólio de Alta Performance</span>
+            <h2>Tecnologia Alemã de Vácuo para Máxima Disponibilidade</h2>
+            <p>Conheça os componentes dimensionados para as demandas mais exigentes de robótica, empacotamento e automação industrial.</p>
+        </div>
+
+        <div class="schmalz-grid">
+            <div class="schmalz-card">
+                <span class="card-icon">🔵</span>
+                <h3>Ventosas &amp; Elementos de Fixação</h3>
+                <p>Ampla variedade de formatos planos, fole e garras específicas para embalagens cartonadas, flow-pack, sacos e peças oleadas com vedação perfeita.</p>
+                <ul class="card-features">
+                    <li>✔ Materiais: NBR, Silicone, HT1 e Elastodur</li>
+                    <li>✔ Pega rápida sem marcas na peça</li>
+                </ul>
+            </div>
+
+            <div class="schmalz-card">
+                <span class="card-icon">⚡</span>
+                <h3>Geradores de Vácuo &amp; Ejetores</h3>
+                <p>Ejetores compactos com tecnologia multiestágio e sistemas inteligentes de economia de ar que interrompem o consumo quando o vácuo nominal é atingido.</p>
+                <ul class="card-features">
+                    <li>✔ Até 80% de redução no uso de ar</li>
+                    <li>✔ Monitoramento de pressão e IO-Link</li>
+                </ul>
+            </div>
+
+            <div class="schmalz-card">
+                <span class="card-icon">🤖</span>
+                <h3>Sistemas de Garras de Vácuo (FXP/FMC)</h3>
+                <p>Sistemas modulares para paletização e manuseio automático de caixas, peças deformadas ou com furações, mesmo com cobertura parcial da garra.</p>
+                <ul class="card-features">
+                    <li>✔ Válvulas de retenção inteligentes</li>
+                    <li>✔ Integração com robôs industriais e cobots</li>
+                </ul>
+            </div>
+
+            <div class="schmalz-card">
+                <span class="card-icon">🎛️</span>
+                <h3>Válvulas, Sensores &amp; Filtros</h3>
+                <p>Segurança operacional com filtros de vácuo de alta vazão, válvulas de alívio rápido e sensores digitais para feedback instantâneo ao CLP da linha.</p>
+                <ul class="card-features">
+                    <li>✔ Proteção total contra particulados</li>
+                    <li>✔ Display digital com programação simples</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- SEÇÃO PERSONALIZADA: ITENS DA PROPOSTA / OPORTUNIDADE (RENDERIZADA JUST-IN-TIME) -->
+        <section class="proposta-container" id="proposta">
+            <div class="proposta-meta">
+                <div>
+                    <h3>Proposta Comercial Exclusiva — {{empresa}}</h3>
+                    <p>Cotação Nº: <strong>{{numero_orcamento}}</strong> &nbsp;|&nbsp; Emitida para: <strong>{{decisor}}</strong> &nbsp;|&nbsp; CNPJ: <strong>{{cnpj}}</strong></p>
+                    <p style="margin-top:4px;color:#005aa9;">Localização do Cliente: <strong>{{cidade_uf}}</strong> &nbsp;|&nbsp; Data: <strong>{{data_hoje}}</strong></p>
+                </div>
+                <div class="proposta-pill">
+                    Valor Total: {{valor_formatado}}
+                </div>
+            </div>
+
+            <div>
+                <h4 style="font-size:1.15em;color:var(--schmalz-dark);margin-bottom:12px;">Especificação Técnica dos Itens Cotados</h4>
+                {{itens_tabela}}
+            </div>
+
+            <!-- OPÇÃO DE ASSINATURA / ACEITE DIGITAL -->
+            <div style="margin-top:24px;padding:20px;background:#f8fafc;border-radius:8px;border:1px dashed var(--schmalz-blue);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
+                <div>
+                    <strong style="color:var(--schmalz-dark);font-size:1.05em;display:block;">Assinatura Digital &amp; Aprovação da Proposta</strong>
+                    <span style="font-size:0.9em;color:var(--text-muted);">Confirme os termos técnicos e libere a emissão do pedido de forma ágil e segura.</span>
+                </div>
+                <div style="display:flex;gap:10px;">
+                    <a href="{{link_assinador_oficial}}" class="btn-schmalz-primary" style="background:#005aa9;">
+                        ✍️ Assinar Proposta Online
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- NÚMEROS E DIFERENCIAIS -->
+        <section class="diferenciais-strip">
+            <div style="text-align:center;">
+                <h2 style="font-size:1.9em;margin-bottom:8px;">Por que escolher Schmalz com a MiCRO Automação?</h2>
+                <p style="color:#cbd5e1;max-width:700px;margin:0 auto;">A união da referência alemã em vácuo com o know-how de engenharia de campo e estoque da MiCRO no Brasil.</p>
+            </div>
+            <div class="diferenciais-grid">
+                <div class="diferencial-item">
+                    <div class="num">+110</div>
+                    <h4>Anos de Inovação</h4>
+                    <p>Pioneirismo em sistemas inteligentes de manipulação por vácuo.</p>
+                </div>
+                <div class="diferencial-item">
+                    <div class="num">80%</div>
+                    <h4>Economia Energética</h4>
+                    <p>Ejetores com tecnologia Eco-Nozzle para reduzir drasticamente seu consumo de ar.</p>
+                </div>
+                <div class="diferencial-item">
+                    <div class="num">100%</div>
+                    <h4>Engenharia Dedicada</h4>
+                    <p>Dimensionamento preciso para sua aplicação específica por consultores MiCRO.</p>
+                </div>
+                <div class="diferencial-item">
+                    <div class="num">Ágil</div>
+                    <h4>Suporte e Reposição</h4>
+                    <p>Peças originais e pronta entrega nos principais polos industriais do país.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA & CONTATO DIRETO -->
+        <section class="schmalz-cta-box">
+            <h2>Pronto para otimizar sua linha com a tecnologia Schmalz?</h2>
+            <p>Seu consultor de engenharia e vendas técnicas está à disposição para validação de testes práticos, suporte de catálogo e negociação de prazos.</p>
+            
+            <div class="consultor-card">
+                <div class="consultor-avatar">M</div>
+                <div class="consultor-info">
+                    <strong>{{vendedor_nome}}</strong>
+                    <span>Especialista Comercial MiCRO | {{vendedor_telefone}} | {{vendedor_email}}</span>
+                </div>
+            </div>
+
+            <div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap;">
+                <a href="https://web.whatsapp.com/send?phone={{vendedor_whatsapp_digits}}&text=Ol%C3%A1%20{{vendedor_nome}}%2C%20recebi%20a%20proposta%20Schmalz%20para%20a%20{{empresa}}%20e%20gostaria%20de%20conversar." target="_blank" class="btn-schmalz-whatsapp" style="font-size:1.05em;padding:16px 36px;">
+                    📱 Iniciar Conversa no WhatsApp
+                </a>
+                <a href="mailto:{{vendedor_email}}?subject=D%C3%BAvidas%20sobre%20Proposta%20Schmalz%20-%20{{empresa}}" class="btn-schmalz-primary" style="background:var(--schmalz-dark);font-size:1.05em;padding:16px 36px;">
+                    ✉️ Enviar Mensagem por E-mail
+                </a>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="schmalz-footer">
+        <div class="footer-content">
+            <div class="schmalz-logos">
+                <div class="brand-pill" style="font-size:1em;">SCHMALZ</div>
+                <span class="brand-separator">&amp;</span>
+                <div class="brand-pill micro" style="font-size:1em;">MiCRO</div>
+            </div>
+            <div>
+                <span>Portal de Propostas Comerciais Schmalz &amp; MiCRO Automação</span>
+            </div>
+        </div>
+        <div class="footer-legal">
+            <p>© {{ano_atual}} MiCRO Automação &amp; Schmalz do Brasil. Todos os direitos reservados. Proposta técnica e comercial exclusiva para {{empresa}} (CNPJ: {{cnpj}}). Proibida a reprodução sem autorização prévia.</p>
+        </div>
+    </footer>
+
+</body>
+</html>`;
+
+
+// ================================================================
 // TEMPLATE: VISUALIZADOR DE ORÇAMENTO COM ASSINATURA DIGITAL & PORTAL DO CLIENTE
 // ================================================================
 const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
@@ -2610,7 +3302,10 @@ function modeloLPParaSupabase(m) {
         logo_img: m.logoImg || '',
         cor_primaria: m.corPrimaria || '#0057a8',
         imagens: m.imagens || [],
-        usuario_id: m.usuarioId || null
+        usuario_id: m.usuarioId || null,
+        tipo: m.tipo || 'integrado',
+        url_externa: m.urlExterna || '',
+        variaveis_flags: m.variaveisFlags || []
     };
 }
 
@@ -2628,6 +3323,9 @@ function linhaSupabaseParaModeloLP(r) {
         corPrimaria: r.cor_primaria || '#0057a8',
         imagens: r.imagens || [],
         usuarioId: r.usuario_id || null,
+        tipo: r.tipo || (r.url_externa ? 'externo' : 'integrado'),
+        urlExterna: r.url_externa || '',
+        variaveisFlags: r.variaveis_flags || ['empresa', 'decisor', 'cnpj', 'valor', 'itens_tabela'],
         criadoEm: r.created_at || new Date().toISOString(),
         atualizadoEm: r.updated_at || new Date().toISOString()
     };
@@ -2798,6 +3496,18 @@ function inicializarModelosLandingPageExemplo() {
                 imagens: [],
                 criadoEm: new Date().toISOString(),
                 atualizadoEm: new Date().toISOString()
+            },
+            {
+                id: 'lp_schmalz_micro_vacuo',
+                nome: 'Schmalz & MiCRO - Tecnologia em Vácuo & Garras',
+                descricao: 'Portal especializado em automação por vácuo Schmalz (ventosas, ejetores ecoeficientes, garras FXP/FMC, robótica e proposta personalizada).',
+                padrao: false,
+                html: TEMPLATE_SCHMALZ_MICRO_VACUO,
+                css: '',
+                js: '',
+                imagens: [],
+                criadoEm: new Date().toISOString(),
+                atualizadoEm: new Date().toISOString()
             }
         ];
         if (typeof salvarDados === 'function') salvarDados();
@@ -2826,6 +3536,40 @@ function inicializarModelosLandingPageExemplo() {
             modelosLandingPage[idxVis].atualizadoEm = new Date().toISOString();
             sincronizarModeloLandingPageNoBanco(modelosLandingPage[idxVis]);
         }
+
+        // Garante que o modelo Schmalz & MiCRO Vácuo exista no array
+        const idxSchmalz = modelosLandingPage.findIndex(m => m.id === 'lp_schmalz_micro_vacuo' || m.nome?.includes('Schmalz'));
+        const urlSchmalzExterna = 'https://schmalz-micro-vacuo.fernandomicroautomac.chatgpt.site/';
+        const flagsPadrao = ['empresa', 'decisor', 'cnpj', 'valor', 'itens_tabela', 'email', 'telefone', 'cidade_uf', 'numero_orcamento', 'vendedor_nome', 'vendedor_whatsapp'];
+
+        if (idxSchmalz === -1) {
+            modelosLandingPage.push({
+                id: 'lp_schmalz_micro_vacuo',
+                nome: 'Schmalz & MiCRO - Tecnologia em Vácuo & Garras (Site Externo)',
+                descricao: 'Template externo de alta velocidade com passagem de flags de variáveis personalizadas (empresa, decisor, cnpj, valor, itens_tabela, etc).',
+                padrao: false,
+                tipo: 'externo',
+                urlExterna: urlSchmalzExterna,
+                variaveisFlags: flagsPadrao,
+                html: TEMPLATE_SCHMALZ_MICRO_VACUO,
+                css: '',
+                js: '',
+                imagens: [],
+                criadoEm: new Date().toISOString(),
+                atualizadoEm: new Date().toISOString()
+            });
+            if (typeof salvarDados === 'function') salvarDados();
+            sincronizarModeloLandingPageNoBanco(modelosLandingPage[modelosLandingPage.length - 1]);
+        } else {
+            // Se já existia, garante o vínculo com o template externo oficial solicitado pelo usuário
+            if (!modelosLandingPage[idxSchmalz].urlExterna) {
+                modelosLandingPage[idxSchmalz].urlExterna = urlSchmalzExterna;
+                modelosLandingPage[idxSchmalz].tipo = 'externo';
+                modelosLandingPage[idxSchmalz].variaveisFlags = flagsPadrao;
+                modelosLandingPage[idxSchmalz].atualizadoEm = new Date().toISOString();
+                sincronizarModeloLandingPageNoBanco(modelosLandingPage[idxSchmalz]);
+            }
+        }
     }
     // Puxa do banco só na primeira vez (evita loop: esta função roda toda
     // vez que o painel é (re)renderizado, mas o fetch do banco só precisa
@@ -2836,27 +3580,10 @@ function inicializarModelosLandingPageExemplo() {
 }
 
 // ================================================================
-// RENDERIZAÇÃO SOB DEMANDA (JUST-IN-TIME - ZERO DESPERDÍCIO DE MEMÓRIA)
+// MONTAGEM DE VARIÁVEIS DO LEAD (COMPARTILHADA POR MODELOS INTEGRADOS E EXTERNOS)
 // ================================================================
-function renderizarLandingPageJIT(modeloIdOuObjeto, lead) {
-    let modelo = null;
-    if (typeof modeloIdOuObjeto === 'object' && modeloIdOuObjeto !== null) {
-        modelo = modeloIdOuObjeto;
-    } else if (typeof modeloIdOuObjeto === 'string') {
-        modelo = (modelosLandingPage || []).find(m => m.id === modeloIdOuObjeto);
-    }
-
-    if (!modelo) {
-        modelo = (modelosLandingPage || []).find(m => m.padrao) || (modelosLandingPage || [])[0];
-    }
-
-    if (!modelo) {
-        inicializarModelosLandingPageExemplo();
-        modelo = modelosLandingPage[0];
-    }
-
-    // Lead de fallback se for simulação sem lead específico
-    const leadData = lead || {
+function extrairDadosLeadParaVariaveis(lead) {
+    return lead || {
         id: 'exemplo',
         empresa: 'Vemaplastic Indústria e Comércio',
         decisor: 'Thomaz',
@@ -2874,6 +3601,10 @@ function renderizarLandingPageJIT(modeloIdOuObjeto, lead) {
             { descricao: 'Bloco de Distribuição Pneumático Despressurização Rápida', quantidade: 2, preco: 5100 }
         ]
     };
+}
+
+function montarMapaVariaveisLead(lead) {
+    const leadData = extrairDadosLeadParaVariaveis(lead);
 
     // Vendedor responsável
     let vendedor = (typeof usuarios !== 'undefined' && Array.isArray(usuarios))
@@ -2958,7 +3689,7 @@ function renderizarLandingPageJIT(modeloIdOuObjeto, lead) {
     const anoAtualStr = String(new Date().getFullYear());
     const cidadeUf = [leadData.cidade, leadData.estado].filter(Boolean).join(' - ') || 'Brasil';
 
-    // Obtenção robusta do PDF original anexo ao lead (o mesmo da aba Itens/Orçamento)
+    // Obtenção do PDF
     let pdfDataUrl = '';
     let pdfNomeArquivo = leadData.numeroPedido ? `078311avance.pdf` : 'Proposta_Comercial_MiCRO.pdf';
 
@@ -2973,7 +3704,6 @@ function renderizarLandingPageJIT(modeloIdOuObjeto, lead) {
         }
     }
 
-    // Se leadData for clone sem dataUrl, busca no array leads global
     if (!pdfDataUrl && leadData.id && typeof leads !== 'undefined' && Array.isArray(leads)) {
         const leadCompleto = leads.find(l => l.id === leadData.id);
         if (leadCompleto?.orcamentoPdfPrincipal?.dataUrl) {
@@ -2988,13 +3718,12 @@ function renderizarLandingPageJIT(modeloIdOuObjeto, lead) {
         }
     }
 
-    // Se estiver no modal de itens no momento
     if (!pdfDataUrl && typeof itensEditLeadId !== 'undefined' && itensEditLeadId === leadData.id && typeof itensEditPdfPrincipal !== 'undefined' && itensEditPdfPrincipal?.dataUrl) {
         pdfDataUrl = itensEditPdfPrincipal.dataUrl;
         if (itensEditPdfPrincipal.nome) pdfNomeArquivo = itensEditPdfPrincipal.nome;
     }
 
-    // Link oficial de autorização/assinatura de pedido (o mesmo da aba Itens/Orçamento)
+    // Link oficial de autorização/assinatura de pedido
     let tokenAutorizacao = leadData.autorizacaoPedidoId;
     if (!tokenAutorizacao && leadData.id) {
         tokenAutorizacao = 'AUT-' + String(leadData.id).slice(0, 8) + '-' + Math.abs(String(leadData.id).split('').reduce((a,b)=>(((a<<5)-a)+b.charCodeAt(0))|0,0)).toString(36).toUpperCase();
@@ -3006,9 +3735,9 @@ function renderizarLandingPageJIT(modeloIdOuObjeto, lead) {
     const baseUrlOrigin = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : '';
     const linkAssinadorOficial = `${baseUrlOrigin}/autorizacao.html?token=${encodeURIComponent(tokenAutorizacao || leadData.id || '')}&leadId=${encodeURIComponent(leadData.id || '')}`;
 
-    // Mapa de interpolação
-    const variaveis = {
+    return {
         pdf_nome_arquivo: pdfNomeArquivo,
+        pdf_data_url: pdfDataUrl,
         empresa: leadData.empresa || 'Sua Empresa',
         decisor: leadData.decisor || 'Thomaz',
         cnpj: cnpjFormatado || 'Consulte seu consultor',
@@ -3040,10 +3769,110 @@ function renderizarLandingPageJIT(modeloIdOuObjeto, lead) {
         metodo_envio: leadData.metodoEnvio || leadData.metodo_envio || '',
         lead_id: leadData.id || ''
     };
+}
 
-    let htmlFinal = (modelo?.id === 'lp_visualizador_orcamento' || modeloIdOuObjeto === 'lp_visualizador_orcamento' || modelo?.nome === 'Visualizador de Orçamento')
-        ? TEMPLATE_VISUALIZADOR_ORCAMENTO
-        : (modelo.html || TEMPLATE_PADRAO_SOPRO_PET);
+// ================================================================
+// MONTAGEM DE URL EXTERNA PERSONALIZADA COM FLAGS DE VARIÁVEIS
+// ================================================================
+function montarUrlExternaComVariaveis(urlBase, flagsArray, lead) {
+    if (!urlBase) return '';
+    let urlLimpa = urlBase.trim();
+    if (!urlLimpa.startsWith('http://') && !urlLimpa.startsWith('https://')) {
+        urlLimpa = 'https://' + urlLimpa;
+    }
+
+    const mapa = montarMapaVariaveisLead(lead);
+    const flags = (Array.isArray(flagsArray) && flagsArray.length > 0)
+        ? flagsArray
+        : ['empresa', 'decisor', 'cnpj', 'valor', 'itens_tabela'];
+
+    try {
+        const urlObj = new URL(urlLimpa);
+        flags.forEach(flag => {
+            const chave = flag.trim();
+            if (chave && mapa[chave] !== undefined) {
+                urlObj.searchParams.set(chave, String(mapa[chave]));
+            }
+        });
+        return urlObj.toString();
+    } catch (e) {
+        // Fallback se URL for relativa ou tiver sintaxe não padrão
+        const separador = urlLimpa.includes('?') ? '&' : '?';
+        const params = flags
+            .filter(f => mapa[f] !== undefined)
+            .map(f => `${encodeURIComponent(f)}=${encodeURIComponent(mapa[f])}`)
+            .join('&');
+        return `${urlLimpa}${separador}${params}`;
+    }
+}
+
+// ================================================================
+// RENDERIZAÇÃO SOB DEMANDA (JUST-IN-TIME - ZERO DESPERDÍCIO DE MEMÓRIA)
+// ================================================================
+function renderizarLandingPageJIT(modeloIdOuObjeto, lead) {
+    let modelo = null;
+    if (typeof modeloIdOuObjeto === 'object' && modeloIdOuObjeto !== null) {
+        modelo = modeloIdOuObjeto;
+    } else if (typeof modeloIdOuObjeto === 'string') {
+        modelo = (modelosLandingPage || []).find(m => m.id === modeloIdOuObjeto);
+    }
+
+    if (!modelo) {
+        modelo = (modelosLandingPage || []).find(m => m.padrao) || (modelosLandingPage || [])[0];
+    }
+
+    if (!modelo) {
+        inicializarModelosLandingPageExemplo();
+        modelo = modelosLandingPage[0];
+    }
+
+    const leadData = extrairDadosLeadParaVariaveis(lead);
+    const variaveis = montarMapaVariaveisLead(leadData);
+
+    // SE FOR MODELO DE LINK EXTERNO (MOLDE DE ECONOMIA DE ESPAÇO)
+    if (modelo.tipo === 'externo' || modelo.urlExterna) {
+        const urlDestino = montarUrlExternaComVariaveis(modelo.urlExterna, modelo.variaveisFlags, leadData);
+        return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${modelo.nome || 'Proposta Comercial'} - ${variaveis.empresa}</title>
+    <style>
+        * { box-sizing: border-box; margin:0; padding:0; }
+        html, body { width:100%; height:100%; overflow:hidden; background:#0f172a; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+        .lp-ext-bar { height:46px; background:#1e293b; border-bottom:2px solid #0057a8; display:flex; align-items:center; justify-content:space-between; padding:0 16px; color:#fff; font-size:12.5px; }
+        .lp-ext-bar a { color:#38bdf8; text-decoration:none; font-weight:600; }
+        .lp-ext-iframe { width:100%; height:calc(100% - 46px); border:none; background:#ffffff; }
+    </style>
+</head>
+<body>
+    <div class="lp-ext-bar">
+        <div>
+            <span>Proposta Exclusiva: <strong>${variaveis.empresa}</strong></span>
+            <span style="opacity:0.6;margin-left:8px;">(${variaveis.decisor})</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+            <span style="color:#22c55e;font-weight:700;">${variaveis.valor}</span>
+            <a href="${urlDestino}" target="_blank" title="Abrir landing page original em tela cheia">Abrir em Nova Aba ↗</a>
+        </div>
+    </div>
+    <iframe class="lp-ext-iframe" src="${urlDestino}" allow="camera; microphone; geolocation; clipboard-write;" sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-top-navigation-by-user-activation"></iframe>
+</body>
+</html>`;
+    }
+
+    // SE FOR MODELO DE CÓDIGO HTML INTEGRADO
+    let htmlFinal = TEMPLATE_PADRAO_SOPRO_PET;
+    if (modelo?.id === 'lp_visualizador_orcamento' || modeloIdOuObjeto === 'lp_visualizador_orcamento' || modelo?.nome === 'Visualizador de Orçamento') {
+        htmlFinal = TEMPLATE_VISUALIZADOR_ORCAMENTO;
+    } else if (modelo?.id === 'lp_schmalz_micro_vacuo' || modeloIdOuObjeto === 'lp_schmalz_micro_vacuo' || modelo?.nome?.includes('Schmalz')) {
+        htmlFinal = modelo?.html || TEMPLATE_SCHMALZ_MICRO_VACUO;
+    } else if (modelo?.id === 'lp_institucional_completa' || modeloIdOuObjeto === 'lp_institucional_completa') {
+        htmlFinal = modelo?.html || TEMPLATE_COMPLEMENTAR_INSTITUCIONAL;
+    } else if (modelo && modelo.html) {
+        htmlFinal = modelo.html;
+    }
 
     // Substituição das variáveis em regex case-insensitive {{ variavel }}
     Object.keys(variaveis).forEach(key => {
@@ -3053,7 +3882,7 @@ function renderizarLandingPageJIT(modeloIdOuObjeto, lead) {
 
     // Injeção do PDF original diretamente no script da página
     if (htmlFinal.includes('/*__ORCAMENTO_PDF_INJECT__*/')) {
-        const scriptInjecao = `window.ORCAMENTO_PDF_DATA_URL = ${JSON.stringify(pdfDataUrl)};\nwindow.ORCAMENTO_PDF_NOME = ${JSON.stringify(pdfNomeArquivo)};`;
+        const scriptInjecao = `window.ORCAMENTO_PDF_DATA_URL = ${JSON.stringify(variaveis.pdf_data_url)};\nwindow.ORCAMENTO_PDF_NOME = ${JSON.stringify(variaveis.pdf_nome_arquivo)};`;
         htmlFinal = htmlFinal.replace('/*__ORCAMENTO_PDF_INJECT__*/', scriptInjecao);
     }
 
@@ -3135,15 +3964,19 @@ function renderizarPainelLandingPagesMarketing() {
                 <div>
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
                         <h4 style="font-size:15px;font-weight:700;margin:0;color:var(--text-primary);display:flex;align-items:center;gap:6px;">
-                            <span>🌐</span> ${m.nome}
+                            <span>${m.tipo === 'externo' || m.urlExterna ? '🔗' : '🌐'}</span> ${m.nome}
                         </h4>
-                        ${m.padrao ? `<span class="badge" style="background:var(--success, #16a34a);color:#fff;font-size:10px;padding:2px 8px;border-radius:12px;font-weight:700;">★ PADRÃO</span>` : ''}
+                        <div style="display:flex;gap:4px;align-items:center;">
+                            ${m.tipo === 'externo' || m.urlExterna ? `<span class="badge" style="background:#0284c7;color:#fff;font-size:10px;padding:2px 8px;border-radius:12px;font-weight:700;" title="Link externo com flags de variáveis">🔗 Link Externo</span>` : `<span class="badge" style="background:#64748b;color:#fff;font-size:10px;padding:2px 8px;border-radius:12px;font-weight:600;">💻 HTML</span>`}
+                            ${m.padrao ? `<span class="badge" style="background:var(--success, #16a34a);color:#fff;font-size:10px;padding:2px 8px;border-radius:12px;font-weight:700;">★ PADRÃO</span>` : ''}
+                        </div>
                     </div>
                     <p class="text-xs text-muted" style="margin:8px 0 0;line-height:1.5;">${m.descricao || 'Sem descrição informada.'}</p>
+                    ${(m.tipo === 'externo' || m.urlExterna) && m.urlExterna ? `<div style="margin-top:6px;font-size:11px;color:#0284c7;font-family:monospace;word-break:break-all;">URL Base: ${m.urlExterna}</div>` : ''}
                 </div>
                 <div style="border-top:1px solid var(--border-color, #eee);padding-top:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
                     <div class="text-xs text-muted">
-                        Renderização JIT sob demanda
+                        ${m.tipo === 'externo' || m.urlExterna ? '🔗 Redirecionamento / Iframe JIT com Flags' : '⚡ Renderização JIT sob demanda'}
                     </div>
                     <div style="display:flex;gap:6px;flex-wrap:wrap;">
                         <button class="btn btn-outline btn-xs" onclick="abrirPreviewLandingPage('${m.id}')" title="Testar e visualizar com lead">👁️ Simular</button>
@@ -3166,6 +3999,99 @@ let lpAbaEditorAtual = 'html';
 let lpModoVisualizacaoEditor = 'split'; // 'split', 'codigo', 'preview'
 let lpDebouncePreviewTimer = null;
 
+function alternarTipoModeloLandingPage(tipo) {
+    const radioExterno = document.getElementById('lpTipoLinkExterno');
+    const radioIntegrado = document.getElementById('lpTipoHtmlIntegrado');
+    const boxExterno = document.getElementById('lpBoxConfigLinkExterno');
+    const boxIntegrado = document.getElementById('lpBoxCodigoIntegrado');
+
+    const tipoFinal = tipo || (radioExterno && radioExterno.checked ? 'externo' : 'integrado');
+
+    if (tipoFinal === 'externo') {
+        if (radioExterno) radioExterno.checked = true;
+        if (boxExterno) boxExterno.style.display = 'flex';
+        if (boxIntegrado) boxIntegrado.style.display = 'none';
+    } else {
+        if (radioIntegrado) radioIntegrado.checked = true;
+        if (boxExterno) boxExterno.style.display = 'none';
+        if (boxIntegrado) boxIntegrado.style.display = 'flex';
+    }
+
+    atualizarPreviewUrlExternaMontada();
+    atualizarLivePreviewEditorLP();
+}
+
+function aplicarUrlExternaPredefinida(url, nomeSugerido) {
+    const inputUrl = document.getElementById('lpEditorUrlExterna');
+    const inputNome = document.getElementById('lpEditorNome');
+    const inputDesc = document.getElementById('lpEditorDescricao');
+    const radioExterno = document.getElementById('lpTipoLinkExterno');
+
+    if (radioExterno) {
+        radioExterno.checked = true;
+        alternarTipoModeloLandingPage('externo');
+    }
+    if (inputUrl) {
+        inputUrl.value = url;
+    }
+    if (inputNome && (!inputNome.value || inputNome.value.trim() === '')) {
+        inputNome.value = nomeSugerido || 'Schmalz & MiCRO - Tecnologia em Vácuo & Garras (Site Externo)';
+    }
+    if (inputDesc && (!inputDesc.value || inputDesc.value.trim() === '')) {
+        inputDesc.value = 'Template externo de alta velocidade com leitura das flags personalizáveis do cliente em tempo real.';
+    }
+
+    marcarTodasVariaveisExternas(true);
+    atualizarPreviewUrlExternaMontada();
+    atualizarLivePreviewEditorLP();
+    showToast('Template externo Schmalz preenchido no editor!', 'info');
+}
+
+function marcarTodasVariaveisExternas(marcar = true) {
+    const checks = document.querySelectorAll('.lp-flag-var');
+    checks.forEach(c => c.checked = marcar);
+    atualizarPreviewUrlExternaMontada();
+    atualizarLivePreviewEditorLP();
+}
+
+function obterFlagsVariaveisSelecionadas() {
+    const checks = document.querySelectorAll('.lp-flag-var');
+    const flags = [];
+    checks.forEach(c => {
+        if (c.checked && c.dataset.var) {
+            flags.push(c.dataset.var);
+        }
+    });
+    return flags;
+}
+
+function definirFlagsVariaveisSelecionadas(flagsArray) {
+    const flags = Array.isArray(flagsArray) && flagsArray.length > 0
+        ? flagsArray
+        : ['empresa', 'decisor', 'cnpj', 'valor', 'itens_tabela'];
+    const checks = document.querySelectorAll('.lp-flag-var');
+    checks.forEach(c => {
+        c.checked = flags.includes(c.dataset.var);
+    });
+}
+
+function atualizarPreviewUrlExternaMontada() {
+    const inputUrl = document.getElementById('lpEditorUrlExterna');
+    const elExemplo = document.getElementById('lpExemploUrlExternaMontada');
+    if (!elExemplo) return;
+
+    const urlBase = (inputUrl && inputUrl.value.trim()) ? inputUrl.value.trim() : 'https://seu-template.site/';
+    const flags = obterFlagsVariaveisSelecionadas();
+
+    // Obtém lead para simulação do seletor ou fallback
+    const selLead = document.getElementById('lpEditorSimularLeadId') || document.getElementById('editorLpSimuladorLeadSelect');
+    const leadId = selLead ? selLead.value : null;
+    const leadObj = (typeof leads !== 'undefined' && Array.isArray(leads)) ? leads.find(l => l.id === leadId) : null;
+
+    const montada = montarUrlExternaComVariaveis(urlBase, flags, leadObj);
+    elExemplo.textContent = montada || 'Informe a URL acima para gerar o link do cliente';
+}
+
 function abrirModalEditorLandingPage(modeloId = null) {
     inicializarModelosLandingPageExemplo();
     lpModeloEmEdicaoId = modeloId;
@@ -3174,6 +4100,7 @@ function abrirModalEditorLandingPage(modeloId = null) {
     const inputId = document.getElementById('lpEditorModeloId');
     const inputNome = document.getElementById('lpEditorNome') || document.getElementById('editorLpNome');
     const inputDescricao = document.getElementById('lpEditorDescricao') || document.getElementById('editorLpDescricao');
+    const inputUrlExterna = document.getElementById('lpEditorUrlExterna');
     const txtHtml = document.getElementById('lpEditorHtml') || document.getElementById('editorLpHtml');
     const txtCss = document.getElementById('lpEditorCss') || document.getElementById('editorLpCss');
     const txtJs = document.getElementById('lpEditorJs') || document.getElementById('editorLpJs');
@@ -3193,6 +4120,7 @@ function abrirModalEditorLandingPage(modeloId = null) {
         if (titulo) titulo.textContent = `Editar Landing Page: ${modelo.nome}`;
         if (inputNome) inputNome.value = modelo.nome || '';
         if (inputDescricao) inputDescricao.value = modelo.descricao || '';
+        if (inputUrlExterna) inputUrlExterna.value = modelo.urlExterna || '';
         if (txtHtml) txtHtml.value = modelo.html || TEMPLATE_PADRAO_SOPRO_PET;
         if (txtCss) txtCss.value = modelo.css || '';
         if (txtJs) txtJs.value = modelo.js || '';
@@ -3200,10 +4128,14 @@ function abrirModalEditorLandingPage(modeloId = null) {
         if (inputHeroImg) inputHeroImg.value = modelo.heroImg || '';
         if (inputLogoImg) inputLogoImg.value = modelo.logoImg || '';
         if (inputCorPrimaria) inputCorPrimaria.value = modelo.corPrimaria || '#0057a8';
+
+        definirFlagsVariaveisSelecionadas(modelo.variaveisFlags);
+        alternarTipoModeloLandingPage(modelo.tipo || (modelo.urlExterna ? 'externo' : 'integrado'));
     } else {
         if (titulo) titulo.textContent = 'Novo Modelo de Landing Page Comercial';
         if (inputNome) inputNome.value = 'Nova Proposta Comercial Personalizada';
         if (inputDescricao) inputDescricao.value = 'Modelo para apresentação técnica e comercial aos clientes';
+        if (inputUrlExterna) inputUrlExterna.value = '';
         if (txtHtml) txtHtml.value = TEMPLATE_PADRAO_SOPRO_PET;
         if (txtCss) txtCss.value = '';
         if (txtJs) txtJs.value = '';
@@ -3211,6 +4143,9 @@ function abrirModalEditorLandingPage(modeloId = null) {
         if (inputHeroImg) inputHeroImg.value = '';
         if (inputLogoImg) inputLogoImg.value = '';
         if (inputCorPrimaria) inputCorPrimaria.value = '#0057a8';
+
+        definirFlagsVariaveisSelecionadas(['empresa', 'decisor', 'cnpj', 'valor', 'itens_tabela']);
+        alternarTipoModeloLandingPage('externo');
     }
 
     // Preenche seletor de leads para simulação ao vivo
@@ -3219,7 +4154,7 @@ function abrirModalEditorLandingPage(modeloId = null) {
     // Configura listeners de digitação em tempo real (se ainda não registrados)
     configurarListenersEdicaoAoVivo();
 
-    // Inicia na aba HTML
+    // Inicia na aba HTML se for integrado
     alternarAbaEditorLP('html');
 
     // Reseta visualização split se necessário
@@ -3229,7 +4164,8 @@ function abrirModalEditorLandingPage(modeloId = null) {
     if (colPreview) colPreview.style.display = 'flex';
     lpModoVisualizacaoEditor = 'split';
 
-    // Atualiza o preview ao vivo com o conteúdo atual
+    // Atualiza o preview e exemplo de URL
+    atualizarPreviewUrlExternaMontada();
     atualizarLivePreviewEditorLP();
 
     // Abre o modal
@@ -3400,6 +4336,12 @@ function atualizarLivePreviewEditorLP() {
     const leadId = selLead ? selLead.value : null;
     const leadObj = (typeof leads !== 'undefined' && Array.isArray(leads)) ? leads.find(l => l.id === leadId) : null;
 
+    const radioExterno = document.getElementById('lpTipoLinkExterno');
+    const isExterno = radioExterno ? radioExterno.checked : false;
+
+    const inputUrlExterna = document.getElementById('lpEditorUrlExterna');
+    const flags = obterFlagsVariaveisSelecionadas();
+
     const txtHtml = document.getElementById('lpEditorHtml') || document.getElementById('editorLpHtml');
     const txtCss = document.getElementById('lpEditorCss') || document.getElementById('editorLpCss');
     const txtJs = document.getElementById('lpEditorJs') || document.getElementById('editorLpJs');
@@ -3408,6 +4350,9 @@ function atualizarLivePreviewEditorLP() {
     const inputCorPrimaria = document.getElementById('lpEditorCorPrimaria');
 
     const modeloTemp = {
+        tipo: isExterno ? 'externo' : 'integrado',
+        urlExterna: inputUrlExterna ? inputUrlExterna.value.trim() : '',
+        variaveisFlags: flags,
         html: (txtHtml && txtHtml.value.trim()) ? txtHtml.value : TEMPLATE_PADRAO_SOPRO_PET,
         css: txtCss ? txtCss.value : '',
         js: txtJs ? txtJs.value : '',
@@ -3427,6 +4372,13 @@ function salvarModeloLandingPage(event) {
     const nomeInput = document.getElementById('lpEditorNome');
     const descInput = document.getElementById('lpEditorDescricao');
     const padraoInput = document.getElementById('lpEditorPadrao');
+    const radioExterno = document.getElementById('lpTipoLinkExterno');
+    const isExterno = radioExterno ? radioExterno.checked : false;
+    const tipo = isExterno ? 'externo' : 'integrado';
+    const inputUrlExterna = document.getElementById('lpEditorUrlExterna');
+    const urlExterna = inputUrlExterna ? inputUrlExterna.value.trim() : '';
+    const variaveisFlags = obterFlagsVariaveisSelecionadas();
+
     const htmlInput = document.getElementById('lpEditorHtml');
     const cssInput = document.getElementById('lpEditorCss');
     const jsInput = document.getElementById('lpEditorJs');
@@ -3451,9 +4403,17 @@ function salvarModeloLandingPage(event) {
         return;
     }
 
-    if (!html) {
-        showToast('O código HTML não pode estar em branco.', 'warning');
-        return;
+    if (tipo === 'externo') {
+        if (!urlExterna) {
+            showToast('Por favor, informe o link de acesso da Landing Page externa.', 'warning');
+            if (inputUrlExterna) inputUrlExterna.focus();
+            return;
+        }
+    } else {
+        if (!html) {
+            showToast('O código HTML não pode estar em branco.', 'warning');
+            return;
+        }
     }
 
     if (padrao) {
@@ -3468,7 +4428,10 @@ function salvarModeloLandingPage(event) {
                 nome,
                 descricao,
                 padrao: padrao || modelosLandingPage[idx].padrao,
-                html,
+                tipo,
+                urlExterna,
+                variaveisFlags,
+                html: html || modelosLandingPage[idx].html || '',
                 css,
                 js,
                 heroImg,
@@ -3486,7 +4449,10 @@ function salvarModeloLandingPage(event) {
             nome,
             descricao,
             padrao: padrao || (modelosLandingPage || []).length === 0,
-            html,
+            tipo,
+            urlExterna,
+            variaveisFlags,
+            html: html || '',
             css,
             js,
             heroImg,
@@ -3878,12 +4844,12 @@ function atualizarUILandingPageOrcamento(lead) {
     if (select) {
         select.innerHTML = (modelosLandingPage || []).map(m => {
             const isSelected = m.id === modeloAtualId;
-            return `<option value="${m.id}" ${isSelected ? 'selected' : ''}>${m.nome} ${m.padrao ? '(Padrão Admin)' : ''}</option>`;
+            const prefix = m.tipo === 'externo' || m.urlExterna ? '🔗 [Externo] ' : '💻 [HTML] ';
+            return `<option value="${m.id}" ${isSelected ? 'selected' : ''}>${prefix}${m.nome} ${m.padrao ? '(Padrão Admin)' : ''}</option>`;
         }).join('');
     }
 
-    const baseUrl = `${window.location.origin}${window.location.pathname}`;
-    const clientUrl = `${baseUrl}?lp=${lead.id}`;
+    const clientUrl = montarLinkPortalLead(lead.id, modeloAtualId);
     if (inputUrl) {
         inputUrl.value = clientUrl;
     }
@@ -3910,6 +4876,12 @@ function alterarModeloLpOrcamentoAtual() {
     lead.landingPageModeloId = select.value;
     lead.atualizadoEm = new Date().toISOString();
     lead._modificadoLocal = true;
+
+    // Atualiza o input de URL na hora
+    const inputUrl = document.getElementById('orcLpUrlInput');
+    if (inputUrl) {
+        inputUrl.value = montarLinkPortalLead(lead.id, select.value);
+    }
 
     if (typeof salvarCacheLocalImediato === 'function') salvarCacheLocalImediato();
     if (typeof salvarDados === 'function') salvarDados();
@@ -3963,8 +4935,10 @@ function enviarLpOrcamentoWhatsApp() {
         : null;
     if (!lead) return;
 
-    const baseUrl = `${window.location.origin}${window.location.pathname}`;
-    const clientUrl = `${baseUrl}?lp=${lead.id}`;
+    const select = document.getElementById('orcLpModeloSelect');
+    const inputUrl = document.getElementById('orcLpUrlInput');
+    const modeloId = select ? select.value : lead.landingPageModeloId;
+    const clientUrl = (inputUrl && inputUrl.value) ? inputUrl.value : montarLinkPortalLead(lead.id, modeloId);
     const decisor = lead.decisor || 'Diretoria';
     const orcNumero = lead.numeroPedido || lead.orcamentoPdfPrincipal?.dadosExtraidos?.numero || 'da sua cotação';
 

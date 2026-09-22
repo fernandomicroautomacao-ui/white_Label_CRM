@@ -565,13 +565,13 @@
                 <!-- Painel Informativo de Arquitetura e Uso -->
                 <div style="background:var(--card-bg, #fff);border:1px solid var(--border-color, #e2e8f0);border-radius:8px;padding:20px;">
                     <h5 style="font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:8px;display:flex;align-items:center;gap:6px;">
-                        <span>💡</span> Como Funciona o Portal do Cliente e a Renderização Sob Demanda
+                        <span>💡</span> Como Funciona a Gestão de Landing Pages & Molde com Link de Template Externo
                     </h5>
                     <ul style="font-size:13px;color:var(--text-muted);line-height:1.7;padding-left:20px;margin:0;">
-                        <li><strong>Acesso Protegido por Lead:</strong> Cada lead possui uma URL exclusiva gerada no CRM (ex: <code>?lp=ID_DO_LEAD</code>). Ao abrir, o cliente visualiza a tela de login exclusiva solicitando seu <strong>E-mail corporativo</strong> e sua senha de segurança que é o seu <strong>CNPJ</strong> cadastrado.</li>
-                        <li><strong>Consumo Zero de Memória (JIT):</strong> A página não fica ocupando memória nem banco como páginas estáticas pesadas. Ela é interpolada e renderizada dinamicamente em milissegundos exatamente no momento em que o cliente abre ou efetua login.</li>
-                        <li><strong>Variáveis Personalizadas:</strong> Use <code>{{empresa}}</code>, <code>{{decisor}}</code>, <code>{{cnpj}}</code>, <code>{{valor}}</code>, <code>{{itens_tabela}}</code> (tabela com itens da cotação), dados do consultor comercial responsável e botões diretos de WhatsApp.</li>
-                        <li><strong>Controle Total para o Vendedor:</strong> O vendedor acompanha quantas vezes o cliente abriu a proposta e a data/hora do último acesso diretamente pelo card no Pipeline ou no perfil do cliente.</li>
+                        <li><strong>Molde de Economia de Espaço (Link de Template Externo):</strong> Em vez de armazenar milhares de linhas de HTML/CSS pesado no banco, cadastre apenas a <strong>URL do template externo</strong> (ex: seu site Schmalz/MiCRO no ChatGPT ou servidor próprio). O CRM gera o link exclusivo do cliente injetando as variáveis marcadas nos parâmetros da URL para o site externo ler e imprimir na hora!</li>
+                        <li><strong>Variáveis Dinâmicas Prontas para Flag:</strong> Escolha quais variáveis deseja enviar na URL: <code>empresa</code>, <code>decisor</code>, <code>cnpj</code>, <code>valor</code>, <code>itens_tabela</code> (tabela com itens da cotação), <code>email</code>, <code>telefone</code>, <code>vendedor_nome</code>, <code>vendedor_whatsapp</code> e link de assinatura digital.</li>
+                        <li><strong>Código HTML/CSS Integrado (Opcional):</strong> Se preferir manter o código completo dentro do CRM, alterne para o formato integrado e personalize cada tag usando a sintaxe <code>{{empresa}}</code>, <code>{{decisor}}</code>, <code>{{cnpj}}</code>, <code>{{valor}}</code>, <code>{{itens_tabela}}</code>.</li>
+                        <li><strong>Acesso Direto e Exclusivo:</strong> O cliente recebe um link exclusivo. O acesso é imediato e registra a contagem de visualizações e último acesso para o vendedor acompanhar em tempo real.</li>
                     </ul>
                 </div>
             </div>
@@ -3786,11 +3786,18 @@
                 <span id="itensTotalGeral" style="font-weight:800;font-size:20px;color:var(--stage-pedido);">R$ 0,00</span>
             </div>
 
-            <div class="form-actions">
-                <button type="button" class="btn btn-outline" onclick="fecharModal('itensModal')">Cancelar</button>
-                <button type="button" class="btn btn-outline" onclick="abrirGeradorPix()">Gerar Cobrança Pix</button>
-                <button type="button" class="btn btn-info" onclick="imprimirOrcamentoPDF()">Imprimir PDF</button>
-                <button type="button" class="btn btn-primary" onclick="salvarItensOrcamento()">Salvar Orçamento</button>
+            <div class="form-actions" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button type="button" class="btn btn-outline" onclick="fecharModal('itensModal')">Cancelar</button>
+                    <button type="button" class="btn btn-outline" onclick="abrirGeradorPix()">Gerar Cobrança Pix</button>
+                    <button type="button" class="btn btn-info" onclick="imprimirOrcamentoPDF()">Imprimir PDF</button>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button type="button" class="btn btn-success" onclick="enviarLpOrcamentoWhatsApp()" style="font-weight:700;" title="Enviar o link da Landing Page / Proposta diretamente no WhatsApp do cliente">
+                        🌐 Enviar Link da Proposta (WhatsApp)
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="salvarItensOrcamento()">Salvar Orçamento</button>
+                </div>
             </div>
         </div>
     </div>
@@ -4218,6 +4225,109 @@ npx @open-wa/wa-automate -p 8080 --popup
                             <input type="text" id="lpEditorDescricao" placeholder="Breve descrição da proposta e perfil de cliente" class="form-control" style="padding:8px 12px;border:1px solid var(--border-color);border-radius:6px;font-size:13px;">
                         </div>
 
+                        <!-- Tipo de Modelo: Link Externo (Economia de Espaço) vs Código Integrado -->
+                        <div style="background:var(--bg-secondary, #f8fafc);border:1px solid var(--border-color, #e2e8f0);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:10px;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                                <label style="font-weight:700;font-size:12.5px;display:flex;align-items:center;gap:6px;margin:0;">
+                                    <span>⚙️ Formato do Modelo:</span>
+                                </label>
+                                <div style="display:flex;gap:16px;">
+                                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12.5px;font-weight:600;margin:0;">
+                                        <input type="radio" name="lpEditorTipoModelo" id="lpTipoLinkExterno" value="externo" onchange="alternarTipoModeloLandingPage('externo')" checked style="cursor:pointer;">
+                                        🔗 Link de Template Externo (Econômico)
+                                    </label>
+                                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12.5px;font-weight:600;margin:0;">
+                                        <input type="radio" name="lpEditorTipoModelo" id="lpTipoHtmlIntegrado" value="integrado" onchange="alternarTipoModeloLandingPage('integrado')" style="cursor:pointer;">
+                                        💻 Código HTML/CSS/JS Integrado
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Configuração de Link Externo -->
+                            <div id="lpBoxConfigLinkExterno" style="display:flex;flex-direction:column;gap:10px;padding-top:4px;">
+                                <div class="form-group" style="margin:0;">
+                                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:4px;">
+                                        <label style="font-weight:700;font-size:12px;color:var(--text-primary);margin:0;">
+                                            URL do Template / Site Externo <span class="required">*</span>
+                                        </label>
+                                        <button type="button" class="btn btn-outline btn-xs" onclick="aplicarUrlExternaPredefinida('https://schmalz-micro-vacuo.fernandomicroautomac.chatgpt.site/', 'Schmalz & MiCRO - Tecnologia em Vácuo & Garras (Site Externo)')" title="Usar template externo Schmalz">
+                                            🔗 Usar Template Schmalz Vácuo
+                                        </button>
+                                    </div>
+                                    <input type="url" id="lpEditorUrlExterna" placeholder="https://seu-site-ou-landing-page-externa.com/" class="form-control" style="padding:8px 12px;border:1px solid var(--border-color);border-radius:6px;font-size:13px;" oninput="atualizarPreviewUrlExternaMontada()">
+                                </div>
+
+                                <!-- Flags das Variáveis Dinâmicas para passar via URL ao site externo -->
+                                <div>
+                                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                                        <span class="text-xs text-muted" style="font-weight:700;">Flags de Variáveis a enviar para o site externo ler e imprimir na hora:</span>
+                                        <div style="display:flex;gap:6px;">
+                                            <button type="button" class="btn btn-outline btn-xs" onclick="marcarTodasVariaveisExternas(true)">Marcar Todas</button>
+                                            <button type="button" class="btn btn-outline btn-xs" onclick="marcarTodasVariaveisExternas(false)">Desmarcar</button>
+                                        </div>
+                                    </div>
+                                    <div id="lpFlagsVariaveisGrid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:6px;background:var(--bg-card, #fff);padding:8px 10px;border-radius:6px;border:1px solid var(--border-color);">
+                                        <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;cursor:pointer;margin:0;">
+                                            <input type="checkbox" class="lp-flag-var" data-var="empresa" checked onchange="atualizarPreviewUrlExternaMontada()">
+                                            <code>empresa</code>
+                                        </label>
+                                        <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;cursor:pointer;margin:0;">
+                                            <input type="checkbox" class="lp-flag-var" data-var="decisor" checked onchange="atualizarPreviewUrlExternaMontada()">
+                                            <code>decisor</code>
+                                        </label>
+                                        <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;cursor:pointer;margin:0;">
+                                            <input type="checkbox" class="lp-flag-var" data-var="cnpj" checked onchange="atualizarPreviewUrlExternaMontada()">
+                                            <code>cnpj</code>
+                                        </label>
+                                        <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;cursor:pointer;margin:0;">
+                                            <input type="checkbox" class="lp-flag-var" data-var="valor" checked onchange="atualizarPreviewUrlExternaMontada()">
+                                            <code>valor</code>
+                                        </label>
+                                        <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;cursor:pointer;margin:0;">
+                                            <input type="checkbox" class="lp-flag-var" data-var="itens_tabela" checked onchange="atualizarPreviewUrlExternaMontada()">
+                                            <code>itens_tabela</code>
+                                        </label>
+                                        <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;cursor:pointer;margin:0;">
+                                            <input type="checkbox" class="lp-flag-var" data-var="email" checked onchange="atualizarPreviewUrlExternaMontada()">
+                                            <code>email</code>
+                                        </label>
+                                        <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;cursor:pointer;margin:0;">
+                                            <input type="checkbox" class="lp-flag-var" data-var="telefone" checked onchange="atualizarPreviewUrlExternaMontada()">
+                                            <code>telefone</code>
+                                        </label>
+                                        <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;cursor:pointer;margin:0;">
+                                            <input type="checkbox" class="lp-flag-var" data-var="cidade_uf" checked onchange="atualizarPreviewUrlExternaMontada()">
+                                            <code>cidade_uf</code>
+                                        </label>
+                                        <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;cursor:pointer;margin:0;">
+                                            <input type="checkbox" class="lp-flag-var" data-var="numero_orcamento" checked onchange="atualizarPreviewUrlExternaMontada()">
+                                            <code>numero_orcamento</code>
+                                        </label>
+                                        <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;cursor:pointer;margin:0;">
+                                            <input type="checkbox" class="lp-flag-var" data-var="vendedor_nome" checked onchange="atualizarPreviewUrlExternaMontada()">
+                                            <code>vendedor_nome</code>
+                                        </label>
+                                        <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;cursor:pointer;margin:0;">
+                                            <input type="checkbox" class="lp-flag-var" data-var="vendedor_whatsapp" checked onchange="atualizarPreviewUrlExternaMontada()">
+                                            <code>vendedor_whatsapp</code>
+                                        </label>
+                                        <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;cursor:pointer;margin:0;">
+                                            <input type="checkbox" class="lp-flag-var" data-var="link_assinador_oficial" checked onchange="atualizarPreviewUrlExternaMontada()">
+                                            <code>link_assinador</code>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Demonstração da URL montada para o cliente -->
+                                <div style="background:var(--bg-input, #0f172a);color:#e2e8f0;padding:10px;border-radius:6px;font-family:monospace;font-size:11.5px;word-break:break-all;">
+                                    <div style="font-size:10px;text-transform:uppercase;color:#94a3b8;font-weight:700;margin-bottom:4px;">Exemplo de Link Exclusivo Gerado para o Cliente:</div>
+                                    <span id="lpExemploUrlExternaMontada" style="color:#38bdf8;">https://seu-template.site/?empresa=Vemaplastic...</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bloco de Código HTML/CSS/JS Integrado (oculto quando tipo for link externo) -->
+                        <div id="lpBoxCodigoIntegrado" style="display:none;flex-direction:column;gap:12px;">
                         <!-- Barra de Tags / Variáveis Dinâmicas -->
                         <div>
                             <span class="text-xs text-muted" style="display:block;margin-bottom:6px;font-weight:600;">Variáveis Dinâmicas (clique para inserir no editor ativo):</span>
@@ -4245,6 +4355,7 @@ npx @open-wa/wa-automate -p 8080 --popup
                                 <span>⚡ Carregar Modelo Base no Editor:</span>
                                 <select id="lpEditorSelectPreset" class="form-control" style="padding:4px 8px;font-size:12px;width:auto;min-width:240px;">
                                     <option value="lp_visualizador_orcamento">📄 Visualizador de Orçamento (PDF + Assinatura)</option>
+                                    <option value="lp_schmalz_micro_vacuo">🔵 Schmalz & MiCRO Vácuo & Garras</option>
                                     <option value="lp_sopro_pet_oficial">🌐 Válvula de Sopro PET (Padrão MiCRO)</option>
                                     <option value="lp_institucional_completa">🏢 Apresentação Geral & Portfólio</option>
                                 </select>
@@ -4292,6 +4403,7 @@ npx @open-wa/wa-automate -p 8080 --popup
                                 <input type="color" id="lpEditorCorPrimaria" value="#0057a8" style="height:36px;width:80px;border:none;cursor:pointer;border-radius:4px;">
                             </div>
                         </div>
+                        </div><!-- Fim lpBoxCodigoIntegrado -->
 
                         <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;">
                             <button type="button" class="btn btn-outline" onclick="fecharModal('editorLandingPageModal')">Cancelar</button>

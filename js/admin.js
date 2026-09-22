@@ -254,7 +254,7 @@ function renderizarLandingPagePadraoAdmin() {
 
     select.innerHTML = modelos.map(m => `
         <option value="${m.id}" ${m.id === (modeloPadrao ? modeloPadrao.id : '') ? 'selected' : ''}>
-            ${m.nome} ${m.padrao ? '★ (Padrão Atual)' : ''}
+            ${m.tipo === 'externo' || m.urlExterna ? '🔗 [Link Externo] ' : '💻 [HTML] '}${m.nome} ${m.padrao ? '★ (Padrão Atual)' : ''}
         </option>
     `).join('');
 
@@ -271,7 +271,27 @@ function atualizarDescricaoLpPadraoAdmin() {
     const modelo = modelos.find(m => m.id === modeloId);
 
     if (modelo) {
-        descEl.innerHTML = `<strong>Descrição:</strong> ${modelo.descricao || 'Sem descrição.'} &nbsp;|&nbsp; <em>Última atualização: ${modelo.atualizadoEm ? new Date(modelo.atualizadoEm).toLocaleDateString('pt-BR') : 'Original'}</em>`;
+        const isExterno = modelo.tipo === 'externo' || Boolean(modelo.urlExterna);
+        const tipoBadge = isExterno
+            ? `<span style="background:#0284c7;color:#fff;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:700;">🔗 Link Externo Econômico</span>`
+            : `<span style="background:#64748b;color:#fff;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;">💻 Código HTML Integrado</span>`;
+        const urlInfo = isExterno && modelo.urlExterna
+            ? `<div style="margin-top:4px;color:#0284c7;font-family:monospace;font-size:11.5px;">URL: ${modelo.urlExterna}</div>`
+            : '';
+        const flagsInfo = isExterno && Array.isArray(modelo.variaveisFlags) && modelo.variaveisFlags.length > 0
+            ? `<div style="margin-top:4px;font-size:11px;color:var(--text-secondary);">Flags ativas: <code>${modelo.variaveisFlags.join(', ')}</code></div>`
+            : '';
+
+        descEl.innerHTML = `
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                ${tipoBadge}
+                <strong>${modelo.nome}</strong>
+            </div>
+            <div><strong>Descrição:</strong> ${modelo.descricao || 'Sem descrição.'}</div>
+            ${urlInfo}
+            ${flagsInfo}
+            <div style="margin-top:4px;font-size:11px;color:var(--text-muted);"><em>Última atualização: ${modelo.atualizadoEm ? new Date(modelo.atualizadoEm).toLocaleDateString('pt-BR') : 'Original'}</em></div>
+        `;
     } else {
         descEl.textContent = 'Selecione um modelo para ver os detalhes.';
     }
@@ -298,10 +318,13 @@ function salvarModeloLandingPagePadraoAdmin(event) {
 
     if (typeof salvarCacheLocalImediato === 'function') salvarCacheLocalImediato();
     if (typeof salvarDados === 'function') salvarDados();
+    if (typeof sincronizarModeloLandingPageNoBanco === 'function') {
+        sincronizarModeloLandingPageNoBanco(modelo);
+    }
 
     renderizarLandingPagePadraoAdmin();
-    if (typeof renderizarModelosLandingPage === 'function') {
-        renderizarModelosLandingPage();
+    if (typeof renderizarPainelLandingPagesMarketing === 'function') {
+        renderizarPainelLandingPagesMarketing();
     }
 
     showToast(`O modelo "${modelo.nome}" foi definido como a Landing Page padrão com sucesso!`, 'success');
