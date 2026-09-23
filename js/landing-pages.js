@@ -3290,32 +3290,49 @@ const TEMPLATE_VISUALIZADOR_ORCAMENTO = `<!DOCTYPE html>
 // renderizada. A montagem final acontece sob demanda (JIT), ver mais abaixo.
 // ================================================================
 function modeloLPParaSupabase(m) {
+    let htmlContent = m.html || '';
+    const extraConfig = {
+        tipo: m.tipo || 'integrado',
+        urlExterna: m.urlExterna || '',
+        variaveisFlags: m.variaveisFlags || []
+    };
+    const marcador = `<!-- LP_CONFIG:${encodeURIComponent(JSON.stringify(extraConfig))} -->`;
+    htmlContent = htmlContent.replace(/<!-- LP_CONFIG:[^>]* -->\s*/g, '');
+    htmlContent = marcador + '\n' + htmlContent;
+
     return {
         id: m.id,
         nome: m.nome || '',
         descricao: m.descricao || '',
         padrao: !!m.padrao,
-        html: m.html || '',
+        html: htmlContent,
         css: m.css || '',
         js: m.js || '',
         hero_img: m.heroImg || '',
         logo_img: m.logoImg || '',
         cor_primaria: m.corPrimaria || '#0057a8',
         imagens: m.imagens || [],
-        usuario_id: m.usuarioId || null,
-        tipo: m.tipo || 'integrado',
-        url_externa: m.urlExterna || '',
-        variaveis_flags: m.variaveisFlags || []
+        usuario_id: m.usuarioId || (typeof usuarioAtual !== 'undefined' && usuarioAtual ? usuarioAtual.id : null)
     };
 }
 
 function linhaSupabaseParaModeloLP(r) {
+    let rawHtml = r.html || '';
+    let extraConfig = {};
+    const match = rawHtml.match(/<!-- LP_CONFIG:([^>]+) -->/);
+    if (match && match[1]) {
+        try {
+            extraConfig = JSON.parse(decodeURIComponent(match[1].trim()));
+            rawHtml = rawHtml.replace(/<!-- LP_CONFIG:[^>]* -->\s*/g, '');
+        } catch(e) {}
+    }
+
     return {
         id: r.id,
         nome: r.nome || '',
         descricao: r.descricao || '',
         padrao: !!r.padrao,
-        html: r.html || '',
+        html: rawHtml,
         css: r.css || '',
         js: r.js || '',
         heroImg: r.hero_img || '',
@@ -3323,9 +3340,9 @@ function linhaSupabaseParaModeloLP(r) {
         corPrimaria: r.cor_primaria || '#0057a8',
         imagens: r.imagens || [],
         usuarioId: r.usuario_id || null,
-        tipo: r.tipo || (r.url_externa ? 'externo' : 'integrado'),
-        urlExterna: r.url_externa || '',
-        variaveisFlags: r.variaveis_flags || ['empresa', 'decisor', 'cnpj', 'valor', 'itens_tabela'],
+        tipo: extraConfig.tipo || r.tipo || (r.url_externa ? 'externo' : 'integrado'),
+        urlExterna: extraConfig.urlExterna || r.url_externa || '',
+        variaveisFlags: extraConfig.variaveisFlags || r.variaveis_flags || ['empresa', 'decisor', 'cnpj', 'valor', 'itens_tabela'],
         criadoEm: r.created_at || new Date().toISOString(),
         atualizadoEm: r.updated_at || new Date().toISOString()
     };
@@ -3419,10 +3436,26 @@ async function carregarModelosLandingPageDoBanco() {
         const { data, error } = await supabaseClient.from('landing_page_modelos').select('*');
         if (error || !data) return;
         // Filtra registros que o usuário já excluiu neste navegador
-        const remotos = data.map(linhaSupabaseParaModeloLP).filter(r => !isModeloLandingPageExcluido(r.id));
+        const remotos = data
+            .map(linhaSupabaseParaModeloLP)
+            .filter(r => r.id !== '__feitosa_crm_templates__' && !isModeloLandingPageExcluido(r.id));
         const mapaLocal = new Map((modelosLandingPage || []).filter(m => !isModeloLandingPageExcluido(m.id)).map(m => [m.id, m]));
         const assinaturaAntes = JSON.stringify(Array.from(mapaLocal.entries()).sort());
-        remotos.forEach(r => mapaLocal.set(r.id, { ...mapaLocal.get(r.id), ...r }));
+        
+        remotos.forEach(r => {
+            const local = mapaLocal.get(r.id);
+            if (!local) {
+                mapaLocal.set(r.id, r);
+            } else {
+                const timeLocal = local.atualizadoEm ? new Date(local.atualizadoEm).getTime() : 0;
+                const timeRemoto = r.atualizadoEm ? new Date(r.atualizadoEm).getTime() : 0;
+                if (timeLocal >= timeRemoto) {
+                    mapaLocal.set(r.id, { ...r, ...local });
+                } else {
+                    mapaLocal.set(r.id, { ...local, ...r });
+                }
+            }
+        });
         const assinaturaDepois = JSON.stringify(Array.from(mapaLocal.entries()).sort());
         const mudou = assinaturaAntes !== assinaturaDepois;
 
@@ -3592,10 +3625,11 @@ function inicializarModelosLandingPageExemplo() {
                 if (typeof salvarDados === 'function') salvarDados();
                 sincronizarModeloLandingPageNoBanco(modelosLandingPage[modelosLandingPage.length - 1]);
             } else {
-                modelosLandingPage[idxVis].html = TEMPLATE_VISUALIZADOR_ORCAMENTO;
-                modelosLandingPage[idxVis].descricao = 'Portal do cliente com visualizador de proposta em anexo estilo PDF em alta fidelidade com PDF.js, aceite/assinatura digital, impressão A4 e vitrine lateral de produtos MiCRO.';
-                modelosLandingPage[idxVis].atualizadoEm = new Date().toISOString();
-                sincronizarModeloLandingPageNoBanco(modelosLandingPage[idxVis]);
+                if (!modelosLandingPage[idxVis].html) {
+                    modelosLandingPage[idxVis].html = TEMPLATE_VISUALIZADOR_ORCAMENTO;
+                    modelosLandingPage[idxVis].atualizadoEm = new Date().toISOString();
+                    sincronizarModeloLandingPageNoBanco(modelosLandingPage[idxVis]);
+                }
             }
         }
 

@@ -165,7 +165,7 @@ function salvarLead(event) {
             proximaAcao: '',
             proximaData: '',
             tarefas: {},
-            usuarioId: usuarioAtual.id,
+            usuarioId: (typeof usuarioAtual !== 'undefined' && usuarioAtual && usuarioAtual.id) ? usuarioAtual.id : (usuarios && usuarios[0] ? usuarios[0].id : null),
             historico: [{
                 data: hoje(),
                 hora: new Date().toTimeString().slice(0, 5),

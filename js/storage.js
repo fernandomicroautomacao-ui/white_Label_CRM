@@ -7,8 +7,9 @@ let leadsIdsCarregados = new Set(); // ids que vieram do banco na última carga,
 // ARMAZENAMENTO INDEXEDDB LOCAL ROBUSTO (Sem limites de 5MB do localStorage)
 // ============================================
 const CRM_IDB_NOME = 'FeitosaCrmDB';
-const CRM_IDB_VERSAO = 1;
+const CRM_IDB_VERSAO = 2;
 const CRM_IDB_STORE = 'leads_cache';
+const CRM_IDB_STORE_APP = 'app_state_cache';
 
 function abrirIndexedDB() {
     return new Promise((resolve) => {
@@ -22,6 +23,9 @@ function abrirIndexedDB() {
                 const db = e.target.result;
                 if (!db.objectStoreNames.contains(CRM_IDB_STORE)) {
                     db.createObjectStore(CRM_IDB_STORE, { keyPath: 'id' });
+                }
+                if (!db.objectStoreNames.contains(CRM_IDB_STORE_APP)) {
+                    db.createObjectStore(CRM_IDB_STORE_APP, { keyPath: 'chave' });
                 }
             };
             request.onsuccess = (e) => resolve(e.target.result);
@@ -66,19 +70,88 @@ async function carregarLeadsDoIndexedDB() {
     }
 }
 
-const colunasRejeitadasSupabase = new Set(['updated_at']);
+async function salvarEstadoAppNoIndexedDB(dadosApp) {
+    if (!dadosApp || typeof dadosApp !== 'object') return false;
+    const db = await abrirIndexedDB();
+    if (!db) return false;
+    try {
+        const tx = db.transaction(CRM_IDB_STORE_APP, 'readwrite');
+        const store = tx.objectStore(CRM_IDB_STORE_APP);
+        store.put({ chave: 'dados_principais', ...dadosApp, salvoEm: new Date().toISOString() });
+        return new Promise((resolve) => {
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = () => resolve(false);
+        });
+    } catch (e) {
+        console.warn('Aviso ao salvar estado do app no IndexedDB:', e);
+        return false;
+    }
+}
+
+async function carregarEstadoAppDoIndexedDB() {
+    const db = await abrirIndexedDB();
+    if (!db) return null;
+    try {
+        const tx = db.transaction(CRM_IDB_STORE_APP, 'readonly');
+        const store = tx.objectStore(CRM_IDB_STORE_APP);
+        const req = store.get('dados_principais');
+        return new Promise((resolve) => {
+            req.onsuccess = () => resolve(req.result || null);
+            req.onerror = () => resolve(null);
+        });
+    } catch (e) {
+        return null;
+    }
+}
+
+// Colunas conhecidas que não existem no schema de leads do Supabase
+const COLUNAS_INEXISTENTES_PADRAO = [
+    'updated_at',
+    'created_at',
+    'valor_produtos',
+    'landing_page_modelo_id',
+    'landing_page_mensagem',
+    'landing_page_views',
+    'landing_page_ultimo_acesso',
+    'metodo_envio'
+];
+
+let colunasSalvasMem = [];
+try {
+    const rawCol = localStorage.getItem('crm_colunas_rejeitadas_supabase');
+    if (rawCol) colunasSalvasMem = JSON.parse(rawCol);
+} catch (e) {}
+
+const colunasRejeitadasSupabase = new Set([
+    ...COLUNAS_INEXISTENTES_PADRAO,
+    ...(Array.isArray(colunasSalvasMem) ? colunasSalvasMem : [])
+]);
+
+function salvarColunasRejeitadasLocal() {
+    try {
+        localStorage.setItem('crm_colunas_rejeitadas_supabase', JSON.stringify([...colunasRejeitadasSupabase]));
+    } catch (e) {}
+}
 
 function detectarEAdicionarColunaRejeitada(erroMsg) {
     if (!erroMsg || typeof erroMsg !== 'string') return null;
     const m1 = erroMsg.match(/Could not find the ['"]?([a-zA-Z0-9_\-]+)['"]? column/i);
     if (m1 && m1[1]) {
         colunasRejeitadasSupabase.add(m1[1]);
+        salvarColunasRejeitadasLocal();
         return m1[1];
     }
     const m2 = erroMsg.match(/column ['"]?([a-zA-Z0-9_\-]+)['"]? of relation/i);
     if (m2 && m2[1]) {
         colunasRejeitadasSupabase.add(m2[1]);
+        salvarColunasRejeitadasLocal();
         return m2[1];
+    }
+    const m3 = erroMsg.match(/column (?:[a-zA-Z0-9_\-]+\.)?['"]?([a-zA-Z0-9_\-]+)['"]? does not exist/i);
+    if (m3 && m3[1]) {
+        colunasRejeitadasSupabase.add(m3[1]);
+        salvarColunasRejeitadasLocal();
+        return m3[1];
     }
     return null;
 }
@@ -171,6 +244,17 @@ function sanitizarOrcamentoPdfParaBanco(pdf) {
 }
 
 function leadParaLinhaSupabase(l) {
+    const tarefasObj = (typeof l.tarefas === 'object' && l.tarefas !== null) ? { ...l.tarefas } : {};
+    tarefasObj._ext = {
+        valorProdutos: l.valorProdutos || l.valor_produtos || 0,
+        landingPageModeloId: l.landingPageModeloId || l.landing_page_modelo_id || null,
+        landingPageMensagem: l.landingPageMensagem || l.landing_page_mensagem || null,
+        landingPageViews: l.landingPageViews || l.landing_page_views || 0,
+        landingPageUltimoAcesso: l.landingPageUltimoAcesso || l.landing_page_ultimo_acesso || null,
+        metodoEnvio: l.metodoEnvio || l.metodo_envio || '',
+        atualizadoEm: l.atualizadoEm || new Date().toISOString()
+    };
+
     return {
         id: l.id,
         codigo_unico: l.codigoUnico || '',
@@ -200,8 +284,8 @@ function leadParaLinhaSupabase(l) {
         data_pedido: l.dataPedido || '',
         proxima_acao: l.proximaAcao || '',
         proxima_data: l.proximaData || '',
-        tarefas: l.tarefas || {},
-        usuario_id: l.usuarioId || null,
+        tarefas: tarefasObj,
+        usuario_id: l.usuarioId || (typeof usuarioAtual !== 'undefined' && usuarioAtual ? usuarioAtual.id : null),
         historico: l.historico || [],
         orcamento_anexos: l.orcamentoAnexos || [],
         orcamento_pdf_principal: sanitizarOrcamentoPdfParaBanco(l.orcamentoPdfPrincipal),
@@ -209,18 +293,16 @@ function leadParaLinhaSupabase(l) {
         orcamento_reset_em: l.orcamentoResetEm || null,
         data_entrada_etapa: l.dataEntradaEtapa || l.dataCriacao || new Date().toISOString(),
         card_obs: l.cardObs || '',
-        valor_produtos: l.valorProdutos || 0,
-        landing_page_modelo_id: l.landingPageModeloId || null,
-        landing_page_mensagem: l.landingPageMensagem || null,
-        landing_page_views: l.landingPageViews || 0,
-        landing_page_ultimo_acesso: l.landingPageUltimoAcesso || null,
         autorizacao_pedido_id: l.autorizacaoPedidoId || null,
-        autorizacao_pedido_status: l.autorizacaoPedidoStatus || null,
-        metodo_envio: l.metodoEnvio || l.metodo_envio || null
+        autorizacao_pedido_status: l.autorizacaoPedidoStatus || null
     };
 }
 
 function linhaSupabaseParaLead(r) {
+    const ext = (r.tarefas && r.tarefas._ext) ? r.tarefas._ext : {};
+    const tarefasLimpas = (typeof r.tarefas === 'object' && r.tarefas !== null) ? { ...r.tarefas } : {};
+    delete tarefasLimpas._ext;
+
     return {
         id: r.id,
         codigoUnico: r.codigo_unico || '',
@@ -250,7 +332,7 @@ function linhaSupabaseParaLead(r) {
         dataPedido: r.data_pedido || '',
         proximaAcao: r.proxima_acao || '',
         proximaData: r.proxima_data || '',
-        tarefas: r.tarefas || {},
+        tarefas: tarefasLimpas,
         usuarioId: r.usuario_id || null,
         historico: r.historico || [],
         orcamentoAnexos: r.orcamento_anexos || [],
@@ -259,16 +341,16 @@ function linhaSupabaseParaLead(r) {
         orcamentoResetEm: r.orcamento_reset_em || null,
         dataEntradaEtapa: r.data_entrada_etapa || r.data_criacao || new Date().toISOString(),
         cardObs: r.card_obs || '',
-        valorProdutos: r.valor_produtos || r.valorProdutos || 0,
-        landingPageModeloId: r.landing_page_modelo_id || r.landingPageModeloId || null,
-        landingPageMensagem: r.landing_page_mensagem || r.landingPageMensagem || null,
-        landingPageViews: r.landing_page_views || r.landingPageViews || 0,
-        landingPageUltimoAcesso: r.landing_page_ultimo_acesso || r.landingPageUltimoAcesso || null,
+        valorProdutos: (r.valor_produtos !== undefined && r.valor_produtos !== null) ? r.valor_produtos : (ext.valorProdutos || 0),
+        landingPageModeloId: r.landing_page_modelo_id || ext.landingPageModeloId || null,
+        landingPageMensagem: r.landing_page_mensagem || ext.landingPageMensagem || null,
+        landingPageViews: (r.landing_page_views !== undefined && r.landing_page_views !== null) ? r.landing_page_views : (ext.landingPageViews || 0),
+        landingPageUltimoAcesso: r.landing_page_ultimo_acesso || ext.landingPageUltimoAcesso || null,
         autorizacaoPedidoId: r.autorizacao_pedido_id || null,
         autorizacaoPedidoStatus: r.autorizacao_pedido_status || null,
-        metodoEnvio: r.metodo_envio || r.metodoEnvio || '',
-        metodo_envio: r.metodo_envio || r.metodoEnvio || '',
-        atualizadoEm: r.updated_at || r.atualizado_em || r.data_criacao || null
+        metodoEnvio: r.metodo_envio || ext.metodoEnvio || '',
+        metodo_envio: r.metodo_envio || ext.metodoEnvio || '',
+        atualizadoEm: ext.atualizadoEm || r.updated_at || r.atualizado_em || r.data_criacao || null
     };
 }
 
@@ -315,40 +397,86 @@ function linhaSupabaseParaPessoa(r) {
 }
 
 async function carregarDados() {
-    const saved = localStorage.getItem('ploomesLeadsV5');
-    if (saved) {
-        try {
-            const data = JSON.parse(saved);
-            modelos = data.modelos || [];
-            campanhas = data.campanhas || [];
-            emailLog = data.emailLog || [];
-            modelosWhatsapp = data.modelosWhatsapp || [];
-            whatsappLog = data.whatsappLog || [];
-            whatsappCampanhas = data.whatsappCampanhas || [];
-            whatsappOptOut = data.whatsappOptOut || [];
-            whatsappConsentimentos = data.whatsappConsentimentos || {};
-            whatsappFilaAtual = data.whatsappFilaAtual || null;
-            perdidos = data.perdidos || [];
-            metas = data.metas || {};
-            coletorListas = data.coletorListas || [];
-            coletorListaAtivaId = data.coletorListaAtivaId || null;
-            segmentosBusca = data.segmentosBusca || [];
-            modelosLandingPage = data.modelosLandingPage || [];
-            if (typeof inicializarModelosLandingPageExemplo === 'function') inicializarModelosLandingPageExemplo();
-        } catch (e) {
-            modelos = [];
-            campanhas = [];
-            emailLog = [];
-            modelosWhatsapp = [];
-            whatsappLog = [];
-            whatsappCampanhas = [];
-            whatsappOptOut = [];
-            whatsappConsentimentos = {};
-            whatsappFilaAtual = null;
-            perdidos = [];
-            modelosLandingPage = [];
-            if (typeof inicializarModelosLandingPageExemplo === 'function') inicializarModelosLandingPageExemplo();
+    let appStateCarregado = null;
+    try {
+        appStateCarregado = await carregarEstadoAppDoIndexedDB();
+    } catch (e) {}
+
+    let dataLocal = null;
+    if (appStateCarregado) {
+        dataLocal = appStateCarregado;
+    } else {
+        const saved = localStorage.getItem('ploomesLeadsV5');
+        if (saved) {
+            try {
+                dataLocal = JSON.parse(saved);
+            } catch (e) {}
         }
+        if (!dataLocal) {
+            try {
+                const modEmail = localStorage.getItem('crm_modelos_email');
+                const modWa = localStorage.getItem('crm_modelos_whatsapp');
+                if (modEmail || modWa) {
+                    dataLocal = {
+                        modelos: modEmail ? JSON.parse(modEmail) : [],
+                        modelosWhatsapp: modWa ? JSON.parse(modWa) : []
+                    };
+                }
+            } catch (e) {}
+        }
+    }
+
+    if (dataLocal) {
+        modelos = dataLocal.modelos || [];
+        campanhas = dataLocal.campanhas || [];
+        emailLog = dataLocal.emailLog || [];
+        modelosWhatsapp = dataLocal.modelosWhatsapp || [];
+        whatsappLog = dataLocal.whatsappLog || [];
+        whatsappCampanhas = dataLocal.whatsappCampanhas || [];
+        whatsappOptOut = dataLocal.whatsappOptOut || [];
+        whatsappConsentimentos = dataLocal.whatsappConsentimentos || {};
+        whatsappFilaAtual = dataLocal.whatsappFilaAtual || null;
+        perdidos = dataLocal.perdidos || [];
+        metas = dataLocal.metas || {};
+        coletorListas = dataLocal.coletorListas || [];
+        coletorListaAtivaId = dataLocal.coletorListaAtivaId || null;
+        segmentosBusca = dataLocal.segmentosBusca || [];
+        modelosLandingPage = dataLocal.modelosLandingPage || [];
+    }
+
+    // Tenta carregar backup remoto de templates gerais (E-mail e WhatsApp) do Supabase
+    try {
+        if (typeof supabaseClient !== 'undefined' && supabaseClient.from) {
+            const { data: tData } = await supabaseClient
+                .from('landing_page_modelos')
+                .select('html, css')
+                .eq('id', '__feitosa_crm_templates__')
+                .maybeSingle();
+            if (tData) {
+                if (tData.html) {
+                    try {
+                        const parsedMod = JSON.parse(tData.html);
+                        if (Array.isArray(parsedMod) && parsedMod.length > 0) {
+                            const mapaMod = new Map(modelos.map(m => [m.id, m]));
+                            parsedMod.forEach(pm => { if (!mapaMod.has(pm.id)) modelos.push(pm); });
+                        }
+                    } catch (e) {}
+                }
+                if (tData.css) {
+                    try {
+                        const parsedWa = JSON.parse(tData.css);
+                        if (Array.isArray(parsedWa) && parsedWa.length > 0) {
+                            const mapaWa = new Map(modelosWhatsapp.map(m => [m.id, m]));
+                            parsedWa.forEach(pw => { if (!mapaWa.has(pw.id)) modelosWhatsapp.push(pw); });
+                        }
+                    } catch (e) {}
+                }
+            }
+        }
+    } catch (e) {}
+
+    if (typeof inicializarModelosLandingPageExemplo === 'function') {
+        inicializarModelosLandingPageExemplo();
     }
 
     // 1. Carrega o melhor cache local (IndexedDB + localStorage) antes de consultar o banco
@@ -672,29 +800,41 @@ async function upsertLeadsNoSupabaseEmLotes(linhas, tamanhoLote = 15) {
 
     for (let i = 0; i < sanitizadas.length; i += tamanhoLote) {
         let lote = sanitizadas.slice(i, i + tamanhoLote);
-        let res = await supabaseClient.from('leads').upsert(lote, { onConflict: 'id' });
-        
-        if (res.error) {
+        let tentativas = 0;
+        let res = null;
+
+        while (tentativas < 6) {
+            res = await supabaseClient.from('leads').upsert(lote, { onConflict: 'id' });
+            if (!res.error) break;
             const colRejeitada = detectarEAdicionarColunaRejeitada(res.error.message);
             if (colRejeitada) {
                 lote = lote.map(sanitizarLinhaParaSupabase);
-                res = await supabaseClient.from('leads').upsert(lote, { onConflict: 'id' });
+                tentativas++;
+            } else {
+                break;
             }
         }
 
-        if (res.error) {
+        if (res && res.error) {
             console.warn(`Lote ${i}..${i + lote.length} falhou no upsert em grupo. Tentando individualmente...`, res.error);
             for (const itemLinha of lote) {
                 let linha = sanitizarLinhaParaSupabase(itemLinha);
-                let resIndiv = await supabaseClient.from('leads').upsert([linha], { onConflict: 'id' });
-                if (resIndiv.error) {
+                let tentativasIndiv = 0;
+                let resIndiv = null;
+
+                while (tentativasIndiv < 6) {
+                    resIndiv = await supabaseClient.from('leads').upsert([linha], { onConflict: 'id' });
+                    if (!resIndiv.error) break;
                     const colRejIndiv = detectarEAdicionarColunaRejeitada(resIndiv.error.message);
                     if (colRejIndiv) {
                         linha = sanitizarLinhaParaSupabase(linha);
-                        resIndiv = await supabaseClient.from('leads').upsert([linha], { onConflict: 'id' });
+                        tentativasIndiv++;
+                    } else {
+                        break;
                     }
                 }
-                if (resIndiv.error) {
+
+                if (resIndiv && resIndiv.error) {
                     const clone = { ...linha };
                     if (clone.orcamento_pdf_principal && clone.orcamento_pdf_principal.dataUrl) {
                         clone.orcamento_pdf_principal = { ...clone.orcamento_pdf_principal };
@@ -730,17 +870,24 @@ async function salvarLeadNoBanco(lead) {
     if (!lead || !lead.id) return false;
     try {
         lead.atualizadoEm = new Date().toISOString();
-        salvarCacheLocalImediato(false);
+        await salvarCacheLocalImediato(false);
         let linha = sanitizarLinhaParaSupabase(leadParaLinhaSupabase(lead));
-        let res = await supabaseClient.from('leads').upsert([linha], { onConflict: 'id' });
-        if (res.error) {
+        let tentativas = 0;
+        let res = null;
+
+        while (tentativas < 6) {
+            res = await supabaseClient.from('leads').upsert([linha], { onConflict: 'id' });
+            if (!res.error) break;
             const colRej = detectarEAdicionarColunaRejeitada(res.error.message);
             if (colRej) {
                 linha = sanitizarLinhaParaSupabase(leadParaLinhaSupabase(lead));
-                res = await supabaseClient.from('leads').upsert([linha], { onConflict: 'id' });
+                tentativas++;
+            } else {
+                break;
             }
         }
-        if (res.error) {
+
+        if (res && res.error) {
             const clone = { ...linha };
             if (clone.orcamento_pdf_principal && clone.orcamento_pdf_principal.dataUrl) {
                 clone.orcamento_pdf_principal = { ...clone.orcamento_pdf_principal };
@@ -764,6 +911,30 @@ async function salvarLeadNoBanco(lead) {
     } catch (e) {
         console.warn('Exceção ao persistir lead único no Supabase:', e);
         atualizarIndicadorStatusSync('offline');
+        return false;
+    }
+}
+
+async function sincronizarTemplatesGeraisNoBanco() {
+    if (typeof supabaseClient === 'undefined' || !supabaseClient.from) return false;
+    try {
+        const payload = {
+            id: '__feitosa_crm_templates__',
+            nome: 'Backup de Modelos CRM (E-mail e WhatsApp)',
+            descricao: 'Backup remoto automático dos modelos de comunicação do Feitosa CRM',
+            padrao: false,
+            html: JSON.stringify(modelos || []),
+            css: JSON.stringify(modelosWhatsapp || []),
+            js: '',
+            hero_img: '',
+            logo_img: '',
+            cor_primaria: '#0057a8',
+            imagens: [],
+            usuario_id: (typeof usuarioAtual !== 'undefined' && usuarioAtual ? usuarioAtual.id : null)
+        };
+        const { error } = await supabaseClient.from('landing_page_modelos').upsert([payload], { onConflict: 'id' });
+        return !error;
+    } catch (e) {
         return false;
     }
 }
@@ -865,31 +1036,52 @@ if (typeof window !== 'undefined') {
 }
 
 async function executarSalvarDadosInterno() {
-    salvarCacheLocalImediato(false);
+    await salvarCacheLocalImediato(false);
 
+    const pacoteAppState = {
+        modelos,
+        campanhas,
+        emailLog,
+        modelosWhatsapp,
+        whatsappLog,
+        whatsappCampanhas,
+        whatsappOptOut,
+        whatsappConsentimentos,
+        whatsappFilaAtual,
+        perdidos,
+        metas,
+        coletorListas,
+        coletorListaAtivaId,
+        segmentosBusca,
+        modelosLandingPage
+    };
+
+    // 1. Salva estado completo no IndexedDB (sem limitação de quota de 5MB do localStorage)
     try {
-        localStorage.setItem('ploomesLeadsV5', JSON.stringify({
-            modelos,
-            campanhas,
-            emailLog,
-            modelosWhatsapp,
-            whatsappLog,
-            whatsappCampanhas,
-            whatsappOptOut,
-            whatsappConsentimentos,
-            whatsappFilaAtual,
-            perdidos,
-            metas,
-            coletorListas,
-            coletorListaAtivaId,
-            segmentosBusca,
-            modelosLandingPage
-        }));
-    } catch (e) {}
+        await salvarEstadoAppNoIndexedDB(pacoteAppState);
+    } catch (eIdb) {
+        console.warn('Aviso ao salvar estado do app no IndexedDB:', eIdb);
+    }
+
+    // 2. Salva no localStorage com proteção contra QuotaExceededError
+    try {
+        localStorage.setItem('ploomesLeadsV5', JSON.stringify(pacoteAppState));
+    } catch (eQuota) {
+        console.warn('Quota do localStorage excedida para ploomesLeadsV5. Salvando em chaves particionadas...');
+        try {
+            localStorage.setItem('crm_modelos_email', JSON.stringify(modelos || []));
+            localStorage.setItem('crm_modelos_whatsapp', JSON.stringify(modelosWhatsapp || []));
+            localStorage.setItem('crm_perdidos', JSON.stringify(perdidos || []));
+            localStorage.setItem('crm_metas', JSON.stringify(metas || {}));
+        } catch (ePart) {}
+    }
 
     try {
         localStorage.setItem('ploomesPessoasV1', JSON.stringify(pessoas || []));
     } catch (e) {}
+
+    // 3. Backup de modelos no Supabase
+    sincronizarTemplatesGeraisNoBanco().catch(() => {});
 
     atualizarContadores();
     atualizarIndicadorStatusSync('sincronizando');
