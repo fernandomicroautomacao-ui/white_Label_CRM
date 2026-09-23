@@ -134,6 +134,8 @@ function renderizarPipeline() {
                                         <button class="btn btn-outline btn-xs" onclick="toggleCardMenu(event, '${lead.id}')" title="Mais ações">⋮</button>
                                         <div class="card-menu" id="cardMenu-${lead.id}">
                                             <button onclick="fecharCardMenus();abrirModalLandingPageLead('${lead.id}')">🌐 Landing Page do Cliente</button>
+                                            <button onclick="fecharCardMenus();copiarLinkLandingPageLeadRapido('${lead.id}')">📋 Copiar Link da Proposta / LP</button>
+                                            <button onclick="fecharCardMenus();abrirLandingPageLeadRapido('${lead.id}')">🚀 Abrir Proposta / LP</button>
                                             <button onclick="fecharCardMenus();abrirMergulhoProfundoLead('${lead.id}', 'abaQuestionario')">📋 Ver Questionário / Diagnóstico</button>
                                             <button onclick="fecharCardMenus();abrirEnvioEmail('${lead.id}')">Enviar Email</button>
                                             <button onclick="fecharCardMenus();abrirEnvioWhatsApp('${lead.id}')">Enviar WhatsApp</button>

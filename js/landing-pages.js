@@ -3365,6 +3365,45 @@ async function excluirModeloLandingPageDoBanco(modeloId) {
     }
 }
 
+// ================================================================
+// CONTROLE DE MODELOS EXCLUÍDOS (PERSISTÊNCIA ANTI-RESSURREIÇÃO)
+// Impede que modelos excluídos pelo usuário voltem a aparecer
+// ao rodar inicializadores de presets ou sincronização com Supabase.
+// ================================================================
+function registrarModeloLandingPageExcluido(modeloId) {
+    if (!modeloId) return;
+    try {
+        const excluidos = JSON.parse(localStorage.getItem('crm_lp_modelos_excluidos') || '[]');
+        if (!excluidos.includes(modeloId)) {
+            excluidos.push(modeloId);
+            localStorage.setItem('crm_lp_modelos_excluidos', JSON.stringify(excluidos));
+        }
+    } catch (e) {
+        console.warn('Erro ao registrar modelo excluído no localStorage:', e);
+    }
+}
+
+function desregistrarModeloLandingPageExcluido(modeloId) {
+    if (!modeloId) return;
+    try {
+        const excluidos = JSON.parse(localStorage.getItem('crm_lp_modelos_excluidos') || '[]');
+        const filtrados = excluidos.filter(id => id !== modeloId);
+        localStorage.setItem('crm_lp_modelos_excluidos', JSON.stringify(filtrados));
+    } catch (e) {
+        console.warn('Erro ao desregistrar modelo excluído no localStorage:', e);
+    }
+}
+
+function isModeloLandingPageExcluido(modeloId) {
+    if (!modeloId) return false;
+    try {
+        const excluidos = JSON.parse(localStorage.getItem('crm_lp_modelos_excluidos') || '[]');
+        return excluidos.includes(modeloId);
+    } catch (e) {
+        return false;
+    }
+}
+
 // Carrega TODOS os modelos do banco para o painel de gestão (aba Marketing),
 // mesclando com o array local. Não é usado no caminho do Portal do Cliente —
 // lá a busca é individual e sob demanda (ver buscarModeloLandingPageJIT).
@@ -3379,8 +3418,9 @@ async function carregarModelosLandingPageDoBanco() {
     try {
         const { data, error } = await supabaseClient.from('landing_page_modelos').select('*');
         if (error || !data) return;
-        const remotos = data.map(linhaSupabaseParaModeloLP);
-        const mapaLocal = new Map((modelosLandingPage || []).map(m => [m.id, m]));
+        // Filtra registros que o usuário já excluiu neste navegador
+        const remotos = data.map(linhaSupabaseParaModeloLP).filter(r => !isModeloLandingPageExcluido(r.id));
+        const mapaLocal = new Map((modelosLandingPage || []).filter(m => !isModeloLandingPageExcluido(m.id)).map(m => [m.id, m]));
         const assinaturaAntes = JSON.stringify(Array.from(mapaLocal.entries()).sort());
         remotos.forEach(r => mapaLocal.set(r.id, { ...mapaLocal.get(r.id), ...r }));
         const assinaturaDepois = JSON.stringify(Array.from(mapaLocal.entries()).sort());
@@ -3460,7 +3500,7 @@ async function renderizarLandingPageJITAsync(modeloIdOuObjeto, lead) {
 // ================================================================
 function inicializarModelosLandingPageExemplo() {
     if (!modelosLandingPage || modelosLandingPage.length === 0) {
-        modelosLandingPage = [
+        const modelosIniciaisPadrao = [
             {
                 id: 'lp_sopro_pet_oficial',
                 nome: 'Válvula de Sopro PET - Proposta Exclusiva MiCRO',
@@ -3502,6 +3542,9 @@ function inicializarModelosLandingPageExemplo() {
                 nome: 'Schmalz & MiCRO - Tecnologia em Vácuo & Garras',
                 descricao: 'Portal especializado em automação por vácuo Schmalz (ventosas, ejetores ecoeficientes, garras FXP/FMC, robótica e proposta personalizada).',
                 padrao: false,
+                tipo: 'externo',
+                urlExterna: 'https://schmalz-micro-vacuo.fernandomicroautomac.chatgpt.site/',
+                variaveisFlags: ['empresa', 'decisor', 'cnpj', 'valor', 'numero_orcamento'],
                 html: TEMPLATE_SCHMALZ_MICRO_VACUO,
                 css: '',
                 js: '',
@@ -3510,67 +3553,95 @@ function inicializarModelosLandingPageExemplo() {
                 atualizadoEm: new Date().toISOString()
             }
         ];
+
+        // Filtra modelos que o usuário já excluiu deliberadamente
+        modelosLandingPage = modelosIniciaisPadrao.filter(m => !isModeloLandingPageExcluido(m.id));
+        if (modelosLandingPage.length === 0) {
+            modelosLandingPage = [modelosIniciaisPadrao[0]];
+        }
+        if (!modelosLandingPage.some(m => m.padrao)) {
+            modelosLandingPage[0].padrao = true;
+        }
+
         if (typeof salvarDados === 'function') salvarDados();
         modelosLandingPage.forEach(m => sincronizarModeloLandingPageNoBanco(m));
     } else {
-        // Garante que o modelo "Visualizador de Orçamento" exista e esteja sempre com o visualizador PDF original atualizado
-        const idxVis = modelosLandingPage.findIndex(m => m.id === 'lp_visualizador_orcamento' || m.nome === 'Visualizador de Orçamento');
-        if (idxVis === -1) {
-            modelosLandingPage.push({
-                id: 'lp_visualizador_orcamento',
-                nome: 'Visualizador de Orçamento',
-                descricao: 'Portal do cliente com visualizador de proposta em anexo estilo PDF em alta fidelidade com PDF.js, aceite/assinatura digital, impressão A4 e vitrine lateral de produtos MiCRO.',
-                padrao: false,
-                html: TEMPLATE_VISUALIZADOR_ORCAMENTO,
-                css: '',
-                js: '',
-                imagens: [],
-                criadoEm: new Date().toISOString(),
-                atualizadoEm: new Date().toISOString()
-            });
-            if (typeof salvarDados === 'function') salvarDados();
-            sincronizarModeloLandingPageNoBanco(modelosLandingPage[modelosLandingPage.length - 1]);
-        } else {
-            modelosLandingPage[idxVis].html = TEMPLATE_VISUALIZADOR_ORCAMENTO;
-            modelosLandingPage[idxVis].descricao = 'Portal do cliente com visualizador de proposta em anexo estilo PDF em alta fidelidade com PDF.js, aceite/assinatura digital, impressão A4 e vitrine lateral de produtos MiCRO.';
-            modelosLandingPage[idxVis].atualizadoEm = new Date().toISOString();
-            sincronizarModeloLandingPageNoBanco(modelosLandingPage[idxVis]);
+        // Remove da memória caso algum modelo excluído ainda esteja presente
+        const qtdAntes = modelosLandingPage.length;
+        modelosLandingPage = modelosLandingPage.filter(m => !isModeloLandingPageExcluido(m.id));
+        if (modelosLandingPage.length !== qtdAntes && typeof salvarDados === 'function') {
+            salvarDados();
         }
 
-        // Garante que o modelo Schmalz & MiCRO Vácuo exista no array
-        const idxSchmalz = modelosLandingPage.findIndex(m => m.id === 'lp_schmalz_micro_vacuo' || m.nome?.includes('Schmalz'));
-        const urlSchmalzExterna = 'https://schmalz-micro-vacuo.fernandomicroautomac.chatgpt.site/';
-        const flagsPadrao = ['empresa', 'decisor', 'cnpj', 'valor', 'itens_tabela', 'email', 'telefone', 'cidade_uf', 'numero_orcamento', 'vendedor_nome', 'vendedor_whatsapp'];
+        // Garante que o modelo "Visualizador de Orçamento" exista (apenas se NÃO foi excluído)
+        if (!isModeloLandingPageExcluido('lp_visualizador_orcamento')) {
+            const idxVis = modelosLandingPage.findIndex(m => m.id === 'lp_visualizador_orcamento' || m.nome === 'Visualizador de Orçamento');
+            if (idxVis === -1) {
+                modelosLandingPage.push({
+                    id: 'lp_visualizador_orcamento',
+                    nome: 'Visualizador de Orçamento',
+                    descricao: 'Portal do cliente com visualizador de proposta em anexo estilo PDF em alta fidelidade com PDF.js, aceite/assinatura digital, impressão A4 e vitrine lateral de produtos MiCRO.',
+                    padrao: false,
+                    html: TEMPLATE_VISUALIZADOR_ORCAMENTO,
+                    css: '',
+                    js: '',
+                    imagens: [],
+                    criadoEm: new Date().toISOString(),
+                    atualizadoEm: new Date().toISOString()
+                });
+                if (typeof salvarDados === 'function') salvarDados();
+                sincronizarModeloLandingPageNoBanco(modelosLandingPage[modelosLandingPage.length - 1]);
+            } else {
+                modelosLandingPage[idxVis].html = TEMPLATE_VISUALIZADOR_ORCAMENTO;
+                modelosLandingPage[idxVis].descricao = 'Portal do cliente com visualizador de proposta em anexo estilo PDF em alta fidelidade com PDF.js, aceite/assinatura digital, impressão A4 e vitrine lateral de produtos MiCRO.';
+                modelosLandingPage[idxVis].atualizadoEm = new Date().toISOString();
+                sincronizarModeloLandingPageNoBanco(modelosLandingPage[idxVis]);
+            }
+        }
 
-        if (idxSchmalz === -1) {
-            modelosLandingPage.push({
-                id: 'lp_schmalz_micro_vacuo',
-                nome: 'Schmalz & MiCRO - Tecnologia em Vácuo & Garras (Site Externo)',
-                descricao: 'Template externo de alta velocidade com passagem de flags de variáveis personalizadas (empresa, decisor, cnpj, valor, itens_tabela, etc).',
-                padrao: false,
-                tipo: 'externo',
-                urlExterna: urlSchmalzExterna,
-                variaveisFlags: flagsPadrao,
-                html: TEMPLATE_SCHMALZ_MICRO_VACUO,
-                css: '',
-                js: '',
-                imagens: [],
-                criadoEm: new Date().toISOString(),
-                atualizadoEm: new Date().toISOString()
-            });
-            if (typeof salvarDados === 'function') salvarDados();
-            sincronizarModeloLandingPageNoBanco(modelosLandingPage[modelosLandingPage.length - 1]);
-        } else {
-            // Se já existia, garante o vínculo com o template externo oficial solicitado pelo usuário
-            if (!modelosLandingPage[idxSchmalz].urlExterna) {
-                modelosLandingPage[idxSchmalz].urlExterna = urlSchmalzExterna;
-                modelosLandingPage[idxSchmalz].tipo = 'externo';
-                modelosLandingPage[idxSchmalz].variaveisFlags = flagsPadrao;
-                modelosLandingPage[idxSchmalz].atualizadoEm = new Date().toISOString();
-                sincronizarModeloLandingPageNoBanco(modelosLandingPage[idxSchmalz]);
+        // Garante que o modelo Schmalz & MiCRO Vácuo exista (apenas se NÃO foi excluído)
+        if (!isModeloLandingPageExcluido('lp_schmalz_micro_vacuo')) {
+            const idxSchmalz = modelosLandingPage.findIndex(m => m.id === 'lp_schmalz_micro_vacuo' || m.nome?.includes('Schmalz'));
+            const urlSchmalzExterna = 'https://schmalz-micro-vacuo.fernandomicroautomac.chatgpt.site/';
+            const flagsPadrao = ['empresa', 'decisor', 'cnpj', 'valor', 'numero_orcamento'];
+
+            if (idxSchmalz === -1) {
+                modelosLandingPage.push({
+                    id: 'lp_schmalz_micro_vacuo',
+                    nome: 'Schmalz & MiCRO - Tecnologia em Vácuo & Garras (Site Externo)',
+                    descricao: 'Template externo de alta velocidade com passagem de flags de variáveis personalizadas (empresa, decisor, cnpj, valor, itens_tabela, etc).',
+                    padrao: false,
+                    tipo: 'externo',
+                    urlExterna: urlSchmalzExterna,
+                    variaveisFlags: flagsPadrao,
+                    html: TEMPLATE_SCHMALZ_MICRO_VACUO,
+                    css: '',
+                    js: '',
+                    imagens: [],
+                    criadoEm: new Date().toISOString(),
+                    atualizadoEm: new Date().toISOString()
+                });
+                if (typeof salvarDados === 'function') salvarDados();
+                sincronizarModeloLandingPageNoBanco(modelosLandingPage[modelosLandingPage.length - 1]);
+            } else {
+                if (!modelosLandingPage[idxSchmalz].urlExterna) {
+                    modelosLandingPage[idxSchmalz].urlExterna = urlSchmalzExterna;
+                    modelosLandingPage[idxSchmalz].tipo = 'externo';
+                    modelosLandingPage[idxSchmalz].variaveisFlags = flagsPadrao;
+                    modelosLandingPage[idxSchmalz].atualizadoEm = new Date().toISOString();
+                    sincronizarModeloLandingPageNoBanco(modelosLandingPage[idxSchmalz]);
+                }
             }
         }
     }
+
+    // Garante que haja ao menos um modelo marcado como padrão
+    if (modelosLandingPage.length > 0 && !modelosLandingPage.some(m => m.padrao)) {
+        modelosLandingPage[0].padrao = true;
+        if (typeof salvarDados === 'function') salvarDados();
+        sincronizarModeloLandingPageNoBanco(modelosLandingPage[0]);
+    }
+
     // Puxa do banco só na primeira vez (evita loop: esta função roda toda
     // vez que o painel é (re)renderizado, mas o fetch do banco só precisa
     // acontecer uma vez por carregamento da página).
@@ -3580,10 +3651,79 @@ function inicializarModelosLandingPageExemplo() {
 }
 
 // ================================================================
+// OBTENÇÃO E RESOLUÇÃO INTELIGENTE DO DECISOR / CONTATO DO LEAD
+// ================================================================
+function obterDecisorLead(lead) {
+    if (!lead) return '';
+    if (typeof lead === 'string') {
+        const encontrado = (typeof leads !== 'undefined' && Array.isArray(leads))
+            ? leads.find(l => l.id === lead)
+            : null;
+        if (encontrado) lead = encontrado;
+        else return '';
+    }
+
+    // 1. Campo explícito lead.decisor no cadastro do lead
+    if (lead.decisor && typeof lead.decisor === 'string') {
+        const d = lead.decisor.trim();
+        if (d && d !== '—' && d !== 'N/A' && d !== 'Não informado' && d !== 'Contato não especificado') {
+            return d;
+        }
+    }
+    // 2. Contatos alternativos do lead
+    if (lead.contato && typeof lead.contato === 'string' && lead.contato.trim()) {
+        return lead.contato.trim();
+    }
+    if (lead.contatoResponsavel && typeof lead.contatoResponsavel === 'string' && lead.contatoResponsavel.trim()) {
+        return lead.contatoResponsavel.trim();
+    }
+    if (lead.contato_responsavel && typeof lead.contato_responsavel === 'string' && lead.contato_responsavel.trim()) {
+        return lead.contato_responsavel.trim();
+    }
+    if (lead.comprador && typeof lead.comprador === 'string' && lead.comprador.trim()) {
+        return lead.comprador.trim();
+    }
+    // 3. Questionário / Sondagem Comercial
+    if (lead.questionario?.contatoNome && typeof lead.questionario.contatoNome === 'string' && lead.questionario.contatoNome.trim()) {
+        return lead.questionario.contatoNome.trim();
+    }
+    // 4. Metadados e dados extraídos de PDF
+    const extraidos = lead.orcamentoPdfPrincipal?.dadosExtraidos;
+    if (extraidos) {
+        const cPdf = extraidos.contato || extraidos.comprador || extraidos.solicitante || extraidos.decisor;
+        if (cPdf && typeof cPdf === 'string' && cPdf.trim()) {
+            return cPdf.trim();
+        }
+    }
+    // 5. Tabela Pessoas vinculadas a esta empresa ou lead
+    if (typeof pessoas !== 'undefined' && Array.isArray(pessoas) && (lead.id || lead.empresa)) {
+        const pDecisor = pessoas.find(p => (p.leadId === lead.id || (p.empresa && p.empresa.toLowerCase() === (lead.empresa || '').toLowerCase())) && (p.decisor === 'sim' || p.decisor === 'influenciador'));
+        if (pDecisor && pDecisor.nome && pDecisor.nome.trim()) return pDecisor.nome.trim();
+
+        const pQualquer = pessoas.find(p => p.leadId === lead.id || (p.empresa && p.empresa.toLowerCase() === (lead.empresa || '').toLowerCase()));
+        if (pQualquer && pQualquer.nome && pQualquer.nome.trim()) return pQualquer.nome.trim();
+    }
+    return '';
+}
+
+// ================================================================
 // MONTAGEM DE VARIÁVEIS DO LEAD (COMPARTILHADA POR MODELOS INTEGRADOS E EXTERNOS)
 // ================================================================
 function extrairDadosLeadParaVariaveis(lead) {
-    return lead || {
+    if (typeof lead === 'string') {
+        const encontrado = (typeof leads !== 'undefined' && Array.isArray(leads))
+            ? leads.find(l => l.id === lead)
+            : null;
+        if (encontrado) lead = encontrado;
+    }
+    if (lead && typeof lead === 'object') {
+        const decisorReal = obterDecisorLead(lead);
+        return {
+            ...lead,
+            decisor: decisorReal || ''
+        };
+    }
+    return {
         id: 'exemplo',
         empresa: 'Vemaplastic Indústria e Comércio',
         decisor: 'Thomaz',
@@ -3605,6 +3745,7 @@ function extrairDadosLeadParaVariaveis(lead) {
 
 function montarMapaVariaveisLead(lead) {
     const leadData = extrairDadosLeadParaVariaveis(lead);
+    const decisorLead = (lead ? (obterDecisorLead(leadData) || 'Diretoria') : (obterDecisorLead(leadData) || 'Thomaz'));
 
     // Vendedor responsável
     let vendedor = (typeof usuarios !== 'undefined' && Array.isArray(usuarios))
@@ -3739,7 +3880,7 @@ function montarMapaVariaveisLead(lead) {
         pdf_nome_arquivo: pdfNomeArquivo,
         pdf_data_url: pdfDataUrl,
         empresa: leadData.empresa || 'Sua Empresa',
-        decisor: leadData.decisor || 'Thomaz',
+        decisor: decisorLead,
         cnpj: cnpjFormatado || 'Consulte seu consultor',
         cnpj_formatado: cnpjFormatado || '',
         cnpj_limpo: cnpjLimpo || '',
@@ -3782,16 +3923,32 @@ function montarUrlExternaComVariaveis(urlBase, flagsArray, lead) {
     }
 
     const mapa = montarMapaVariaveisLead(lead);
+    const decisorReal = obterDecisorLead(lead);
     const flags = (Array.isArray(flagsArray) && flagsArray.length > 0)
         ? flagsArray
-        : ['empresa', 'decisor', 'cnpj', 'valor', 'itens_tabela'];
+        : ['empresa', 'decisor', 'cnpj', 'valor', 'numero_orcamento'];
 
     try {
         const urlObj = new URL(urlLimpa);
         flags.forEach(flag => {
             const chave = flag.trim();
-            if (chave && mapa[chave] !== undefined) {
-                urlObj.searchParams.set(chave, String(mapa[chave]));
+            if (chave && mapa[chave] !== undefined && mapa[chave] !== null && mapa[chave] !== '') {
+                // Se a chave for decisor e o lead real não possuir decisor preenchido, omite para não exibir nome falso
+                if (chave === 'decisor' && lead && !decisorReal) {
+                    return;
+                }
+                let valor = String(mapa[chave]);
+                // Se contiver tags HTML (ex: itens_tabela), sanitiza para texto plano limpo
+                // para não quebrar a URL nem ativar firewalls WAF / bloqueios de login no ChatGPT
+                if (valor.includes('<') && valor.includes('>')) {
+                    const temp = document.createElement('div');
+                    temp.innerHTML = valor;
+                    valor = (temp.textContent || temp.innerText || '').replace(/\s+/g, ' ').trim();
+                    if (valor.length > 250) {
+                        valor = valor.slice(0, 250) + '...';
+                    }
+                }
+                urlObj.searchParams.set(chave, valor);
             }
         });
         return urlObj.toString();
@@ -3799,8 +3956,20 @@ function montarUrlExternaComVariaveis(urlBase, flagsArray, lead) {
         // Fallback se URL for relativa ou tiver sintaxe não padrão
         const separador = urlLimpa.includes('?') ? '&' : '?';
         const params = flags
-            .filter(f => mapa[f] !== undefined)
-            .map(f => `${encodeURIComponent(f)}=${encodeURIComponent(mapa[f])}`)
+            .filter(f => {
+                if (f === 'decisor' && lead && !decisorReal) return false;
+                return mapa[f] !== undefined && mapa[f] !== null && mapa[f] !== '';
+            })
+            .map(f => {
+                let val = String(mapa[f]);
+                if (val.includes('<') && val.includes('>')) {
+                    const temp = document.createElement('div');
+                    temp.innerHTML = val;
+                    val = (temp.textContent || temp.innerText || '').replace(/\s+/g, ' ').trim();
+                    if (val.length > 250) val = val.slice(0, 250) + '...';
+                }
+                return `${encodeURIComponent(f)}=${encodeURIComponent(val)}`;
+            })
             .join('&');
         return `${urlLimpa}${separador}${params}`;
     }
@@ -3978,12 +4147,12 @@ function renderizarPainelLandingPagesMarketing() {
                     <div class="text-xs text-muted">
                         ${m.tipo === 'externo' || m.urlExterna ? '🔗 Redirecionamento / Iframe JIT com Flags' : '⚡ Renderização JIT sob demanda'}
                     </div>
-                    <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                        <button class="btn btn-outline btn-xs" onclick="abrirPreviewLandingPage('${m.id}')" title="Testar e visualizar com lead">👁️ Simular</button>
-                        <button class="btn btn-primary btn-xs" onclick="abrirModalEditorLandingPage('${m.id}')" title="Editar código HTML, CSS, JS">✏️ Editar</button>
-                        <button class="btn btn-outline btn-xs" onclick="duplicarModeloLandingPage('${m.id}')" title="Duplicar modelo">📋 Copiar</button>
-                        ${!m.padrao ? `<button class="btn btn-outline btn-xs" onclick="definirModeloLandingPagePadrao('${m.id}')" title="Definir como padrão">⭐ Padrão</button>` : ''}
-                        ${modelosLandingPage.length > 1 ? `<button class="btn btn-danger btn-xs" onclick="excluirModeloLandingPage('${m.id}')" title="Excluir">✕</button>` : ''}
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+                        <button type="button" class="btn btn-outline btn-xs" onclick="abrirPreviewLandingPage('${m.id}')" title="Testar e simular este modelo com qualquer lead">👁️ Simular</button>
+                        <button type="button" class="btn btn-primary btn-xs" onclick="abrirModalEditorLandingPage('${m.id}')" title="Editar código HTML, CSS, JS ou link externo">✏️ Editar</button>
+                        <button type="button" class="btn btn-outline btn-xs" onclick="duplicarModeloLandingPage('${m.id}')" title="Duplicar modelo">📋 Copiar</button>
+                        ${!m.padrao ? `<button type="button" class="btn btn-outline btn-xs" onclick="definirModeloLandingPagePadrao('${m.id}')" title="Definir como modelo padrão do sistema">⭐ Padrão</button>` : ''}
+                        ${modelosLandingPage.length > 1 ? `<button type="button" class="btn btn-danger btn-xs" onclick="abrirModalConfirmacaoExcluirModeloLP('${m.id}')" title="Excluir este modelo de Landing Page">🗑️ Excluir</button>` : ''}
                     </div>
                 </div>
             </div>
@@ -4157,6 +4326,16 @@ function abrirModalEditorLandingPage(modeloId = null) {
     // Inicia na aba HTML se for integrado
     alternarAbaEditorLP('html');
 
+    // Botão de exclusão rápida no rodapé do editor (apenas quando editando modelo existente e se houver mais de um)
+    const btnExcluir = document.getElementById('btnLpEditorExcluir');
+    if (btnExcluir) {
+        if (modeloId && (modelosLandingPage || []).length > 1) {
+            btnExcluir.style.display = 'inline-flex';
+        } else {
+            btnExcluir.style.display = 'none';
+        }
+    }
+
     // Reseta visualização split se necessário
     const colCodigo = document.getElementById('lpEditorColunaCodigo');
     const colPreview = document.getElementById('lpEditorColunaPreview');
@@ -4170,6 +4349,14 @@ function abrirModalEditorLandingPage(modeloId = null) {
 
     // Abre o modal
     abrirModal('editorLandingPageModal');
+}
+
+function excluirModeloLandingPageAtualDoEditor() {
+    const inputId = document.getElementById('lpEditorModeloId');
+    const modeloId = inputId ? inputId.value.trim() : lpModeloEmEdicaoId;
+    if (modeloId) {
+        abrirModalConfirmacaoExcluirModeloLP(modeloId);
+    }
 }
 
 function carregarPresetNoEditor() {
@@ -4427,7 +4614,7 @@ function salvarModeloLandingPage(event) {
                 ...modelosLandingPage[idx],
                 nome,
                 descricao,
-                padrao: padrao || modelosLandingPage[idx].padrao,
+                padrao: Boolean(padrao),
                 tipo,
                 urlExterna,
                 variaveisFlags,
@@ -4439,16 +4626,21 @@ function salvarModeloLandingPage(event) {
                 corPrimaria,
                 atualizadoEm: new Date().toISOString()
             };
+            if (!modelosLandingPage.some(m => m.padrao)) {
+                modelosLandingPage[0].padrao = true;
+            }
+            desregistrarModeloLandingPageExcluido(modeloId);
             showToast(`Modelo "${nome}" atualizado com sucesso!`, 'success');
             sincronizarModeloLandingPageNoBanco(modelosLandingPage[idx]);
         }
     } else {
         const novoId = 'lp_' + Date.now();
+        desregistrarModeloLandingPageExcluido(novoId);
         const novoModelo = {
             id: novoId,
             nome,
             descricao,
-            padrao: padrao || (modelosLandingPage || []).length === 0,
+            padrao: Boolean(padrao) || (modelosLandingPage || []).length === 0,
             tipo,
             urlExterna,
             variaveisFlags,
@@ -4462,6 +4654,9 @@ function salvarModeloLandingPage(event) {
             atualizadoEm: new Date().toISOString()
         };
         modelosLandingPage.push(novoModelo);
+        if (!modelosLandingPage.some(m => m.padrao)) {
+            modelosLandingPage[0].padrao = true;
+        }
         showToast(`Novo modelo "${nome}" criado com sucesso!`, 'success');
         sincronizarModeloLandingPageNoBanco(novoModelo);
     }
@@ -4471,15 +4666,22 @@ function salvarModeloLandingPage(event) {
 
     fecharModal('editorLandingPageModal');
     renderizarPainelLandingPagesMarketing();
+    if (typeof renderizarLandingPagePadraoAdmin === 'function') renderizarLandingPagePadraoAdmin();
 }
 
 function duplicarModeloLandingPage(modeloId) {
     const original = (modelosLandingPage || []).find(m => m.id === modeloId);
-    if (!original) return;
+    if (!original) {
+        showToast('Modelo original não encontrado.', 'error');
+        return;
+    }
+
+    const novoId = 'lp_' + Date.now();
+    desregistrarModeloLandingPageExcluido(novoId);
 
     const novoModelo = {
         ...JSON.parse(JSON.stringify(original)),
-        id: 'lp_' + Date.now(),
+        id: novoId,
         nome: `${original.nome} (Cópia)`,
         padrao: false,
         criadoEm: new Date().toISOString(),
@@ -4489,36 +4691,131 @@ function duplicarModeloLandingPage(modeloId) {
     modelosLandingPage.push(novoModelo);
     if (typeof salvarDados === 'function') salvarDados();
     renderizarPainelLandingPagesMarketing();
+    if (typeof renderizarLandingPagePadraoAdmin === 'function') renderizarLandingPagePadraoAdmin();
     showToast(`Modelo copiado como "${novoModelo.nome}"!`, 'success');
     sincronizarModeloLandingPageNoBanco(novoModelo);
 }
 
 function definirModeloLandingPagePadrao(modeloId) {
-    (modelosLandingPage || []).forEach(m => m.padrao = (m.id === modeloId));
+    let anteriorPadrao = null;
+    let novoPadrao = null;
+
+    (modelosLandingPage || []).forEach(m => {
+        if (m.padrao && m.id !== modeloId) anteriorPadrao = m;
+        m.padrao = (m.id === modeloId);
+        if (m.padrao) novoPadrao = m;
+    });
+
     if (typeof salvarDados === 'function') salvarDados();
     renderizarPainelLandingPagesMarketing();
+    if (typeof renderizarLandingPagePadraoAdmin === 'function') renderizarLandingPagePadraoAdmin();
     showToast('Modelo padrão atualizado!', 'success');
-    const modeloPadrao = (modelosLandingPage || []).find(m => m.id === modeloId);
-    if (modeloPadrao) sincronizarModeloLandingPageNoBanco(modeloPadrao);
+
+    if (anteriorPadrao) sincronizarModeloLandingPageNoBanco(anteriorPadrao);
+    if (novoPadrao) sincronizarModeloLandingPageNoBanco(novoPadrao);
 }
 
-function excluirModeloLandingPage(modeloId) {
+// ================================================================
+// EXCLUSÃO DE MODELOS DE LANDING PAGE COM MODAL DEDICADO
+// Não depende de window.confirm() (garante funcionamento no iframe)
+// e limpa vínculos de leads e banco com persistência imediata.
+// ================================================================
+let _lpModeloPendenteExclusaoId = null;
+
+function abrirModalConfirmacaoExcluirModeloLP(modeloId) {
+    if (!modeloId) return;
+
     if ((modelosLandingPage || []).length <= 1) {
         showToast('Você deve manter pelo menos um modelo de Landing Page no sistema.', 'warning');
         return;
     }
-    const modelo = (modelosLandingPage || []).find(m => m.id === modeloId);
-    if (!confirm(`Deseja realmente excluir o modelo "${modelo?.nome || 'Selecionado'}"?`)) return;
 
-    modelosLandingPage = modelosLandingPage.filter(m => m.id !== modeloId);
-    if (!modelosLandingPage.some(m => m.padrao)) {
-        modelosLandingPage[0].padrao = true;
-        sincronizarModeloLandingPageNoBanco(modelosLandingPage[0]);
+    const modelo = (modelosLandingPage || []).find(m => m.id === modeloId);
+    if (!modelo) {
+        showToast('Modelo de Landing Page não encontrado.', 'error');
+        return;
     }
 
+    _lpModeloPendenteExclusaoId = modeloId;
+
+    const inputId = document.getElementById('lpExcluirModeloId');
+    const elNome = document.getElementById('lpExcluirModeloNome');
+    if (inputId) inputId.value = modeloId;
+    if (elNome) elNome.textContent = `"${modelo.nome}"`;
+
+    abrirModal('modalConfirmarExclusaoModeloLP');
+}
+
+// Retrocompatibilidade para chamadas diretas da função antiga
+function excluirModeloLandingPage(modeloId) {
+    abrirModalConfirmacaoExcluirModeloLP(modeloId);
+}
+
+async function confirmarExclusaoModeloLPFinal() {
+    const inputId = document.getElementById('lpExcluirModeloId');
+    const modeloId = inputId?.value || _lpModeloPendenteExclusaoId;
+
+    if (!modeloId) {
+        fecharModal('modalConfirmarExclusaoModeloLP');
+        return;
+    }
+
+    if ((modelosLandingPage || []).length <= 1) {
+        showToast('Você deve manter pelo menos um modelo de Landing Page no sistema.', 'warning');
+        fecharModal('modalConfirmarExclusaoModeloLP');
+        return;
+    }
+
+    const modelo = (modelosLandingPage || []).find(m => m.id === modeloId);
+    const nomeModelo = modelo ? modelo.nome : 'Modelo';
+
+    // 1. Marca modelo como excluído no blacklist local (evita ressuscitar nos presets e sync)
+    registrarModeloLandingPageExcluido(modeloId);
+
+    // 2. Remove do array em memória
+    modelosLandingPage = (modelosLandingPage || []).filter(m => m.id !== modeloId);
+
+    // 3. Se era o padrão, elege o primeiro modelo restante como padrão
+    let novoPadraoDefinido = null;
+    if (!modelosLandingPage.some(m => m.padrao) && modelosLandingPage.length > 0) {
+        modelosLandingPage[0].padrao = true;
+        novoPadraoDefinido = modelosLandingPage[0];
+    }
+
+    // 4. Redireciona leads que apontavam para este modelo excluído (para seguir o padrão)
+    if (typeof leads !== 'undefined' && Array.isArray(leads)) {
+        let afetados = 0;
+        leads.forEach(l => {
+            if (l.landingPageModeloId === modeloId) {
+                l.landingPageModeloId = '';
+                l.atualizadoEm = new Date().toISOString();
+                l._modificadoLocal = true;
+                afetados++;
+                if (typeof salvarLeadNoBanco === 'function') salvarLeadNoBanco(l);
+            }
+        });
+        if (afetados > 0 && typeof salvarCacheLocalImediato === 'function') {
+            salvarCacheLocalImediato();
+        }
+    }
+
+    // 5. Salva no storage local (IndexedDB e localStorage)
     if (typeof salvarDados === 'function') salvarDados();
+
+    // 6. Fecha modais
+    fecharModal('modalConfirmarExclusaoModeloLP');
+    fecharModal('editorLandingPageModal');
+
+    // 7. Renderiza o painel atualizado e as telas vinculadas
     renderizarPainelLandingPagesMarketing();
-    showToast('Modelo excluído com sucesso!', 'info');
+    if (typeof renderizarLandingPagePadraoAdmin === 'function') renderizarLandingPagePadraoAdmin();
+
+    showToast(`Modelo "${nomeModelo}" excluído com sucesso!`, 'info');
+
+    // 8. Sincroniza exclusão no Supabase em background
+    if (novoPadraoDefinido) {
+        sincronizarModeloLandingPageNoBanco(novoPadraoDefinido);
+    }
     excluirModeloLandingPageDoBanco(modeloId);
 }
 
@@ -4571,6 +4868,35 @@ function recarregarPreviewModalLP() {
     const modelo = (modelosLandingPage || []).find(m => m.id === modeloId);
     const leadObj = (typeof leads !== 'undefined' && Array.isArray(leads)) ? leads.find(l => l.id === leadId) : null;
 
+    if (modelo && (modelo.tipo === 'externo' || Boolean(modelo.urlExterna))) {
+        const urlMontada = montarUrlExternaComVariaveis(modelo.urlExterna, modelo.variaveisFlags, leadObj);
+        iframe.srcdoc = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; padding: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; text-align: center; }
+        .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 28px; max-width: 600px; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: #0284c7; color: #fff; margin-bottom: 12px; text-transform: uppercase; }
+        h2 { font-size: 18px; margin-bottom: 8px; color: #38bdf8; }
+        p { font-size: 13px; color: #94a3b8; line-height: 1.5; margin-bottom: 16px; }
+        .url-box { background: #090d16; border: 1px solid #1e293b; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 12px; color: #7dd3fc; word-break: break-all; margin-bottom: 20px; text-align: left; }
+        .btn-open { display: inline-block; background: #0284c7; color: #fff; padding: 10px 22px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <span class="badge">🔗 Template Externo Ativo</span>
+        <h2>${modelo.nome}</h2>
+        <p>Este modelo é carregado no servidor externo com tags do cliente em tempo real, sem restrição de autenticação.</p>
+        <div class="url-box">${urlMontada}</div>
+        <a href="${urlMontada}" target="_blank" class="btn-open">🚀 Abrir Template Externo em Nova Aba</a>
+    </div>
+</body>
+</html>`;
+        return;
+    }
+
     const rendered = renderizarLandingPageJIT(modelo, leadObj);
     iframe.srcdoc = rendered;
 }
@@ -4603,6 +4929,12 @@ function abrirPreviewEmNovaAba() {
     const modelo = (modelosLandingPage || []).find(m => m.id === modeloId);
     const leadObj = (typeof leads !== 'undefined' && Array.isArray(leads)) ? leads.find(l => l.id === leadId) : null;
 
+    if (modelo && (modelo.tipo === 'externo' || Boolean(modelo.urlExterna))) {
+        const urlMontada = montarUrlExternaComVariaveis(modelo.urlExterna, modelo.variaveisFlags, leadObj);
+        window.open(urlMontada, '_blank');
+        return;
+    }
+
     const rendered = renderizarLandingPageJIT(modelo, leadObj);
 
     const win = window.open('', '_blank');
@@ -4622,12 +4954,32 @@ function abrirPreviewEmNovaAba() {
 // ================================================================
 let leadLpModalAtivoId = null;
 
-// Monta a URL do Portal do Cliente. Se um modeloId for informado, ele vai
-// gravado na própria URL (?modelo=...) — assim o link já abre com aquele
-// modelo, sem precisar salvar nada antes nem depender do que está gravado
-// no banco para aquele lead. Sem modeloId, o link fica "dinâmico": sempre
-// abre o que estiver marcado como Padrão no momento do acesso.
+// Monta a URL do Portal / Landing Page do Lead.
+// Se o modelo for externo (ex: ChatGPT Site da Schmalz ou template com urlExterna),
+// retorna DIRETAMENTE a URL externa já montada com as variáveis/tags do lead.
+// Isso elimina qualquer bloqueio de login/autenticação prejudicial e atende perfeitamente ao formato esperado.
 function montarLinkPortalLead(leadId, modeloId) {
+    const lead = (typeof leads !== 'undefined' && Array.isArray(leads)) ? leads.find(l => l.id === leadId) : null;
+
+    let modelo = null;
+    const lista = (typeof modelosLandingPage !== 'undefined' && Array.isArray(modelosLandingPage)) ? modelosLandingPage : [];
+
+    if (modeloId) {
+        modelo = lista.find(m => m.id === modeloId);
+    }
+    if (!modelo && lead && lead.landingPageModeloId) {
+        modelo = lista.find(m => m.id === lead.landingPageModeloId);
+    }
+    if (!modelo) {
+        modelo = lista.find(m => m.padrao) || lista.find(m => m.id === 'lp_schmalz_micro_vacuo') || lista[0];
+    }
+
+    // Se o modelo for externo (ou tiver urlExterna)
+    if (modelo && (modelo.tipo === 'externo' || Boolean(modelo.urlExterna))) {
+        return montarUrlExternaComVariaveis(modelo.urlExterna, modelo.variaveisFlags, lead);
+    }
+
+    // Se for modelo interno hospedado no CRM
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
     let url = `${baseUrl}?lp=${leadId}`;
     if (modeloId) url += `&modelo=${encodeURIComponent(modeloId)}`;
@@ -4641,9 +4993,19 @@ function atualizarLinkLeadConformeModelo() {
     const elId = document.getElementById('lpLeadId');
     const selModelo = document.getElementById('lpLeadModeloId');
     const elUrl = document.getElementById('lpLeadUrl');
+    const labelUrl = document.getElementById('lpLeadUrlLabel');
     if (!elId || !elUrl) return;
+
     const modeloId = selModelo ? selModelo.value : '';
-    elUrl.value = montarLinkPortalLead(elId.value, modeloId);
+    const novaUrl = montarLinkPortalLead(elId.value, modeloId);
+    elUrl.value = novaUrl;
+
+    if (labelUrl) {
+        const isExterno = novaUrl.includes('chatgpt.site') || (novaUrl.startsWith('http') && !novaUrl.includes(window.location.origin));
+        labelUrl.textContent = isExterno
+            ? 'Link Exclusivo do Cliente (URL Montada com Tags Dinâmicas)'
+            : 'Link Exclusivo do Cliente (Portal Web Integrado)';
+    }
 }
 
 function abrirModalLandingPageLead(leadId) {
@@ -4667,10 +5029,11 @@ function abrirModalLandingPageLead(leadId) {
     const selModelo = document.getElementById('lpLeadModeloId');
     const elUrl = document.getElementById('lpLeadUrl');
     const elMsg = document.getElementById('lpLeadMensagemCustomizada');
+    const labelUrl = document.getElementById('lpLeadUrlLabel');
 
     if (elId) elId.value = lead.id;
     if (elEmpresa) elEmpresa.textContent = lead.empresa;
-    if (elDecisor) elDecisor.textContent = lead.decisor || 'Contato não especificado';
+    if (elDecisor) elDecisor.textContent = obterDecisorLead(lead) || 'Contato não especificado';
     if (elEmail) elEmail.textContent = lead.email || 'Não informado';
 
     const cnpjLimpo = (lead.cnpj || '').replace(/\D/g, '');
@@ -4683,28 +5046,74 @@ function abrirModalLandingPageLead(leadId) {
             : 'Nunca acessou';
     }
 
-    // URL Exclusiva do Cliente — recalculada a cada troca de modelo abaixo
+    // URL Exclusiva do Cliente com as tags já montadas
     const clientUrl = montarLinkPortalLead(lead.id, lead.landingPageModeloId || '');
     if (elUrl) elUrl.value = clientUrl;
 
+    if (labelUrl) {
+        const isExterno = clientUrl.includes('chatgpt.site') || (clientUrl.startsWith('http') && !clientUrl.includes(window.location.origin));
+        labelUrl.textContent = isExterno
+            ? 'Link Exclusivo do Cliente (URL Montada com Tags Dinâmicas)'
+            : 'Link Exclusivo do Cliente (Portal Web Integrado)';
+    }
+
     if (elMsg) elMsg.value = lead.landingPageMensagem || '';
 
-    // Seletor de modelos — a primeira opção "Seguir o Padrão" mantém o link
-    // sempre dinâmico: se você trocar o modelo padrão depois, o link deste
-    // lead passa a usar o novo automaticamente, sem precisar reabrir e salvar
-    // cada lead de novo.
+    // Seletor de modelos com auto-salvamento imediato ao trocar (sem necessitar clicar botão)
     if (selModelo) {
         const seguindoPadrao = !lead.landingPageModeloId;
         const opcaoPadraoDinamico = `<option value="" ${seguindoPadrao ? 'selected' : ''}>🔄 Seguir sempre o modelo Padrão atual</option>`;
         const opcoesModelos = (modelosLandingPage || []).map(m => {
             const isSelected = lead.landingPageModeloId === m.id;
-            return `<option value="${m.id}" ${isSelected ? 'selected' : ''}>${m.nome} ${m.padrao ? '(Padrão atual)' : ''}</option>`;
+            const prefix = (m.tipo === 'externo' || m.urlExterna) ? '🔗 [Externo] ' : '💻 [HTML] ';
+            return `<option value="${m.id}" ${isSelected ? 'selected' : ''}>${prefix}${m.nome} ${m.padrao ? '(Padrão atual)' : ''}</option>`;
         }).join('');
         selModelo.innerHTML = opcaoPadraoDinamico + opcoesModelos;
-        // Ao trocar a opção, o link é reescrito na mesma hora
-        selModelo.onchange = atualizarLinkLeadConformeModelo;
+
+        // Ao trocar: salva na hora, atualiza o link com as tags e avisa o usuário (sem precisar de botão!)
+        selModelo.onchange = function() {
+            lead.landingPageModeloId = selModelo.value || null;
+            lead.atualizadoEm = new Date().toISOString();
+            lead._modificadoLocal = true;
+
+            atualizarLinkLeadConformeModelo();
+
+            if (typeof salvarCacheLocalImediato === 'function') salvarCacheLocalImediato();
+            if (typeof salvarDados === 'function') salvarDados();
+            if (typeof salvarLeadNoBanco === 'function') salvarLeadNoBanco(lead);
+
+            mostrarIndicadorAutoSaveModalLP('✓ Modelo alterado e salvo automaticamente');
+        };
     }
 
+    // Mensagem customizada com auto-salvamento em tempo real
+    if (elMsg) {
+        let timeoutMsg = null;
+        elMsg.oninput = function() {
+            clearTimeout(timeoutMsg);
+            timeoutMsg = setTimeout(() => {
+                lead.landingPageMensagem = elMsg.value.trim();
+                lead.atualizadoEm = new Date().toISOString();
+                lead._modificadoLocal = true;
+                if (typeof salvarCacheLocalImediato === 'function') salvarCacheLocalImediato();
+                if (typeof salvarDados === 'function') salvarDados();
+                if (typeof salvarLeadNoBanco === 'function') salvarLeadNoBanco(lead);
+                mostrarIndicadorAutoSaveModalLP('✓ Mensagem salva automaticamente');
+            }, 350);
+        };
+        elMsg.onblur = function() {
+            clearTimeout(timeoutMsg);
+            lead.landingPageMensagem = elMsg.value.trim();
+            lead.atualizadoEm = new Date().toISOString();
+            lead._modificadoLocal = true;
+            if (typeof salvarCacheLocalImediato === 'function') salvarCacheLocalImediato();
+            if (typeof salvarDados === 'function') salvarDados();
+            if (typeof salvarLeadNoBanco === 'function') salvarLeadNoBanco(lead);
+            mostrarIndicadorAutoSaveModalLP('✓ Salvo automaticamente');
+        };
+    }
+
+    mostrarIndicadorAutoSaveModalLP('✓ Salvo automaticamente ao alterar');
     abrirModal('landingPageLeadModal');
 }
 
@@ -4722,15 +5131,26 @@ function salvarLandingPageLead(event) {
     if (elMsg) lead.landingPageMensagem = elMsg.value.trim();
 
     lead.atualizadoEm = new Date().toISOString();
+    lead._modificadoLocal = true;
 
+    if (typeof salvarCacheLocalImediato === 'function') salvarCacheLocalImediato();
     if (typeof salvarDados === 'function') salvarDados();
     if (typeof salvarLeadNoBanco === 'function') salvarLeadNoBanco(lead);
 
+    mostrarIndicadorAutoSaveModalLP('✓ Salvo com sucesso!');
     showToast(`Configurações de Landing Page salvas para ${lead.empresa}!`, 'success');
     fecharModal('landingPageLeadModal');
 
     if (typeof renderizarPipeline === 'function') renderizarPipeline();
     if (typeof renderizarClientes === 'function') renderizarClientes();
+}
+
+function mostrarIndicadorAutoSaveModalLP(msg = '✓ Salvo automaticamente') {
+    const statusEl = document.getElementById('lpLeadAutoSaveStatus');
+    if (statusEl) {
+        statusEl.innerHTML = `<span style="color:#10b981;font-weight:700;">✓</span> <span style="color:#10b981;">${msg}</span>`;
+        statusEl.style.opacity = '1';
+    }
 }
 
 function visualizarModeloSelecionadoLead() {
@@ -4764,23 +5184,65 @@ function copiarConviteWhatsAppLead() {
     const clientUrl = (elUrlAtual && elUrlAtual.value)
         ? elUrlAtual.value
         : montarLinkPortalLead(lead.id, selModeloAtual ? selModeloAtual.value : (lead.landingPageModeloId || ''));
-    const decisor = lead.decisor || 'Diretoria';
-    const emailLogin = lead.email || 'seu e-mail comercial';
-    const cnpjSenha = lead.cnpj || 'seu CNPJ';
+    const decisor = obterDecisorLead(lead) || 'Diretoria';
     const msgCustom = document.getElementById('lpLeadMensagemCustomizada')?.value.trim();
 
-    let texto = `Olá, ${decisor}! Preparamos uma proposta comercial personalizada e exclusiva para a ${lead.empresa} na MiCRO Automação.\n\n🌐 Acesse sua proposta comercial: ${clientUrl}`;
+    const isExterno = clientUrl.includes('chatgpt.site') || (clientUrl.startsWith('http') && !clientUrl.includes(window.location.origin));
+    let texto = isExterno
+        ? `Olá, ${decisor}! Preparamos a proposta comercial personalizada da Schmalz & MiCRO para a ${lead.empresa}.\n\n🌐 Acesse a apresentação interativa no link exclusivo:\n${clientUrl}`
+        : `Olá, ${decisor}! Preparamos uma proposta comercial personalizada e exclusiva para a ${lead.empresa} na MiCRO Automação.\n\n🌐 Acesse sua proposta comercial no link:\n${clientUrl}`;
 
     if (msgCustom) {
         texto += `\n\n📌 Observação do Consultor: ${msgCustom}`;
     }
 
-    texto += `\n\nVocê pode analisar as especificações e autorizar o pedido com assinatura digital no próprio link. Qualquer dúvida, estou à disposição!`;
+    texto += `\n\nQualquer dúvida, estou à disposição!`;
 
     navigator.clipboard.writeText(texto).then(() => {
         showToast('Mensagem de convite copiada! Pronta para colar no WhatsApp.', 'success');
     }).catch(() => {
         prompt('Copie a mensagem de convite abaixo:', texto);
+    });
+}
+
+function enviarLinkLandingPageWhatsApp() {
+    const leadId = document.getElementById('lpLeadId')?.value || leadLpModalAtivoId;
+    const lead = (typeof leads !== 'undefined' && Array.isArray(leads)) ? leads.find(l => l.id === leadId) : null;
+    if (!lead) return;
+
+    const elUrl = document.getElementById('lpLeadUrl');
+    const selModelo = document.getElementById('lpLeadModeloId');
+    const modeloId = selModelo ? selModelo.value : lead.landingPageModeloId;
+    const clientUrl = (elUrl && elUrl.value) ? elUrl.value : montarLinkPortalLead(lead.id, modeloId);
+    const decisor = obterDecisorLead(lead) || 'Diretoria';
+    const orcNumero = lead.numeroPedido || lead.orcamentoPdfPrincipal?.dadosExtraidos?.numero || 'da sua cotação';
+    const msgCustom = document.getElementById('lpLeadMensagemCustomizada')?.value.trim();
+
+    const isExterno = clientUrl.includes('chatgpt.site') || (clientUrl.startsWith('http') && !clientUrl.includes(window.location.origin));
+    let texto = isExterno
+        ? `Olá, ${decisor}! Preparamos a proposta comercial personalizada da Schmalz & MiCRO para a ${lead.empresa}.\n\n🌐 Acesse a apresentação interativa no link exclusivo:\n${clientUrl}`
+        : `Olá, ${decisor}! Preparamos a proposta comercial personalizada (${orcNumero}) para a ${lead.empresa} na MiCRO Automação.\n\n🌐 Acesse sua proposta no link:\n${clientUrl}`;
+
+    if (msgCustom) {
+        texto += `\n\n📌 Observação do Consultor: ${msgCustom}`;
+    }
+    texto += `\n\nQualquer dúvida, estou à disposição!`;
+
+    const telefone = lead.whatsapp || lead.telefone;
+    const digits = telefone ? telefone.replace(/\D/g, '') : '';
+    let waUrl = '';
+    if (digits.length >= 10) {
+        const ddi = digits.startsWith('55') ? digits : ('55' + digits);
+        waUrl = `https://wa.me/${ddi}?text=${encodeURIComponent(texto)}`;
+    } else {
+        waUrl = `https://wa.me/?text=${encodeURIComponent(texto)}`;
+    }
+
+    navigator.clipboard.writeText(texto).then(() => {
+        showToast('Texto copiado! Abrindo WhatsApp...', 'success');
+        window.open(waUrl, '_blank');
+    }).catch(() => {
+        window.open(waUrl, '_blank');
     });
 }
 
@@ -4791,6 +5253,14 @@ function visualizarLandingPageLeadComoCliente() {
 
     const selModelo = document.getElementById('lpLeadModeloId');
     const modeloId = selModelo ? selModelo.value : lead.landingPageModeloId;
+    const clientUrl = montarLinkPortalLead(lead.id, modeloId);
+
+    // Se for URL externa (ex: site ChatGPT ou template com urlExterna), abre diretamente em nova aba
+    // sem iframe, evitando qualquer restrição de X-Frame-Options ou solicitação de autenticação
+    if (clientUrl && (clientUrl.startsWith('http://') || clientUrl.startsWith('https://')) && !clientUrl.includes(window.location.origin)) {
+        window.open(clientUrl, '_blank');
+        return;
+    }
 
     const rendered = renderizarLandingPageJIT(modeloId, lead);
 
@@ -4816,6 +5286,22 @@ const salvarConfigLandingPageLead = salvarLandingPageLead;
 const copiarLinkLandingPageLead = copiarLinkAcessoLead;
 const abrirLandingPageComoCliente = visualizarLandingPageLeadComoCliente;
 const abrirNovaAbaPreviewModal = abrirPreviewEmNovaAba;
+
+function copiarLinkLandingPageLeadRapido(leadId) {
+    const link = montarLinkPortalLead(leadId);
+    if (!link) return;
+    navigator.clipboard.writeText(link).then(() => {
+        showToast('Link da Landing Page / Proposta copiado com sucesso!', 'success');
+    }).catch(() => {
+        prompt('Copie o link da Landing Page:', link);
+    });
+}
+
+function abrirLandingPageLeadRapido(leadId) {
+    const link = montarLinkPortalLead(leadId);
+    if (!link) return;
+    window.open(link, '_blank');
+}
 
 // ================================================================
 // CONTROLE DA LANDING PAGE NA TELA DE ITENS / ORÇAMENTO
@@ -4915,6 +5401,13 @@ function visualizarLpOrcamentoAtual() {
 
     const select = document.getElementById('orcLpModeloSelect');
     const modeloId = select ? select.value : (lead.landingPageModeloId || 'lp_visualizador_orcamento');
+    const clientUrl = montarLinkPortalLead(lead.id, modeloId);
+
+    // Se for URL externa, abre diretamente em nova aba sem bloqueios
+    if (clientUrl && (clientUrl.startsWith('http://') || clientUrl.startsWith('https://')) && !clientUrl.includes(window.location.origin)) {
+        window.open(clientUrl, '_blank');
+        return;
+    }
 
     const rendered = renderizarLandingPageJIT(modeloId, lead);
     const win = window.open('', '_blank');
@@ -4939,10 +5432,13 @@ function enviarLpOrcamentoWhatsApp() {
     const inputUrl = document.getElementById('orcLpUrlInput');
     const modeloId = select ? select.value : lead.landingPageModeloId;
     const clientUrl = (inputUrl && inputUrl.value) ? inputUrl.value : montarLinkPortalLead(lead.id, modeloId);
-    const decisor = lead.decisor || 'Diretoria';
+    const decisor = obterDecisorLead(lead) || 'Diretoria';
     const orcNumero = lead.numeroPedido || lead.orcamentoPdfPrincipal?.dadosExtraidos?.numero || 'da sua cotação';
 
-    const texto = `Olá, ${decisor}! Preparamos a proposta comercial personalizada (${orcNumero}) para a ${lead.empresa} na MiCRO Automação.\n\n🌐 Acesse sua proposta com visualizador e aprovação digital no link:\n${clientUrl}\n\nVocê pode analisar todas as especificações técnicas e assinar digitalmente o documento diretamente no portal. Qualquer dúvida, estou à disposição!`;
+    const isExterno = clientUrl.includes('chatgpt.site') || (clientUrl.startsWith('http') && !clientUrl.includes(window.location.origin));
+    const texto = isExterno
+        ? `Olá, ${decisor}! Preparamos a proposta comercial personalizada da Schmalz & MiCRO para a ${lead.empresa}.\n\n🌐 Acesse a apresentação interativa no link exclusivo:\n${clientUrl}\n\nQualquer dúvida, estou à disposição!`
+        : `Olá, ${decisor}! Preparamos a proposta comercial personalizada (${orcNumero}) para a ${lead.empresa} na MiCRO Automação.\n\n🌐 Acesse sua proposta com visualizador e aprovação digital no link:\n${clientUrl}\n\nVocê pode analisar todas as especificações técnicas e assinar digitalmente o documento diretamente no portal. Qualquer dúvida, estou à disposição!`;
 
     // Se o lead tiver telefone ou WhatsApp cadastrado, tenta abrir direto
     const telefone = lead.whatsapp || lead.telefone;

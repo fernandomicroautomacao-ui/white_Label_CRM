@@ -66,7 +66,38 @@ async function carregarLeadsDoIndexedDB() {
     }
 }
 
-function salvarCacheLocalImediato() {
+const colunasRejeitadasSupabase = new Set(['updated_at']);
+
+function detectarEAdicionarColunaRejeitada(erroMsg) {
+    if (!erroMsg || typeof erroMsg !== 'string') return null;
+    const m1 = erroMsg.match(/Could not find the ['"]?([a-zA-Z0-9_\-]+)['"]? column/i);
+    if (m1 && m1[1]) {
+        colunasRejeitadasSupabase.add(m1[1]);
+        return m1[1];
+    }
+    const m2 = erroMsg.match(/column ['"]?([a-zA-Z0-9_\-]+)['"]? of relation/i);
+    if (m2 && m2[1]) {
+        colunasRejeitadasSupabase.add(m2[1]);
+        return m2[1];
+    }
+    return null;
+}
+
+function sanitizarLinhaParaSupabase(linha) {
+    if (!linha || typeof linha !== 'object') return linha;
+    const copia = { ...linha };
+    colunasRejeitadasSupabase.forEach(col => {
+        delete copia[col];
+    });
+    if (copia.orcamento_pdf_principal && copia.orcamento_pdf_principal.dataUrl && copia.orcamento_pdf_principal.dataUrl.length > 5000000) {
+        const pdfClean = { ...copia.orcamento_pdf_principal };
+        delete pdfClean.dataUrl;
+        copia.orcamento_pdf_principal = pdfClean;
+    }
+    return copia;
+}
+
+function salvarCacheLocalImediato(acionarSyncRemoto = true) {
     if (!Array.isArray(leads)) return;
 
     const agora = new Date().toISOString();
@@ -95,6 +126,11 @@ function salvarCacheLocalImediato() {
         } catch (e) {
             console.warn('Aviso: Quota do localStorage atingida. Leads preservados com integridade no IndexedDB.');
         }
+    }
+
+    // 3. Auto-save para o banco Supabase: dispara sincronização automática em segundo plano
+    if (acionarSyncRemoto && typeof salvarDadosDebounced === 'function') {
+        salvarDadosDebounced(400);
     }
 }
 
@@ -180,8 +216,7 @@ function leadParaLinhaSupabase(l) {
         landing_page_ultimo_acesso: l.landingPageUltimoAcesso || null,
         autorizacao_pedido_id: l.autorizacaoPedidoId || null,
         autorizacao_pedido_status: l.autorizacaoPedidoStatus || null,
-        metodo_envio: l.metodoEnvio || l.metodo_envio || null,
-        updated_at: l.atualizadoEm || new Date().toISOString()
+        metodo_envio: l.metodoEnvio || l.metodo_envio || null
     };
 }
 
@@ -583,7 +618,7 @@ let salvandoDadosEmExecucao = false;
 let salvarNovamenteAoTerminar = false;
 
 function salvarDadosDebounced(delay = 350) {
-    salvarCacheLocalImediato();
+    salvarCacheLocalImediato(false);
     try {
         localStorage.setItem('ploomesLeadsV5', JSON.stringify({
             modelos,
@@ -603,6 +638,8 @@ function salvarDadosDebounced(delay = 350) {
             modelosLandingPage
         }));
     } catch (e) {}
+
+    atualizarIndicadorStatusSync('sincronizando');
 
     if (salvarDadosTimeout) clearTimeout(salvarDadosTimeout);
     salvarDadosTimeout = setTimeout(() => {
@@ -631,13 +668,32 @@ async function upsertLeadsNoSupabaseEmLotes(linhas, tamanhoLote = 15) {
     let totalSalvos = 0;
     let erros = [];
 
-    for (let i = 0; i < linhas.length; i += tamanhoLote) {
-        const lote = linhas.slice(i, i + tamanhoLote);
+    const sanitizadas = linhas.map(sanitizarLinhaParaSupabase);
+
+    for (let i = 0; i < sanitizadas.length; i += tamanhoLote) {
+        let lote = sanitizadas.slice(i, i + tamanhoLote);
         let res = await supabaseClient.from('leads').upsert(lote, { onConflict: 'id' });
+        
+        if (res.error) {
+            const colRejeitada = detectarEAdicionarColunaRejeitada(res.error.message);
+            if (colRejeitada) {
+                lote = lote.map(sanitizarLinhaParaSupabase);
+                res = await supabaseClient.from('leads').upsert(lote, { onConflict: 'id' });
+            }
+        }
+
         if (res.error) {
             console.warn(`Lote ${i}..${i + lote.length} falhou no upsert em grupo. Tentando individualmente...`, res.error);
-            for (const linha of lote) {
+            for (const itemLinha of lote) {
+                let linha = sanitizarLinhaParaSupabase(itemLinha);
                 let resIndiv = await supabaseClient.from('leads').upsert([linha], { onConflict: 'id' });
+                if (resIndiv.error) {
+                    const colRejIndiv = detectarEAdicionarColunaRejeitada(resIndiv.error.message);
+                    if (colRejIndiv) {
+                        linha = sanitizarLinhaParaSupabase(linha);
+                        resIndiv = await supabaseClient.from('leads').upsert([linha], { onConflict: 'id' });
+                    }
+                }
                 if (resIndiv.error) {
                     const clone = { ...linha };
                     if (clone.orcamento_pdf_principal && clone.orcamento_pdf_principal.dataUrl) {
@@ -649,13 +705,21 @@ async function upsertLeadsNoSupabaseEmLotes(linhas, tamanhoLote = 15) {
                         erros.push({ id: linha.id, empresa: linha.empresa, erro: retry.error.message });
                     } else {
                         totalSalvos++;
+                        const leadCorrespondente = (typeof leads !== 'undefined' && Array.isArray(leads)) ? leads.find(l => l.id === linha.id) : null;
+                        if (leadCorrespondente) leadCorrespondente._modificadoLocal = false;
                     }
                 } else {
                     totalSalvos++;
+                    const leadCorrespondente = (typeof leads !== 'undefined' && Array.isArray(leads)) ? leads.find(l => l.id === linha.id) : null;
+                    if (leadCorrespondente) leadCorrespondente._modificadoLocal = false;
                 }
             }
         } else {
             totalSalvos += lote.length;
+            lote.forEach(linhaSalva => {
+                const leadCorrespondente = (typeof leads !== 'undefined' && Array.isArray(leads)) ? leads.find(l => l.id === linhaSalva.id) : null;
+                if (leadCorrespondente) leadCorrespondente._modificadoLocal = false;
+            });
         }
     }
 
@@ -666,9 +730,16 @@ async function salvarLeadNoBanco(lead) {
     if (!lead || !lead.id) return false;
     try {
         lead.atualizadoEm = new Date().toISOString();
-        salvarCacheLocalImediato();
-        const linha = leadParaLinhaSupabase(lead);
+        salvarCacheLocalImediato(false);
+        let linha = sanitizarLinhaParaSupabase(leadParaLinhaSupabase(lead));
         let res = await supabaseClient.from('leads').upsert([linha], { onConflict: 'id' });
+        if (res.error) {
+            const colRej = detectarEAdicionarColunaRejeitada(res.error.message);
+            if (colRej) {
+                linha = sanitizarLinhaParaSupabase(leadParaLinhaSupabase(lead));
+                res = await supabaseClient.from('leads').upsert([linha], { onConflict: 'id' });
+            }
+        }
         if (res.error) {
             const clone = { ...linha };
             if (clone.orcamento_pdf_principal && clone.orcamento_pdf_principal.dataUrl) {
@@ -700,11 +771,11 @@ async function salvarLeadNoBanco(lead) {
 async function forcarPersistenciaBanco(opcoes = {}) {
     const mostrarProgresso = opcoes.mostrarProgresso !== false;
     if (mostrarProgresso && typeof showToast === 'function') {
-        showToast('Gravando alterações e forçando persistência no banco de dados...', 'info');
+        showToast('Gravando alterações no banco de dados...', 'info');
     }
     atualizarIndicadorStatusSync('sincronizando');
 
-    salvarCacheLocalImediato();
+    salvarCacheLocalImediato(false);
 
     if (!leads || leads.length === 0) {
         atualizarIndicadorStatusSync('sucesso');
@@ -730,16 +801,26 @@ async function forcarPersistenciaBanco(opcoes = {}) {
         console.warn('Persistência no banco concluída com avisos em alguns itens:', erros);
         atualizarIndicadorStatusSync('parcial');
         if (mostrarProgresso && typeof showToast === 'function') {
-            showToast(`✓ ${totalSalvos} leads gravados com sucesso no banco de dados (${erros.length} salvos no cache local).`, 'warning');
+            showToast(`✓ ${totalSalvos} leads gravados no banco de dados (sincronizando os demais em segundo plano).`, 'warning');
         }
     } else {
         atualizarIndicadorStatusSync('sucesso');
         if (mostrarProgresso && typeof showToast === 'function') {
-            showToast(`✓ Todos os ${totalSalvos} leads e orçamentos foram gravados no banco de dados com sucesso!`, 'success');
+            showToast(`✓ Todos os ${totalSalvos} leads e orçamentos estão gravados e atualizados no banco de dados!`, 'success');
         }
     }
 
     return { sucesso: erros.length === 0, totalSalvos, erros };
+}
+
+let timerAutoSyncNovamente = null;
+function agendarAutoSyncNovamente(delayMs = 4000) {
+    if (timerAutoSyncNovamente) clearTimeout(timerAutoSyncNovamente);
+    timerAutoSyncNovamente = setTimeout(() => {
+        if (typeof salvarDados === 'function' && !salvandoDadosEmExecucao) {
+            salvarDados();
+        }
+    }, delayMs);
 }
 
 function atualizarIndicadorStatusSync(status) {
@@ -751,23 +832,40 @@ function atualizarIndicadorStatusSync(status) {
     if (status === 'sincronizando') {
         icone.textContent = '🔄';
         texto.textContent = 'Salvando no banco...';
-        btn.style.borderColor = 'var(--primary)';
-        btn.style.color = 'var(--primary)';
+        btn.style.borderColor = 'var(--primary, #0057a8)';
+        btn.style.color = 'var(--primary, #0057a8)';
+        btn.title = 'Salvando automaticamente alterações no banco de dados...';
     } else if (status === 'sucesso') {
         icone.textContent = '☁️';
         texto.textContent = 'Banco Atualizado';
         btn.style.borderColor = 'var(--success, #10b981)';
         btn.style.color = 'var(--success, #10b981)';
+        btn.title = 'Todas as alterações estão salvas automaticamente no banco de dados.';
     } else if (status === 'parcial' || status === 'offline') {
-        icone.textContent = '⚠️';
-        texto.textContent = 'Salvo Local (Sincronizar)';
+        icone.textContent = '🔄';
+        texto.textContent = 'Sincronizando auto...';
         btn.style.borderColor = 'var(--warning, #f59e0b)';
         btn.style.color = 'var(--warning, #f59e0b)';
+        btn.title = 'Sincronizando automaticamente alterações pendentes com o banco...';
+        agendarAutoSyncNovamente(4000);
     }
 }
 
+if (typeof window !== 'undefined') {
+    window.addEventListener('online', () => {
+        console.info('Conexão restabelecida. Sincronizando com o banco automaticamente...');
+        salvarDados();
+    });
+    // Verificação periódica suave de auto-persistência a cada 60s
+    setInterval(() => {
+        if (typeof leads !== 'undefined' && Array.isArray(leads) && leads.some(l => l._modificadoLocal)) {
+            if (!salvandoDadosEmExecucao) salvarDados();
+        }
+    }, 60000);
+}
+
 async function executarSalvarDadosInterno() {
-    salvarCacheLocalImediato();
+    salvarCacheLocalImediato(false);
 
     try {
         localStorage.setItem('ploomesLeadsV5', JSON.stringify({

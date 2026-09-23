@@ -322,12 +322,25 @@ function salvarModeloLandingPagePadraoAdmin(event) {
         sincronizarModeloLandingPageNoBanco(modelo);
     }
 
-    renderizarLandingPagePadraoAdmin();
+    atualizarDescricaoLpPadraoAdmin();
     if (typeof renderizarPainelLandingPagesMarketing === 'function') {
         renderizarPainelLandingPagesMarketing();
     }
 
-    showToast(`O modelo "${modelo.nome}" foi definido como a Landing Page padrão com sucesso!`, 'success');
+    const badge = document.getElementById('adminLpAutoSaveBadge');
+    if (badge) {
+        badge.textContent = '✓ Padrão salvo automaticamente!';
+        badge.style.color = '#10b981';
+        setTimeout(() => {
+            if (badge) badge.textContent = '✓ Salvo automaticamente';
+        }, 2500);
+    }
+
+    showToast(`✓ Modelo "${modelo.nome}" definido como padrão e salvo automaticamente!`, 'success');
+}
+
+function trocarModeloLandingPagePadraoAdminAuto(event) {
+    salvarModeloLandingPagePadraoAdmin(event);
 }
 
 function testarModeloSelecionadoAdmin() {

@@ -559,6 +559,11 @@ function processarPdfVisualOrcamento(file) {
                 }
             }
 
+            // Sincroniza decisor / contato do PDF no lead atual caso ainda vazio ou com placeholder
+            if (dadosExtraidos.contato && leadAtual && (!leadAtual.decisor || leadAtual.decisor === '—' || leadAtual.decisor === 'Thomaz' || leadAtual.decisor === 'Não informado')) {
+                leadAtual.decisor = dadosExtraidos.contato;
+            }
+
             const infoCnpjMsg = dadosExtraidos.clienteCnpj ? ` | CNPJ/CPF: ${dadosExtraidos.clienteCnpj}` : '';
             if (valorFinal > 0) {
                 if (campoValorDireto) campoValorDireto.value = subtotalProdutos.toFixed(2);
@@ -631,6 +636,8 @@ function extrairDadosCompletosPdf(texto) {
         clienteCnpj: '',
         clienteEndereco: '',
         clienteTelefone: '',
+        contato: '',
+        decisor: '',
         vendedor: '',
         vendedorEmail: '',
         vendedorTelefone: '',
@@ -744,6 +751,16 @@ function extrairDadosCompletosPdf(texto) {
 
     const matchVendedorTel = texto.match(/Telefone:\s*([0-9\s\-]{8,20})/i);
     if (matchVendedorTel) dados.vendedorTelefone = matchVendedorTel[1].trim();
+
+    // 3.1 Contato / Decisor / Aos Cuidados do Cliente
+    const matchContato = texto.match(/(?:A\/C[\s\:\.\-]*|Aos\s+Cuidados(?:\s+de)?[\s\:\.\-]*|Contato(?:\s+do\s+Cliente)?[\s\:\.\-]*|Comprador[\s\:\.\-]*|Solicitante[\s\:\.\-]*|Attn?\.?[\s\:\.\-]*|Aten[çc][ãa]o[\s\:\.\-]*)\s*([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ][a-záéíóúâêîôûãõçA-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ\s]{2,40})/i);
+    if (matchContato && matchContato[1]) {
+        const cand = matchContato[1].trim().replace(/\s+/g, ' ');
+        if (!/micro\s*automa|vendedor|telefone|email|cnpj|data/i.test(cand)) {
+            dados.contato = cand;
+            dados.decisor = cand;
+        }
+    }
 
     // 4. Condições Comerciais & Frete
     const matchCond = texto.match(/Condi[çc][õo]es\s+de\s+Pagamento:\s*([^\n\r]+?)(?:Descri[çc][ãa]o|Item|Informa|\n)/i);
@@ -1142,6 +1159,11 @@ function salvarItensOrcamento() {
         if (!lead.codigoUnico || cnpjsIgnorar.has(codigoLeadDigitos)) {
             lead.codigoUnico = docExtraido;
         }
+    }
+
+    // Se o PDF extraiu contato/decisor, salva no lead se ainda não preenchido
+    if (itensEditPdfPrincipal?.dadosExtraidos?.contato && (!lead.decisor || lead.decisor === '—' || lead.decisor === 'Thomaz' || lead.decisor === 'Não informado')) {
+        lead.decisor = itensEditPdfPrincipal.dadosExtraidos.contato;
     }
 
     const subtotal = parseFloat(document.getElementById('itemValorDiretoPdf').value) || 0;
