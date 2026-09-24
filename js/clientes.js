@@ -158,6 +158,7 @@ function abrirModalCliente(leadId) {
             <div class="info-item"><span class="info-item-label">Potencial</span><span class="info-item-value">${principal.potencial || 'B'}</span></div>
             <div class="info-item"><span class="info-item-label">Negócios</span><span class="info-item-value">${totalNegocios} abertos</span></div>
             <div class="info-item"><span class="info-item-label">Pedidos</span><span class="info-item-value">${fechados.length}</span></div>
+            <div class="info-item"><span class="info-item-label">Visualizações LP</span><span class="info-item-value">${Number(principal.landingPageViews) > 0 ? `<span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-weight:700;padding:2px 8px;border-radius:10px;font-size:11px;">👁️ ${principal.landingPageViews}x ${principal.landingPageUltimoAcesso ? `(${formatarDataHora(principal.landingPageUltimoAcesso)})` : ''}</span>` : '<span style="color:var(--text-muted);">Nenhum acesso</span>'}</span></div>
             <div class="info-item highlight-box" style="grid-column:1 / -1;">
                 <span class="info-item-label">Volume Total</span><span class="highlight-value">${formatarMoeda(totalValor)}</span>
             </div>

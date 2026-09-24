@@ -5684,5 +5684,255 @@ function voltarAoLoginCrmColaborador() {
     if (crmLogin) crmLogin.style.display = 'flex';
 }
 
+// ============================================
+// AUDITORIA E RELATÓRIO DE VISUALIZAÇÕES DE CLIENTES
+// ============================================
+
+function obterLeadsComVisualizacoes() {
+    const lista = (typeof leads !== 'undefined' && Array.isArray(leads)) ? leads : [];
+    return lista.filter(l => (Number(l.landingPageViews) > 0) || Boolean(l.landingPageUltimoAcesso));
+}
+
+function abrirModalRelatorioVisualizacoesLP(leadIdFoco = null) {
+    const inputBusca = document.getElementById('modalLpBuscaCliente');
+    const selectEtapa = document.getElementById('modalLpFiltroEtapa');
+    const selectOrdem = document.getElementById('modalLpOrdenacao');
+
+    if (inputBusca) {
+        if (leadIdFoco) {
+            const leadFoco = (typeof leads !== 'undefined') ? leads.find(l => l.id === leadIdFoco) : null;
+            inputBusca.value = leadFoco ? leadFoco.empresa : '';
+        } else {
+            inputBusca.value = '';
+        }
+    }
+    if (selectEtapa) selectEtapa.value = '';
+    if (selectOrdem) selectOrdem.value = 'ultimo_acesso';
+
+    atualizarResumoMetricasVisualizacoesLP();
+    filtrarTabelaVisualizacoesLP();
+    abrirModal('modalRelatorioVisualizacoesLP');
+}
+
+function atualizarResumoMetricasVisualizacoesLP() {
+    const leadsViram = obterLeadsComVisualizacoes();
+    const totalViews = leadsViram.reduce((acc, l) => acc + (Number(l.landingPageViews) || 0), 0);
+    const totalClientes = leadsViram.length;
+
+    const hojeStr = new Date().toISOString().split('T')[0];
+    const viramHoje = leadsViram.filter(l => l.landingPageUltimoAcesso && l.landingPageUltimoAcesso.startsWith(hojeStr)).length;
+    const valorPipeline = leadsViram.reduce((acc, l) => acc + (Number(l.valor) || 0), 0);
+
+    const elTotalViews = document.getElementById('modalLpTotalVisualizacoes');
+    const elTotalClientes = document.getElementById('modalLpTotalClientesViram');
+    const elViramHoje = document.getElementById('modalLpVisualizaramHoje');
+    const elValorPipeline = document.getElementById('modalLpValorPipelineInteressado');
+
+    if (elTotalViews) elTotalViews.textContent = totalViews;
+    if (elTotalClientes) elTotalClientes.textContent = totalClientes;
+    if (elViramHoje) elViramHoje.textContent = viramHoje;
+    if (elValorPipeline) elValorPipeline.textContent = formatarMoeda(valorPipeline);
+}
+
+function filtrarTabelaVisualizacoesLP() {
+    const tbody = document.getElementById('modalLpTabelaCorpo');
+    if (!tbody) return;
+
+    const termoBusca = (document.getElementById('modalLpBuscaCliente')?.value || '').toLowerCase().trim();
+    const etapaFiltro = document.getElementById('modalLpFiltroEtapa')?.value || '';
+    const ordenacao = document.getElementById('modalLpOrdenacao')?.value || 'ultimo_acesso';
+
+    let lista = obterLeadsComVisualizacoes();
+
+    if (etapaFiltro) {
+        lista = lista.filter(l => l.etapa === etapaFiltro);
+    }
+
+    if (termoBusca) {
+        lista = lista.filter(l => {
+            const empresa = (l.empresa || '').toLowerCase();
+            const decisor = (l.decisor || '').toLowerCase();
+            const telefone = (l.telefone || '').replace(/\D/g, '');
+            const whatsapp = (l.whatsapp || '').replace(/\D/g, '');
+            const email = (l.email || '').toLowerCase();
+            const cnpj = (l.cnpj || '').replace(/\D/g, '');
+            const vend = (typeof usuarios !== 'undefined') ? (usuarios.find(u => u.id === l.usuarioId)?.nome || '').toLowerCase() : '';
+            return empresa.includes(termoBusca) ||
+                   decisor.includes(termoBusca) ||
+                   email.includes(termoBusca) ||
+                   telefone.includes(termoBusca) ||
+                   whatsapp.includes(termoBusca) ||
+                   cnpj.includes(termoBusca) ||
+                   vend.includes(termoBusca);
+        });
+    }
+
+    // Ordenação
+    lista.sort((a, b) => {
+        if (ordenacao === 'ultimo_acesso') {
+            const dataA = a.landingPageUltimoAcesso ? new Date(a.landingPageUltimoAcesso).getTime() : 0;
+            const dataB = b.landingPageUltimoAcesso ? new Date(b.landingPageUltimoAcesso).getTime() : 0;
+            return dataB - dataA;
+        } else if (ordenacao === 'mais_views') {
+            return (Number(b.landingPageViews) || 0) - (Number(a.landingPageViews) || 0);
+        } else if (ordenacao === 'maior_valor') {
+            return (Number(b.valor) || 0) - (Number(a.valor) || 0);
+        } else if (ordenacao === 'empresa') {
+            return (a.empresa || '').localeCompare(b.empresa || '');
+        }
+        return 0;
+    });
+
+    if (lista.length === 0) {
+        const totalSemFiltro = obterLeadsComVisualizacoes().length;
+        if (totalSemFiltro === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align:center;padding:48px 16px;color:var(--text-muted);">
+                        <span style="font-size:36px;display:block;margin-bottom:8px;">👀</span>
+                        <strong style="font-size:15px;color:var(--text-primary);display:block;margin-bottom:4px;">Nenhuma visualização de cliente registrada até agora</strong>
+                        <p style="font-size:13px;max-width:540px;margin:0 auto 16px;line-height:1.5;">
+                            Quando você envia o link exclusivo da Landing Page ou Orçamento para o cliente via WhatsApp ou E-mail, cada vez que ele abrir o link, o CRM registra o momento exato e contabiliza a visualização aqui automaticamente.
+                        </p>
+                    </td>
+                </tr>
+            `;
+        } else {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align:center;padding:32px 16px;color:var(--text-muted);">
+                        <span style="font-size:24px;display:block;margin-bottom:6px;">🔍</span>
+                        Nenhum cliente encontrado com os critérios de busca aplicados.
+                    </td>
+                </tr>
+            `;
+        }
+        return;
+    }
+
+    const hojeStr = new Date().toISOString().split('T')[0];
+
+    tbody.innerHTML = lista.map(lead => {
+        const vendedor = (typeof usuarios !== 'undefined') ? usuarios.find(u => u.id === lead.usuarioId) : null;
+        const etapaNome = (typeof ETAPA_NOMES !== 'undefined' && ETAPA_NOMES[lead.etapa]) || lead.etapa || 'Lead';
+        const numViews = Number(lead.landingPageViews) || 0;
+
+        // Formatação de data/hora do último acesso
+        let dataHoraFormatada = '<span style="color:var(--text-muted);">Sem registro</span>';
+        let ehHoje = false;
+        if (lead.landingPageUltimoAcesso) {
+            try {
+                const dt = new Date(lead.landingPageUltimoAcesso);
+                const dtIso = lead.landingPageUltimoAcesso.split('T')[0];
+                ehHoje = (dtIso === hojeStr);
+                const horaMin = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                if (ehHoje) {
+                    dataHoraFormatada = `<span style="background:#dcfce7;color:#15803d;padding:3px 8px;border-radius:6px;font-weight:700;display:inline-flex;align-items:center;gap:4px;">🟢 Hoje às ${horaMin}</span>`;
+                } else {
+                    dataHoraFormatada = `<span style="color:var(--text-primary);font-weight:600;">${dt.toLocaleDateString('pt-BR')} às ${horaMin}</span>`;
+                }
+            } catch (e) {
+                dataHoraFormatada = String(lead.landingPageUltimoAcesso);
+            }
+        }
+
+        // WhatsApp do decisor ou telefone
+        const foneWhats = (lead.whatsapp || lead.telefone || '').replace(/\D/g, '');
+        let whatsBtn = '';
+        if (foneWhats) {
+            const msgWhats = encodeURIComponent(`Olá ${lead.decisor || ''}, tudo bem? Notei que estava avaliando nossa apresentação e proposta comercial para a ${lead.empresa}. Gostaria de tirar alguma dúvida técnica ou alinhar os próximos passos?`);
+            whatsBtn = `
+                <a href="https://wa.me/55${foneWhats}?text=${msgWhats}" target="_blank" class="btn btn-success btn-xs" title="Chamar decisor no WhatsApp agora" style="display:inline-flex;align-items:center;gap:3px;text-decoration:none;">
+                    <span>💬</span> WhatsApp
+                </a>
+            `;
+        }
+
+        return `
+            <tr style="border-bottom:1px solid var(--border-color, #e2e8f0);transition:background 0.15s;">
+                <td style="padding:12px 14px;vertical-align:middle;">
+                    <div style="font-weight:700;color:var(--text-primary);font-size:13px;">${lead.empresa}</div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
+                        ${lead.cnpj ? `CNPJ: ${lead.cnpj}` : ''} ${lead.cidade ? `• ${lead.cidade}/${lead.estado || ''}` : ''}
+                    </div>
+                </td>
+                <td style="padding:12px 14px;vertical-align:middle;">
+                    <div style="font-weight:600;color:var(--text-primary);">${lead.decisor || '—'}</div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
+                        ${lead.telefone || lead.whatsapp || lead.email || 'Sem contato direto'}
+                    </div>
+                </td>
+                <td style="padding:12px 14px;vertical-align:middle;">
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <span class="badge" style="background:#e0f2fe;color:#0369a1;font-size:11px;padding:2px 6px;border-radius:4px;font-weight:600;">${etapaNome}</span>
+                        <strong style="color:var(--stage-pedido, #059669);font-size:12px;">${formatarMoeda(lead.valor || 0)}</strong>
+                    </div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
+                        Resp: ${vendedor ? vendedor.nome : 'Sem vendedor'}
+                    </div>
+                </td>
+                <td style="padding:12px 14px;vertical-align:middle;text-align:center;">
+                    <span class="badge" style="background:${numViews > 2 ? '#2563eb' : '#0284c7'};color:#fff;font-size:12px;font-weight:700;padding:4px 10px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+                        👁️ ${numViews}x
+                    </span>
+                </td>
+                <td style="padding:12px 14px;vertical-align:middle;">
+                    ${dataHoraFormatada}
+                </td>
+                <td style="padding:12px 14px;vertical-align:middle;text-align:center;">
+                    <div style="display:flex;gap:4px;justify-content:center;align-items:center;flex-wrap:wrap;">
+                        ${whatsBtn}
+                        <button type="button" class="btn btn-primary btn-xs" onclick="fecharModal('modalRelatorioVisualizacoesLP');abrirAtividade('${lead.id}')" title="Abrir histórico e atividades do lead">
+                            📋 Ficha
+                        </button>
+                        <button type="button" class="btn btn-outline btn-xs" onclick="fecharModal('modalRelatorioVisualizacoesLP');abrirModalLandingPageLead('${lead.id}')" title="Configurar ou copiar link da Landing Page">
+                            🌐 Link LP
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function exportarRelatorioVisualizacoesCSV() {
+    const lista = obterLeadsComVisualizacoes();
+    if (!lista || lista.length === 0) {
+        showToast('Nenhum dado de visualização disponível para exportar.', 'warning');
+        return;
+    }
+
+    const cabecalho = ['Empresa', 'CNPJ', 'Cidade', 'Estado', 'Decisor', 'Telefone', 'WhatsApp', 'Email', 'Vendedor', 'Etapa', 'Valor', 'Visualizacoes', 'Ultimo_Acesso'];
+    const linhas = lista.map(l => {
+        const vend = (typeof usuarios !== 'undefined') ? (usuarios.find(u => u.id === l.usuarioId)?.nome || '') : '';
+        const etapaNome = (typeof ETAPA_NOMES !== 'undefined' && ETAPA_NOMES[l.etapa]) || l.etapa || '';
+        return [
+            `"${(l.empresa || '').replace(/"/g, '""')}"`,
+            `"${(l.cnpj || '').replace(/"/g, '""')}"`,
+            `"${(l.cidade || '').replace(/"/g, '""')}"`,
+            `"${(l.estado || '').replace(/"/g, '""')}"`,
+            `"${(l.decisor || '').replace(/"/g, '""')}"`,
+            `"${(l.telefone || '').replace(/"/g, '""')}"`,
+            `"${(l.whatsapp || '').replace(/"/g, '""')}"`,
+            `"${(l.email || '').replace(/"/g, '""')}"`,
+            `"${vend.replace(/"/g, '""')}"`,
+            `"${etapaNome.replace(/"/g, '""')}"`,
+            Number(l.valor || 0).toFixed(2),
+            Number(l.landingPageViews || 0),
+            `"${(l.landingPageUltimoAcesso || '').replace(/"/g, '""')}"`
+        ].join(';');
+    });
+
+    const csvContent = '\uFEFF' + cabecalho.join(';') + '\n' + linhas.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `visualizacoes_clientes_crm_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('Relatório de visualizações exportado com sucesso!', 'success');
+}
+
 // Inicializa modelos se ainda não inicializado
 inicializarModelosLandingPageExemplo();
