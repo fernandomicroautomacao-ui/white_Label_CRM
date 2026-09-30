@@ -9,6 +9,8 @@
     <meta property="og:description" content="Gestão de projetos e produtos, do lead ao pedido.">
     <link rel="icon" id="dynamicFavicon" href="assets/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+    <link rel="stylesheet" href="css/territory-intelligence.css">
     <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#22384d">
 </head>
@@ -148,6 +150,10 @@
                 <span class="icon" data-icone="coletor"></span>
                 <span class="label">Coletor de Leads</span>
                 <span class="badge" id="coletorCount">0</span>
+            </a>
+            <a data-section="territory" id="navItemTerritory" title="Mapa inteligente de prospecção e rotas comerciais">
+                <span class="icon" data-icone="mapa"></span>
+                <span class="label">Mapa de Prospecção</span>
             </a>
             <a data-section="mergulho" id="navItemMergulho" title="Mergulho Profundo & Dossiê do Lead">
                 <span class="icon" data-icone="busca"></span>
@@ -2514,6 +2520,63 @@
             </div>
         </section>
 
+        <!-- ============ TERRITORY INTELLIGENCE ============ -->
+        <section class="section" id="section-territory">
+            <div class="territory-shell">
+                <div class="territory-toolbar">
+                    <div class="territory-search">
+                        <input id="territorySearch" type="search" placeholder="Buscar empresa, CNPJ, cidade ou decisor..." onkeydown="territorySearchEnter(event)">
+                    </div>
+                    <select id="territoryFilterCity" onchange="atualizarFiltrosTerritory()"><option value="">Todas as cidades</option></select>
+                    <select id="territoryFilterSegment" onchange="atualizarFiltrosTerritory()"><option value="">Todos os segmentos</option></select>
+                    <select id="territoryFilterPotential" onchange="atualizarFiltrosTerritory()">
+                        <option value="">Todo potencial</option><option>Alto</option><option>Médio</option><option>Baixo</option>
+                    </select>
+                    <select id="territoryFilterStatus" onchange="atualizarFiltrosTerritory()">
+                        <option value="">Todo status</option><option>Cliente</option><option>Em negociação</option><option>Qualificação</option><option>Prospect</option>
+                    </select>
+                    <div class="territory-toolbar-actions">
+                        <button class="btn btn-outline btn-sm" onclick="limparFiltrosTerritory()">Limpar</button>
+                        <button class="btn btn-outline btn-sm" id="territoryGeoBtn" onclick="geocodificarLoteTerritory()">📍 Geocodificar empresas</button>
+                        <button class="btn btn-primary btn-sm" onclick="otimizarRotaTerritory()">🧭 Criar rota</button>
+                    </div>
+                </div>
+
+                <div class="territory-kpis">
+                    <div class="territory-kpi"><div class="territory-kpi-icon">🏭</div><div><strong id="territoryKpiTotal">0</strong><span>Empresas no recorte</span></div></div>
+                    <div class="territory-kpi"><div class="territory-kpi-icon">🔥</div><div><strong id="territoryKpiHigh">0</strong><span>Score alto</span></div></div>
+                    <div class="territory-kpi"><div class="territory-kpi-icon">📈</div><div><strong id="territoryKpiMedium">0</strong><span>Score médio</span></div></div>
+                    <div class="territory-kpi"><div class="territory-kpi-icon">📍</div><div><strong id="territoryKpiGeo">0</strong><span>No mapa</span></div></div>
+                    <div class="territory-kpi"><div class="territory-kpi-icon">⚙️</div><div><strong id="territoryKpiMachines">0</strong><span>Máquinas/equip.</span></div></div>
+                    <div class="territory-kpi"><div class="territory-kpi-icon">♻️</div><div><strong id="territoryKpiPlastic">0</strong><span>Plásticos/PET</span></div></div>
+                </div>
+
+                <div class="territory-grid">
+                    <div class="territory-map-card">
+                        <div class="territory-map-head">
+                            <strong>Mapa Comercial</strong>
+                            <span id="territoryVisibleCount">0 empresa(s)</span>
+                        </div>
+                        <div id="territoryMap"></div>
+                    </div>
+                    <div class="territory-profile-card" id="territoryProfile">
+                        <div class="territory-profile-placeholder">Selecione uma empresa no mapa ou na lista para abrir a ficha comercial.</div>
+                    </div>
+                </div>
+
+                <div class="territory-bottom">
+                    <div class="territory-list-card">
+                        <div class="territory-card-head"><strong>Empresas por prioridade</strong><span>ordenadas por score comercial</span></div>
+                        <div class="territory-list" id="territoryLeadList"></div>
+                    </div>
+                    <div class="territory-insights-card">
+                        <div class="territory-card-head"><strong>Insights de território</strong><span>dados do CRM atual</span></div>
+                        <div class="territory-insights" id="territoryInsights"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </main>
     </div>
 
@@ -4611,6 +4674,7 @@ npx @open-wa/wa-automate -p 8080 --popup
             window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         }
     </script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script src="js/icons.js"></script>
     <script src="js/config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -4660,6 +4724,7 @@ npx @open-wa/wa-automate -p 8080 --popup
     <script src="js/advanced-features.js"></script>
     <script src="js/mergulho-profundo.js"></script>
     <script src="js/landing-pages.js"></script>
+    <script src="js/territory-intelligence.js"></script>
     <script src="js/init.js"></script>
 </body>
 </html>
