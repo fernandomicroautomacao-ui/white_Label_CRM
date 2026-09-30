@@ -28,6 +28,7 @@ function navegarPara(section) {
         marketing: 'Marketing',
         whatsapp: 'WhatsApp',
         coletor: 'Coletor de Leads',
+        territory: 'Territory Intelligence',
         calendario: 'Calendário',
         comunicacao: 'Comunicação',
         pessoas: 'Pessoas & Contatos',
@@ -54,6 +55,7 @@ function navegarPara(section) {
     }
     if (section === 'whatsapp') renderizarWhatsapp();
     if (section === 'coletor') renderizarColetor();
+    if (section === 'territory' && typeof renderizarTerritoryIntelligence === 'function') renderizarTerritoryIntelligence();
     if (section === 'calendario') renderizarCalendario();
     if (section === 'comunicacao') renderizarComunicacao();
     if (section === 'pessoas' && typeof renderizarPessoas === 'function') renderizarPessoas();
