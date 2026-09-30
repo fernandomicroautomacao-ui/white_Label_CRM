@@ -90,6 +90,10 @@ function coletorNormalizarLinha(bruta) {
         endereco,
         categoria: bruta['Categoria'] || bruta['categoria'] || bruta['Segmento'] || bruta['Setor'] || '',
         observacoes: [bruta['Observações'] || bruta['Observacoes'] || bruta['Anotações'] || '', extras].filter(Boolean).join(' | '),
+        cidade: bruta['Cidade'] || bruta['cidade'] || '',
+        estado: bruta['Estado'] || bruta['UF'] || '',
+        latitude: bruta['Latitude'] || bruta['latitude'] || bruta['lat'],
+        longitude: bruta['Longitude'] || bruta['longitude'] || bruta['lng'],
         tratado: false,
         promovido: false
     };
@@ -302,6 +306,7 @@ async function coletorBuscarNoMaps(event) {
         coletorSalvar();
         renderizarColetor();
         fecharModal('coletorMapsModal');
+        if (typeof abrirModoProspeccao === 'function') abrirModoProspeccao('mapa');
         showToast(`${resultadosUnicos.length} lead(s) encontrado(s) numa nova lista!`);
     } catch (e) {
         showToast('Erro inesperado na busca: ' + e.message, 'error');
@@ -469,9 +474,10 @@ function coletorLeadJaExisteNoCRM(linha, nomeEmpresa, codigoUnico) {
 }
 
 // ---------- Promoção para o CRM ----------
-function coletorPromoverParaCRM() {
-    const dados = coletorDadosAtivos();
-    const candidatos = dados.filter(l => l.tratado === true && l.promovido !== true);
+function coletorPromoverParaCRM(opcoes = null) {
+    const listaOrigem = opcoes?.lista || coletorListaAtiva();
+    const dados = opcoes?.linhas || coletorDadosAtivos();
+    const candidatos = dados.filter(l => (opcoes || l.tratado === true) && l.promovido !== true && l.prospecting?.status !== 'Descartado');
 
     if (candidatos.length === 0) {
         showToast('Nenhuma linha tratada e ainda não promovida nesta lista.', 'warning');
@@ -487,9 +493,12 @@ function coletorPromoverParaCRM() {
         const nomeEmpresa = (linha.empresa || linha.nome || 'Sem nome').trim();
         const codigoUnico = (linha.cnpj || '').trim() || nomeEmpresa.toLowerCase().replace(/\s+/g, '-');
 
-        const jaExiste = coletorLeadJaExisteNoCRM(linha, nomeEmpresa, codigoUnico);
+        // Exact confirmed link or CNPJ; name/phone alone can belong to different branches.
+        const existente = window.Prospecting ? Prospecting.match(linha, leads.filter(l => l.usuarioId === usuarioAtual.id)) : null;
+        const jaExiste = window.Prospecting ? !!existente : coletorLeadJaExisteNoCRM(linha, nomeEmpresa, codigoUnico);
 
         if (jaExiste) {
+            if (existente) { Prospecting.metadata(linha).crmId = existente.id; linha.promovido = true; }
             pulados++;
             return;
         }
@@ -507,8 +516,8 @@ function coletorPromoverParaCRM() {
             id: gerarId(),
             codigoUnico,
             empresa: nomeEmpresa,
-            cidade,
-            estado,
+            cidade: linha.cidade || cidade,
+            estado: linha.estado || estado,
             telefone: linha.telefone || '',
             whatsapp: linha.telefone || '',
             email: linha.email || '',
@@ -529,18 +538,19 @@ function coletorPromoverParaCRM() {
             pedidos: [],
             proximaAcao: '',
             proximaData: '',
-            tarefas: {},
+            tarefas: window.Prospecting ? {territory: JSON.parse(JSON.stringify(Prospecting.metadata(linha).territory))} : {},
             usuarioId: usuarioAtual.id,
             historico: [{
                 data: hoje(),
                 hora: new Date().toTimeString().slice(0, 5),
                 tipo: 'Movimento',
-                descricao: `Lead promovido do Coletor (lista "${coletorListaAtiva().nome}")`
+                descricao: `Lead promovido do Coletor (lista "${listaOrigem.nome}")`
             }]
         };
 
         leads.unshift(novoLead);
         linha.promovido = true;
+        if (window.Prospecting) Prospecting.metadata(linha).crmId = novoLead.id;
         promovidos++;
     });
 
@@ -843,3 +853,4 @@ function renderizarColetor() {
     const chkTodos = document.getElementById('coletorSelecionarTodos');
     if (chkTodos) chkTodos.checked = (coletorSelecionados.size === dados.length && dados.length > 0);
 }
+

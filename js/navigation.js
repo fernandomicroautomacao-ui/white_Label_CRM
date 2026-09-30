@@ -11,6 +11,8 @@ function setupNavegacao() {
 }
 
 function navegarPara(section) {
+    const modoProspeccao = section === 'coletor' ? 'descoberta' : section === 'territory' ? 'mapa' : null;
+    if (modoProspeccao) section = 'prospeccao';
     fecharTodosModais();
     document.getElementById('sidebar')?.classList.remove('mobile-open');
 
@@ -23,6 +25,7 @@ function navegarPara(section) {
 
     const titles = {
         dashboard: 'Dashboard',
+        prospeccao: 'Inteligência de Prospecção',
         pipeline: 'Pipeline',
         central: 'Central 360º',
         marketing: 'Marketing',
@@ -44,6 +47,7 @@ function navegarPara(section) {
     document.getElementById('pageTitle').innerHTML =
         `<span class="page-title-icon">${svgIcone(section)}</span> ${titles[section] || section}`;
 
+    if (section === 'prospeccao') abrirModoProspeccao(modoProspeccao || 'descoberta');
     if (section === 'dashboard') renderizarDashboard();
     if (section === 'pipeline') renderizarPipeline();
     if (section === 'central' && typeof renderizarCentral === 'function') renderizarCentral();
@@ -89,3 +93,4 @@ function toggleTheme() {
     document.documentElement.setAttribute('data-theme', novo);
     localStorage.setItem('ploomesTemaV5', novo);
 }
+

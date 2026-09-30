@@ -146,19 +146,12 @@
                 <span class="label">WhatsApp</span>
                 <span class="badge" id="whatsappCount">0</span>
             </a>
-            <a data-section="coletor">
+            <a data-section="prospeccao" id="navItemTerritory" title="Descoberta, empresas, mapa e rotas">
                 <span class="icon" data-icone="coletor"></span>
-                <span class="label">Coletor de Leads</span>
+                <span class="label">Inteligência de Prospecção</span>
                 <span class="badge" id="coletorCount">0</span>
             </a>
-            <a data-section="territory" id="navItemTerritory" title="Mapa inteligente de prospecção e rotas comerciais">
-                <span class="icon" data-icone="mapa"></span>
-                <span class="label">Mapa de Prospecção</span>
-            </a>
-            <a data-section="mergulho" id="navItemMergulho" title="Mergulho Profundo & Dossiê do Lead">
-                <span class="icon" data-icone="busca"></span>
-                <span class="label">Mergulho Profundo</span>
-            </a>
+
             <a data-section="calendario">
                 <span class="icon" data-icone="calendario"></span>
                 <span class="label">Calendário</span>
@@ -837,79 +830,7 @@
         </section>
 
         <!-- ============ COLETOR DE LEADS ============ -->
-        <section class="section" id="section-coletor">
-            <h3 style="font-size:18px;font-weight:700;margin-bottom:8px;">Coletor de Leads</h3>
-            <p class="text-muted mb-16">Importe listas brutas (CSV de Google Contacts, planilhas exportadas, etc.), trate cada linha e promova os leads qualificados direto para o Pipeline do CRM</p>
 
-            <div class="dashboard-cards coletor-stats">
-                <div class="stat-card leads">
-                    <span class="icon-dot" style="background:var(--stage-leads);"></span>
-                    <div class="label">Linhas na Lista</div>
-                    <div class="value" id="coletorTotalLinhas">0</div>
-                </div>
-                <div class="stat-card oportunidades">
-                    <span class="icon-dot" style="background:var(--stage-oportunidades);"></span>
-                    <div class="label">Tratados</div>
-                    <div class="value" id="coletorTotalTratados">0</div>
-                </div>
-                <div class="stat-card pedido">
-                    <span class="icon-dot" style="background:var(--stage-pedido);"></span>
-                    <div class="label">Promovidos ao CRM</div>
-                    <div class="value" id="coletorTotalPromovidos">0</div>
-                </div>
-            </div>
-
-            <div class="sub-tabs mb-16" id="coletorAbas"></div>
-
-            <div class="filters mb-16">
-                <label class="btn btn-outline btn-sm" style="cursor:pointer;">
-                    Carregar CSV
-                    <input type="file" id="coletorCsvFile" accept=".csv" style="display:none" onchange="coletorCarregarCSV(event)">
-                </label>
-                <button class="btn btn-warning btn-sm" onclick="abrirModalBuscaMaps()">Buscar no Google Maps</button>
-                <button class="btn btn-success btn-sm" onclick="coletorPromoverParaCRM()">Promover Tratados para o CRM</button>
-                <button class="btn btn-outline btn-sm" onclick="coletorResetarPromovidos()">Resetar Promovidos</button>
-                <button class="btn btn-info btn-sm" onclick="coletorImprimirTratados()">Imprimir Tratados</button>
-                <button class="btn btn-primary btn-sm" onclick="coletorAbrirChamada(null)">Ligação Manual</button>
-                <button class="btn btn-danger btn-sm" onclick="coletorLimparListaAtual()">Limpar Lista</button>
-            </div>
-
-            <div class="filters mb-16">
-                <span class="text-sm font-bold">Ações em massa:</span>
-                <select id="coletorAcaoEmMassa" style="padding:8px 14px;border:1px solid var(--border-color);border-radius:20px;background:var(--bg-card);color:var(--text-primary);">
-                    <option value="">Selecione</option>
-                    <option value="tratar">Marcar como Tratado</option>
-                    <option value="destratar">Desmarcar Tratado</option>
-                    <option value="excluir">Excluir selecionados</option>
-                </select>
-                <button class="btn btn-outline btn-sm" onclick="coletorAplicarAcaoEmMassa()">Aplicar</button>
-            </div>
-
-            <div class="table-wrapper" id="dataTableColetorWrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th class="select-col"><input type="checkbox" id="coletorSelecionarTodos" onchange="coletorSelecionarTodos(this.checked)"></th>
-                            <th>#</th>
-                            <th>Tratado</th>
-                            <th>Nome</th>
-                            <th>Empresa</th>
-                            <th>Telefone</th>
-                            <th>E-mail</th>
-                            <th>Website</th>
-                            <th>CNPJ</th>
-                            <th>Instagram</th>
-                            <th>LinkedIn</th>
-                            <th>Endereço</th>
-                            <th>Categoria</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="coletorTableBody"></tbody>
-                </table>
-            </div>
-            <div id="coletorPaginacao" class="coletor-paginacao"></div>
-        </section>
 
         <!-- ============ CALENDÁRIO ============ -->
         <section class="section" id="section-calendario">
@@ -2207,6 +2128,7 @@
 
         <!-- ============ MERGULHO PROFUNDO ============ -->
         <section class="section" id="section-mergulho">
+            <button class="btn btn-outline" onclick="navegarPara('territory');abrirModoProspeccao('analise')">← Voltar à prospecção</button>
             <!-- Conteúdo dinâmico renderizado por js/mergulho-profundo.js -->
         </section>
 
@@ -2521,7 +2443,89 @@
         </section>
 
         <!-- ============ TERRITORY INTELLIGENCE ============ -->
-        <section class="section" id="section-territory">
+        <section class="section" id="section-prospeccao">
+            <h2>Inteligência de Prospecção</h2>
+            <p class="text-muted">Descubra empresas, avalie o potencial e planeje suas visitas. As descobertas ficam nas listas do coletor até a promoção ao CRM.</p>
+            <div class="sub-tabs mb-16" role="tablist" aria-label="Prospecção">
+                <button class="sub-tab" role="tab" id="prospectingTab-descoberta" aria-controls="section-coletor" onclick="abrirModoProspeccao('descoberta')">Descoberta</button>
+                <button class="sub-tab" role="tab" id="prospectingTab-empresas" aria-controls="section-territory" onclick="abrirModoProspeccao('empresas')">Empresas</button>
+                <button class="sub-tab" role="tab" id="prospectingTab-analise" aria-controls="section-territory" onclick="abrirModoProspeccao('analise')">Análise rápida</button>
+                <button class="sub-tab" role="tab" id="prospectingTab-mapa" aria-controls="section-territory" onclick="abrirModoProspeccao('mapa')">Mapa</button>
+                <button class="sub-tab" role="tab" id="prospectingTab-rotas" aria-controls="section-territory" onclick="abrirModoProspeccao('rotas')">Rotas</button>
+            </div>
+        <section class="prospecting-panel" hidden id="section-coletor">
+            <h3 style="font-size:18px;font-weight:700;margin-bottom:8px;">Coletor de Leads</h3>
+            <p class="text-muted mb-16">Importe listas brutas (CSV de Google Contacts, planilhas exportadas, etc.), trate cada linha e promova os leads qualificados direto para o Pipeline do CRM</p>
+
+            <div class="dashboard-cards coletor-stats">
+                <div class="stat-card leads">
+                    <span class="icon-dot" style="background:var(--stage-leads);"></span>
+                    <div class="label">Linhas na Lista</div>
+                    <div class="value" id="coletorTotalLinhas">0</div>
+                </div>
+                <div class="stat-card oportunidades">
+                    <span class="icon-dot" style="background:var(--stage-oportunidades);"></span>
+                    <div class="label">Tratados</div>
+                    <div class="value" id="coletorTotalTratados">0</div>
+                </div>
+                <div class="stat-card pedido">
+                    <span class="icon-dot" style="background:var(--stage-pedido);"></span>
+                    <div class="label">Promovidos ao CRM</div>
+                    <div class="value" id="coletorTotalPromovidos">0</div>
+                </div>
+            </div>
+
+            <div class="sub-tabs mb-16" id="coletorAbas"></div>
+
+            <div class="filters mb-16">
+                <label class="btn btn-outline btn-sm" style="cursor:pointer;">
+                    Carregar CSV
+                    <input type="file" id="coletorCsvFile" accept=".csv" style="display:none" onchange="coletorCarregarCSV(event)">
+                </label>
+                <button class="btn btn-warning btn-sm" onclick="abrirModalBuscaMaps()">Buscar no Google Maps</button>
+                <button class="btn btn-success btn-sm" onclick="coletorPromoverParaCRM()">Promover Tratados para o CRM</button>
+                <button class="btn btn-outline btn-sm" onclick="coletorResetarPromovidos()">Resetar Promovidos</button>
+                <button class="btn btn-info btn-sm" onclick="coletorImprimirTratados()">Imprimir Tratados</button>
+                <button class="btn btn-primary btn-sm" onclick="coletorAbrirChamada(null)">Ligação Manual</button>
+                <button class="btn btn-danger btn-sm" onclick="coletorLimparListaAtual()">Limpar Lista</button>
+            </div>
+
+            <div class="filters mb-16">
+                <span class="text-sm font-bold">Ações em massa:</span>
+                <select id="coletorAcaoEmMassa" style="padding:8px 14px;border:1px solid var(--border-color);border-radius:20px;background:var(--bg-card);color:var(--text-primary);">
+                    <option value="">Selecione</option>
+                    <option value="tratar">Marcar como Tratado</option>
+                    <option value="destratar">Desmarcar Tratado</option>
+                    <option value="excluir">Excluir selecionados</option>
+                </select>
+                <button class="btn btn-outline btn-sm" onclick="coletorAplicarAcaoEmMassa()">Aplicar</button>
+            </div>
+
+            <div class="table-wrapper" id="dataTableColetorWrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="select-col"><input type="checkbox" id="coletorSelecionarTodos" onchange="coletorSelecionarTodos(this.checked)"></th>
+                            <th>#</th>
+                            <th>Tratado</th>
+                            <th>Nome</th>
+                            <th>Empresa</th>
+                            <th>Telefone</th>
+                            <th>E-mail</th>
+                            <th>Website</th>
+                            <th>CNPJ</th>
+                            <th>Instagram</th>
+                            <th>LinkedIn</th>
+                            <th>Endereço</th>
+                            <th>Categoria</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="coletorTableBody"></tbody>
+                </table>
+            </div>
+            <div id="coletorPaginacao" class="coletor-paginacao"></div>
+        </section>        <section class="prospecting-panel" hidden id="section-territory">
             <div class="territory-shell">
                 <div class="territory-toolbar">
                     <div class="territory-search">
@@ -2533,15 +2537,18 @@
                         <option value="">Todo potencial</option><option>Alto</option><option>Médio</option><option>Baixo</option>
                     </select>
                     <select id="territoryFilterStatus" onchange="atualizarFiltrosTerritory()">
-                        <option value="">Todo status</option><option>Cliente</option><option>Em negociação</option><option>Qualificação</option><option>Prospect</option>
+                        <option value="">Todo status</option><option>Nova descoberta</option><option>Analisado</option><option>Interessante</option><option>Qualificado</option><option>Descartado</option><option>Promovido</option><option>Cliente</option><option>Em negociação</option><option>Qualificação</option><option>Prospect</option>
                     </select>
+                    <select id="territoryFilterSource" onchange="atualizarFiltrosTerritory()"><option value="">Todas as origens</option><option value="discovery">Descobertas</option><option value="crm">CRM</option></select>
                     <div class="territory-toolbar-actions">
                         <button class="btn btn-outline btn-sm" onclick="limparFiltrosTerritory()">Limpar</button>
                         <button class="btn btn-outline btn-sm" id="territoryGeoBtn" onclick="geocodificarLoteTerritory()">📍 Geocodificar empresas</button>
-                        <button class="btn btn-primary btn-sm" onclick="otimizarRotaTerritory()">🧭 Criar rota</button>
+                        <button class="btn btn-primary btn-sm" onclick="otimizarRotaTerritory()">🧭 Rota por prioridade</button>
                     </div>
                 </div>
 
+                <div id="prospectingRoutePanel" hidden></div>
+                <p class="text-muted">Cores: cinza descoberta · roxo análise · azul prospect · amarelo negociação · verde cliente. Score e produtos são sugestões por regras, a validar.</p>
                 <div class="territory-kpis">
                     <div class="territory-kpi"><div class="territory-kpi-icon">🏭</div><div><strong id="territoryKpiTotal">0</strong><span>Empresas no recorte</span></div></div>
                     <div class="territory-kpi"><div class="territory-kpi-icon">🔥</div><div><strong id="territoryKpiHigh">0</strong><span>Score alto</span></div></div>
@@ -2570,11 +2577,12 @@
                         <div class="territory-list" id="territoryLeadList"></div>
                     </div>
                     <div class="territory-insights-card">
-                        <div class="territory-card-head"><strong>Insights de território</strong><span>dados do CRM atual</span></div>
+                        <div class="territory-card-head"><strong>Insights de território</strong><span>descobertas e CRM</span></div>
                         <div class="territory-insights" id="territoryInsights"></div>
                     </div>
                 </div>
             </div>
+        </section>
         </section>
 
     </main>
@@ -4724,7 +4732,9 @@ npx @open-wa/wa-automate -p 8080 --popup
     <script src="js/advanced-features.js"></script>
     <script src="js/mergulho-profundo.js"></script>
     <script src="js/landing-pages.js"></script>
+    <script src="js/prospecting-intelligence.js"></script>
     <script src="js/territory-intelligence.js"></script>
     <script src="js/init.js"></script>
 </body>
 </html>
+

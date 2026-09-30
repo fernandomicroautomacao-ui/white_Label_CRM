@@ -57,3 +57,21 @@
 @media (max-width:1300px){.territory-kpis{grid-template-columns:repeat(3,1fr)}.territory-grid{grid-template-columns:minmax(0,1.45fr) minmax(290px,.8fr)}}
 @media (max-width:980px){.territory-grid,.territory-bottom{grid-template-columns:1fr}.territory-kpis{grid-template-columns:repeat(2,1fr)}#territoryMap{height:420px}.territory-profile-card{min-height:0}.territory-profile-placeholder{height:260px}}
 @media (max-width:640px){.territory-kpis{grid-template-columns:1fr 1fr}.territory-toolbar select,.territory-search{width:100%;min-width:100%}.territory-toolbar-actions{width:100%;margin-left:0}.territory-toolbar-actions button{flex:1}.territory-profile-grid{grid-template-columns:1fr}.territory-insights{grid-template-columns:1fr}}
+
+
+/* Unified prospecting workspace */
+.prospecting-panel[hidden], #prospectingRoutePanel[hidden] { display:none !important; }
+.prospecting-field { display:block; margin:10px 0; font-size:13px; }
+.prospecting-field textarea { display:block; width:100%; box-sizing:border-box; border:1px solid var(--border-color); border-radius:8px; padding:8px; background:var(--bg-card); color:var(--text-primary); }
+.prospecting-route-row { display:flex; gap:8px; align-items:center; margin:8px 0; }
+.prospecting-route-row span { flex:1; }
+#prospectingRoutePanel { padding:16px; border:1px solid var(--border-color); border-radius:12px; margin:12px 0; }
+#section-prospeccao[data-mode="empresas"] .territory-map-card,
+#section-prospeccao[data-mode="analise"] .territory-map-card { display:none; }
+#section-prospeccao[data-mode="empresas"] .territory-grid,
+#section-prospeccao[data-mode="analise"] .territory-grid { grid-template-columns:1fr; }
+.territory-marker-discovery { background:#64748b; }
+.territory-marker-analysis { background:#8b5cf6; }
+.territory-marker-prospect { background:#2563eb; }
+.territory-marker-negotiation { background:#eab308; }
+.territory-marker-client { background:#16a34a; }

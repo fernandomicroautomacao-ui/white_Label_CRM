@@ -70,6 +70,7 @@
     }
 
     function statusCRM(lead) {
+        if (lead._discovery) return lead._status;
         if (lead.cliente || lead.etapa === 'pedido') return 'Cliente';
         const etapa = normalize(lead.etapa);
         if (etapa === 'orcamento' || etapa === 'oportunidades') return 'Em negociação';
@@ -100,7 +101,7 @@
 
     function scoreLead(lead) {
         const td = territoryData(lead);
-        if (Number.isFinite(Number(td.scoreManual))) return Math.max(0, Math.min(100, Number(td.scoreManual)));
+        if (td.scoreManual != null && td.scoreManual !== '' && Number.isFinite(Number(td.scoreManual))) return Math.max(0, Math.min(100, Number(td.scoreManual)));
 
         let score = 10;
         if (lead.potencial === 'A') score += 35;
@@ -150,10 +151,10 @@
         const td = territoryData(lead);
         const lat = Number(td.lat);
         const lng = Number(td.lng);
-        return Number.isFinite(lat) && Number.isFinite(lng);
+        return td.lat != null && td.lng != null && td.lat !== '' && td.lng !== '' && Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
     }
 
-    function leadsPermitidos() {
+    function crmPermitido() {
         if (typeof leads === 'undefined' || !Array.isArray(leads)) return [];
         if (typeof usuarioAtual !== 'undefined' && usuarioAtual && usuarioAtual.papel !== 'admin') {
             return leads.filter(l => l.usuarioId === usuarioAtual.id);
@@ -164,9 +165,15 @@
         return leads.slice();
     }
 
+    function leadsPermitidos() {
+        return window.Prospecting ? Prospecting.records(crmPermitido()) : crmPermitido();
+    }
+
     function aplicarFiltros(lista) {
         const f = state.filters;
         return lista.filter(lead => {
+            if (f.origem && (lead._discovery ? 'discovery' : 'crm') !== f.origem) return false;
+            if (!f.status && statusCRM(lead) === 'Descartado') return false;
             const busca = normalize([lead.empresa, lead.cnpj, lead.cidade, lead.estado, lead.decisor, lead.observacoes].join(' '));
             if (f.busca && !busca.includes(normalize(f.busca))) return false;
             if (f.cidade && normalize(lead.cidade) !== normalize(f.cidade)) return false;
@@ -198,7 +205,7 @@
     function markerHtml(lead) {
         const score = scoreLead(lead);
         const faixa = faixaScore(score);
-        const cls = faixa === 'Alto' ? 'high' : faixa === 'Médio' ? 'medium' : 'low';
+        const cls = ({Cliente:'client','Em negociação':'negotiation',Prospect:'prospect',Qualificação:'analysis','Nova descoberta':'discovery',Analisado:'analysis',Interessante:'analysis',Qualificado:'analysis',Descartado:'discovery',Promovido:'prospect'})[statusCRM(lead)] || 'discovery';
         return `<div class="territory-marker territory-marker-${cls}" title="${safe(lead.empresa)}"><span>🏭</span></div>`;
     }
 
@@ -267,7 +274,7 @@
         if (!el) return;
 
         if (!lista.length) {
-            el.innerHTML = '<div class="territory-empty"><strong>Nenhuma empresa encontrada.</strong><span>Ajuste os filtros ou cadastre novos leads no CRM.</span></div>';
+            el.innerHTML = '<div class="territory-empty"><strong>Nenhuma empresa encontrada.</strong><span>Ajuste os filtros ou busque/importe empresas em Descoberta.</span></div>';
             return;
         }
 
@@ -283,7 +290,7 @@
                 <button class="territory-company-row ${state.selectedLeadId === lead.id ? 'active' : ''}" onclick="selecionarLeadTerritory('${safe(lead.id)}')">
                     <div class="territory-company-main">
                         <strong>${safe(lead.empresa || 'Empresa sem nome')}</strong>
-                        <span>${safe(inferirSegmento(lead))} • ${safe(lead.cidade || 'Cidade não informada')}${lead.estado ? '/' + safe(lead.estado) : ''}</span>
+                        <span>${safe(statusCRM(lead))} · ${safe(inferirSegmento(lead))} • ${safe(lead.cidade || 'Cidade não informada')}${lead.estado ? '/' + safe(lead.estado) : ''}</span>
                     </div>
                     <div class="territory-company-meta">
                         <span class="territory-score territory-score-${normalize(faixa)}">${score}</span>
@@ -349,7 +356,7 @@
                 ${wa ? `<a href="https://wa.me/${wa}" target="_blank" rel="noopener" class="territory-action">💬 WhatsApp</a>` : ''}
                 ${lead.telefone ? `<a href="tel:${safe(String(lead.telefone).replace(/[^0-9+]/g,''))}" class="territory-action">📞 Ligar</a>` : ''}
                 ${lead.email ? `<a href="mailto:${safe(lead.email)}" class="territory-action">✉️ E-mail</a>` : ''}
-                <button class="territory-action" onclick="abrirModalLead('${safe(lead.id)}')">✏️ Abrir no CRM</button>
+                ${!lead._discovery ? `<button class="territory-action" onclick="abrirModalLead('${safe(lead.id)}')">✏️ Abrir no CRM</button>` : ''}
             </div>
 
             <div class="territory-profile-grid">
@@ -361,7 +368,8 @@
                 <div><span>Valor em aberto</span><strong>R$ ${Number(lead.valor || 0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong></div>
             </div>
 
-            <div class="territory-section-title">Produtos prováveis</div>
+            ${window.Prospecting ? Prospecting.profile(lead) : ''}
+            <div class="territory-section-title">Produtos sugeridos · validar aplicação</div>
             <div class="territory-products">${produtos.map(p=>`<span>${safe(p)}</span>`).join('')}</div>
 
             <div class="territory-section-title">Próxima ação</div>
@@ -494,6 +502,7 @@
     }
 
     function atualizarFiltrosTerritory() {
+        state.filters.origem = document.getElementById('territoryFilterSource')?.value || '';
         state.filters.busca = document.getElementById('territorySearch')?.value || '';
         state.filters.cidade = document.getElementById('territoryFilterCity')?.value || '';
         state.filters.segmento = document.getElementById('territoryFilterSegment')?.value || '';
@@ -504,7 +513,7 @@
 
     function limparFiltrosTerritory() {
         state.filters = { busca:'', cidade:'', segmento:'', potencial:'', status:'' };
-        ['territorySearch','territoryFilterCity','territoryFilterSegment','territoryFilterPotential','territoryFilterStatus'].forEach(id => {
+        ['territoryFilterSource','territorySearch','territoryFilterCity','territoryFilterSegment','territoryFilterPotential','territoryFilterStatus'].forEach(id => {
             const el = document.getElementById(id); if (el) el.value = '';
         });
         renderizarTerritoryIntelligence();
@@ -541,6 +550,7 @@
         }
     }
 
+    window.obterEmpresasTerritory = leadsPermitidos;
     window.renderizarTerritoryIntelligence = renderizarTerritoryIntelligence;
     window.atualizarFiltrosTerritory = atualizarFiltrosTerritory;
     window.limparFiltrosTerritory = limparFiltrosTerritory;
@@ -553,7 +563,7 @@
     window.territorySearchEnter = handleSearchEnter;
 
     document.addEventListener('visibilitychange', () => {
-        if (!document.hidden && document.getElementById('section-territory')?.classList.contains('active') && state.map) {
+        if (!document.hidden && document.getElementById('section-prospeccao')?.classList.contains('active') && state.map) {
             setTimeout(() => state.map.invalidateSize(), 100);
         }
     });
