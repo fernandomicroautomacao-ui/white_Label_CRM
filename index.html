@@ -9,6 +9,8 @@
     <meta property="og:description" content="Gestão de projetos e produtos, do lead ao pedido.">
     <link rel="icon" id="dynamicFavicon" href="assets/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+    <link rel="stylesheet" href="css/territory-intelligence.css">
     <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#22384d">
 </head>
@@ -144,15 +146,12 @@
                 <span class="label">WhatsApp</span>
                 <span class="badge" id="whatsappCount">0</span>
             </a>
-            <a data-section="coletor">
+            <a data-section="prospeccao" id="navItemTerritory" title="Descoberta, empresas, mapa e rotas">
                 <span class="icon" data-icone="coletor"></span>
-                <span class="label">Coletor de Leads</span>
+                <span class="label">Prospecção Reversa</span>
                 <span class="badge" id="coletorCount">0</span>
             </a>
-            <a data-section="mergulho" id="navItemMergulho" title="Mergulho Profundo & Dossiê do Lead">
-                <span class="icon" data-icone="busca"></span>
-                <span class="label">Mergulho Profundo</span>
-            </a>
+
             <a data-section="calendario">
                 <span class="icon" data-icone="calendario"></span>
                 <span class="label">Calendário</span>
@@ -831,79 +830,7 @@
         </section>
 
         <!-- ============ COLETOR DE LEADS ============ -->
-        <section class="section" id="section-coletor">
-            <h3 style="font-size:18px;font-weight:700;margin-bottom:8px;">Coletor de Leads</h3>
-            <p class="text-muted mb-16">Importe listas brutas (CSV de Google Contacts, planilhas exportadas, etc.), trate cada linha e promova os leads qualificados direto para o Pipeline do CRM</p>
 
-            <div class="dashboard-cards coletor-stats">
-                <div class="stat-card leads">
-                    <span class="icon-dot" style="background:var(--stage-leads);"></span>
-                    <div class="label">Linhas na Lista</div>
-                    <div class="value" id="coletorTotalLinhas">0</div>
-                </div>
-                <div class="stat-card oportunidades">
-                    <span class="icon-dot" style="background:var(--stage-oportunidades);"></span>
-                    <div class="label">Tratados</div>
-                    <div class="value" id="coletorTotalTratados">0</div>
-                </div>
-                <div class="stat-card pedido">
-                    <span class="icon-dot" style="background:var(--stage-pedido);"></span>
-                    <div class="label">Promovidos ao CRM</div>
-                    <div class="value" id="coletorTotalPromovidos">0</div>
-                </div>
-            </div>
-
-            <div class="sub-tabs mb-16" id="coletorAbas"></div>
-
-            <div class="filters mb-16">
-                <label class="btn btn-outline btn-sm" style="cursor:pointer;">
-                    Carregar CSV
-                    <input type="file" id="coletorCsvFile" accept=".csv" style="display:none" onchange="coletorCarregarCSV(event)">
-                </label>
-                <button class="btn btn-warning btn-sm" onclick="abrirModalBuscaMaps()">Buscar no Google Maps</button>
-                <button class="btn btn-success btn-sm" onclick="coletorPromoverParaCRM()">Promover Tratados para o CRM</button>
-                <button class="btn btn-outline btn-sm" onclick="coletorResetarPromovidos()">Resetar Promovidos</button>
-                <button class="btn btn-info btn-sm" onclick="coletorImprimirTratados()">Imprimir Tratados</button>
-                <button class="btn btn-primary btn-sm" onclick="coletorAbrirChamada(null)">Ligação Manual</button>
-                <button class="btn btn-danger btn-sm" onclick="coletorLimparListaAtual()">Limpar Lista</button>
-            </div>
-
-            <div class="filters mb-16">
-                <span class="text-sm font-bold">Ações em massa:</span>
-                <select id="coletorAcaoEmMassa" style="padding:8px 14px;border:1px solid var(--border-color);border-radius:20px;background:var(--bg-card);color:var(--text-primary);">
-                    <option value="">Selecione</option>
-                    <option value="tratar">Marcar como Tratado</option>
-                    <option value="destratar">Desmarcar Tratado</option>
-                    <option value="excluir">Excluir selecionados</option>
-                </select>
-                <button class="btn btn-outline btn-sm" onclick="coletorAplicarAcaoEmMassa()">Aplicar</button>
-            </div>
-
-            <div class="table-wrapper" id="dataTableColetorWrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th class="select-col"><input type="checkbox" id="coletorSelecionarTodos" onchange="coletorSelecionarTodos(this.checked)"></th>
-                            <th>#</th>
-                            <th>Tratado</th>
-                            <th>Nome</th>
-                            <th>Empresa</th>
-                            <th>Telefone</th>
-                            <th>E-mail</th>
-                            <th>Website</th>
-                            <th>CNPJ</th>
-                            <th>Instagram</th>
-                            <th>LinkedIn</th>
-                            <th>Endereço</th>
-                            <th>Categoria</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="coletorTableBody"></tbody>
-                </table>
-            </div>
-            <div id="coletorPaginacao" class="coletor-paginacao"></div>
-        </section>
 
         <!-- ============ CALENDÁRIO ============ -->
         <section class="section" id="section-calendario">
@@ -2201,6 +2128,7 @@
 
         <!-- ============ MERGULHO PROFUNDO ============ -->
         <section class="section" id="section-mergulho">
+            <button class="btn btn-outline" onclick="navegarPara('territory');abrirModoProspeccao('analise')">← Voltar à prospecção</button>
             <!-- Conteúdo dinâmico renderizado por js/mergulho-profundo.js -->
         </section>
 
@@ -2512,6 +2440,184 @@
                 <div class="admin-card"><div class="admin-card-header">Backup local</div><p class="text-xs text-muted mb-8">Exporta leads, configurações, metas e cadências do navegador atual. Não substitui o backup do Supabase.</p><button class="btn btn-primary btn-sm" onclick="exportarBackupCompleto()">Baixar backup JSON</button><label class="btn btn-outline btn-sm" style="cursor:pointer; margin-left:6px;">Restaurar JSON<input type="file" accept="application/json" onchange="restaurarBackupCompleto(event)" hidden></label></div>
                 <div class="admin-card"><div class="admin-card-header">Auditoria local</div><p class="text-xs text-muted mb-8">Registra ações feitas nesta sessão para revisão antes da migração para a tabela audit_logs do Supabase.</p><div id="auditLocalList"></div></div>
             </div>
+        </section>
+
+        <!-- ============ TERRITORY INTELLIGENCE ============ -->
+        <section class="section" id="section-prospeccao">
+            <h2>Prospecção Reversa</h2>
+            <p class="text-muted">Comece pelo produto. Defina aplicações e território, encontre empresas compatíveis e valide a oportunidade antes de promover ao CRM.</p>
+            <div id="reverseActivePlan" class="reverse-active-plan" aria-live="polite"></div>
+            <div class="sub-tabs mb-16" role="tablist" aria-label="Prospecção Reversa">
+                <button class="sub-tab" role="tab" id="prospectingTab-produto" aria-controls="reverseProductPanel" onclick="abrirModoProspeccao('produto')">Produto e aplicação</button>
+                <button class="sub-tab" role="tab" id="prospectingTab-descoberta" aria-controls="section-coletor" onclick="abrirModoProspeccao('descoberta')">Descoberta</button>
+                <button class="sub-tab" role="tab" id="prospectingTab-empresas" aria-controls="section-territory" onclick="abrirModoProspeccao('empresas')">Empresas</button>
+                <button class="sub-tab" role="tab" id="prospectingTab-analise" aria-controls="section-territory" onclick="abrirModoProspeccao('analise')">Análise rápida</button>
+                <button class="sub-tab" role="tab" id="prospectingTab-mapa" aria-controls="section-territory" onclick="abrirModoProspeccao('mapa')">Mapa</button>
+                <button class="sub-tab" role="tab" id="prospectingTab-rotas" aria-controls="section-territory" onclick="abrirModoProspeccao('rotas')">Rotas</button>
+            </div>
+        <section class="prospecting-panel reverse-product-panel" id="reverseProductPanel" hidden>
+            <div class="reverse-intro"><span class="reverse-eyebrow">PRODUTO → APLICAÇÃO → EMPRESA</span><h3>Para quem este produto faz sentido?</h3><p>Use um roteiro sugerido ou seu catálogo. Revise os critérios: a busca encontra candidatos e a confirmação depende de evidência.</p></div>
+            <fieldset id="reversePlanFields">
+                <div class="reverse-plan-grid">
+                    <div class="reverse-plan-card"><h3>1. Produto e aplicação</h3>
+                        <label>Produto ou roteiro<select id="reverseProduct"></select></label>
+                        <small id="reverseProductSource">Roteiros são hipóteses editáveis. Itens do catálogo podem conter dados demonstrativos.</small>
+                        <label>Nome do produto<input id="reverseName" maxlength="180" placeholder="Ex.: cilindro sem haste"></label>
+                        <label>Aplicação que deseja investigar<textarea id="reverseApplication" rows="3"></textarea></label>
+                        <label>Pergunta de qualificação<textarea id="reverseQuestion" rows="3"></textarea></label>
+                    </div>
+                    <div class="reverse-plan-card"><h3>2. Perfil das empresas</h3>
+                        <label>Tipos de empresa para buscar · um por linha<textarea id="reverseTargets" rows="4" placeholder="Fabricantes de máquinas de embalagem"></textarea></label>
+                        <label>Termos de aplicação · um por linha<textarea id="reverseKeywords" rows="3" placeholder="transferência de peças&#10;movimentação linear"></textarea></label>
+                        <label>CNAEs ou prefixos · separados por ponto e vírgula<input id="reverseCnaes" placeholder="Opcional; revise a classificação"></label>
+                        <label>Termos que exigem revisão de exclusão<textarea id="reverseExcluded" rows="2" placeholder="Ex.: reciclagem de PET"></textarea></label>
+                    </div>
+                    <div class="reverse-plan-card"><h3>3. Território e prioridade</h3>
+                        <label>Cidade<input id="reverseCity" maxlength="100" placeholder="Boituva"></label>
+                        <label>UF<input id="reverseUF" maxlength="2" placeholder="SP"></label>
+                        <label>DDDs permitidos<input id="reverseDDDs" placeholder="14; 15; 16; 17; 18"></label>
+                        <small>Filtros de cidade/UF e DDD são combinados. Registros sem esses dados ficam fora do recorte quando o filtro está preenchido.</small>
+                        <label>Aderência mínima<select id="reverseMinScore"><option value="0">0 · incluir empresas sem indícios</option><option value="30">30 · algum indício</option><option value="60">60 · mais indícios</option><option value="100">100 · somente aplicações confirmadas</option></select></label>
+                        <label class="reverse-checkbox"><input type="checkbox" id="reverseFetchEmails"> Enriquecer contatos na busca (quando disponível)</label>
+                    </div>
+                </div>
+                <div id="reverseQueryPreview" class="reverse-query-preview"></div>
+                <div class="reverse-plan-actions"><button type="button" class="btn btn-primary" data-reverse-action="apply">Analisar minha base</button><button type="button" class="btn btn-success" data-reverse-action="search">Buscar novas empresas</button></div>
+                <p class="text-muted">Analisar a base usa seus dados atuais. Buscar novas empresas consulta o serviço Maps configurado e pode consumir sua cota. O plano fica salvo neste navegador por usuário.</p>
+            </fieldset>
+        </section>
+        <div class="reverse-search-progress" role="status"><span id="reverseSearchStatus" aria-live="polite"></span><button class="btn btn-outline btn-sm" id="reverseCancelSearch" data-reverse-action="cancel" hidden>Interromper busca</button></div>
+        <section class="prospecting-panel" hidden id="section-coletor">
+            <h3 style="font-size:18px;font-weight:700;margin-bottom:8px;">Coletor de Leads</h3>
+            <p class="text-muted mb-16">Importe listas brutas (CSV de Google Contacts, planilhas exportadas, etc.), trate cada linha e promova os leads qualificados direto para o Pipeline do CRM</p>
+
+            <div class="dashboard-cards coletor-stats">
+                <div class="stat-card leads">
+                    <span class="icon-dot" style="background:var(--stage-leads);"></span>
+                    <div class="label">Linhas na Lista</div>
+                    <div class="value" id="coletorTotalLinhas">0</div>
+                </div>
+                <div class="stat-card oportunidades">
+                    <span class="icon-dot" style="background:var(--stage-oportunidades);"></span>
+                    <div class="label">Tratados</div>
+                    <div class="value" id="coletorTotalTratados">0</div>
+                </div>
+                <div class="stat-card pedido">
+                    <span class="icon-dot" style="background:var(--stage-pedido);"></span>
+                    <div class="label">Promovidos ao CRM</div>
+                    <div class="value" id="coletorTotalPromovidos">0</div>
+                </div>
+            </div>
+
+            <div class="sub-tabs mb-16" id="coletorAbas"></div>
+
+            <div class="filters mb-16">
+                <label class="btn btn-outline btn-sm" style="cursor:pointer;">
+                    Carregar CSV
+                    <input type="file" id="coletorCsvFile" accept=".csv" style="display:none" onchange="coletorCarregarCSV(event)">
+                </label>
+                <button class="btn btn-warning btn-sm" onclick="abrirModalBuscaMaps()">Buscar no Google Maps</button>
+                <button class="btn btn-success btn-sm" onclick="coletorPromoverParaCRM()">Promover Tratados para o CRM</button>
+                <button class="btn btn-outline btn-sm" onclick="coletorResetarPromovidos()">Resetar Promovidos</button>
+                <button class="btn btn-info btn-sm" onclick="coletorImprimirTratados()">Imprimir Tratados</button>
+                <button class="btn btn-primary btn-sm" onclick="coletorAbrirChamada(null)">Ligação Manual</button>
+                <button class="btn btn-danger btn-sm" onclick="coletorLimparListaAtual()">Limpar Lista</button>
+            </div>
+
+            <div class="filters mb-16">
+                <span class="text-sm font-bold">Ações em massa:</span>
+                <select id="coletorAcaoEmMassa" style="padding:8px 14px;border:1px solid var(--border-color);border-radius:20px;background:var(--bg-card);color:var(--text-primary);">
+                    <option value="">Selecione</option>
+                    <option value="tratar">Marcar como Tratado</option>
+                    <option value="destratar">Desmarcar Tratado</option>
+                    <option value="excluir">Excluir selecionados</option>
+                </select>
+                <button class="btn btn-outline btn-sm" onclick="coletorAplicarAcaoEmMassa()">Aplicar</button>
+            </div>
+
+            <div class="table-wrapper" id="dataTableColetorWrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="select-col"><input type="checkbox" id="coletorSelecionarTodos" onchange="coletorSelecionarTodos(this.checked)"></th>
+                            <th>#</th>
+                            <th>Tratado</th>
+                            <th>Nome</th>
+                            <th>Empresa</th>
+                            <th>Telefone</th>
+                            <th>E-mail</th>
+                            <th>Website</th>
+                            <th>CNPJ</th>
+                            <th>Instagram</th>
+                            <th>LinkedIn</th>
+                            <th>Endereço</th>
+                            <th>Categoria</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="coletorTableBody"></tbody>
+                </table>
+            </div>
+            <div id="coletorPaginacao" class="coletor-paginacao"></div>
+        </section>        <section class="prospecting-panel" hidden id="section-territory">
+            <div class="territory-shell">
+                <p id="reverseResultsSummary" class="reverse-results-summary" aria-live="polite"></p>
+                <div class="territory-toolbar">
+                    <div class="territory-search">
+                        <input id="territorySearch" type="search" placeholder="Buscar empresa, CNPJ, cidade ou decisor..." onkeydown="territorySearchEnter(event)">
+                    </div>
+                    <select id="territoryFilterCity" onchange="atualizarFiltrosTerritory()"><option value="">Todas as cidades</option></select>
+                    <select id="territoryFilterSegment" onchange="atualizarFiltrosTerritory()"><option value="">Todos os segmentos</option></select>
+                    <select id="territoryFilterPotential" onchange="atualizarFiltrosTerritory()">
+                        <option value="">Todo potencial</option><option>Alto</option><option>Médio</option><option>Baixo</option>
+                    </select>
+                    <select id="territoryFilterStatus" onchange="atualizarFiltrosTerritory()">
+                        <option value="">Todo status</option><option>Nova descoberta</option><option>Analisado</option><option>Interessante</option><option>Qualificado</option><option>Descartado</option><option>Promovido</option><option>Cliente</option><option>Em negociação</option><option>Qualificação</option><option>Prospect</option>
+                    </select>
+                    <select id="territoryFilterSource" onchange="atualizarFiltrosTerritory()"><option value="">Todas as origens</option><option value="discovery">Descobertas</option><option value="crm">CRM</option></select>
+                    <div class="territory-toolbar-actions">
+                        <button class="btn btn-outline btn-sm" onclick="limparFiltrosTerritory()">Limpar</button>
+                        <button class="btn btn-outline btn-sm" id="territoryGeoBtn" onclick="geocodificarLoteTerritory()">📍 Geocodificar empresas</button>
+                        <button class="btn btn-primary btn-sm" onclick="otimizarRotaTerritory()">🧭 Rota por prioridade</button>
+                    </div>
+                </div>
+
+                <div id="prospectingRoutePanel" hidden></div>
+                <p class="text-muted">Cores: cinza descoberta · roxo análise · azul prospect · amarelo negociação · verde cliente. Score e produtos são sugestões por regras, a validar.</p>
+                <div class="territory-kpis">
+                    <div class="territory-kpi"><div class="territory-kpi-icon">🏭</div><div><strong id="territoryKpiTotal">0</strong><span>Empresas no recorte</span></div></div>
+                    <div class="territory-kpi"><div class="territory-kpi-icon">🔥</div><div><strong id="territoryKpiHigh">0</strong><span>Score alto</span></div></div>
+                    <div class="territory-kpi"><div class="territory-kpi-icon">📈</div><div><strong id="territoryKpiMedium">0</strong><span>Score médio</span></div></div>
+                    <div class="territory-kpi"><div class="territory-kpi-icon">📍</div><div><strong id="territoryKpiGeo">0</strong><span>No mapa</span></div></div>
+                    <div class="territory-kpi"><div class="territory-kpi-icon">⚙️</div><div><strong id="territoryKpiMachines">0</strong><span>Máquinas/equip.</span></div></div>
+                    <div class="territory-kpi"><div class="territory-kpi-icon">♻️</div><div><strong id="territoryKpiPlastic">0</strong><span>Plásticos/PET</span></div></div>
+                </div>
+
+                <div class="territory-grid">
+                    <div class="territory-map-card">
+                        <div class="territory-map-head">
+                            <strong>Mapa Comercial</strong>
+                            <span id="territoryVisibleCount">0 empresa(s)</span>
+                        </div>
+                        <div id="territoryMap"></div>
+                    </div>
+                    <div class="territory-profile-card" id="territoryProfile">
+                        <div class="territory-profile-placeholder">Selecione uma empresa no mapa ou na lista para abrir a ficha comercial.</div>
+                    </div>
+                </div>
+
+                <div class="territory-bottom">
+                    <div class="territory-list-card">
+                        <div class="territory-card-head"><strong>Empresas por prioridade</strong><span>ordenadas pela aderência ao produto quando houver plano ativo</span></div>
+                        <div class="territory-list" id="territoryLeadList"></div>
+                    </div>
+                    <div class="territory-insights-card">
+                        <div class="territory-card-head"><strong>Insights de território</strong><span>descobertas e CRM</span></div>
+                        <div class="territory-insights" id="territoryInsights"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
         </section>
 
     </main>
@@ -4611,6 +4717,7 @@ npx @open-wa/wa-automate -p 8080 --popup
             window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         }
     </script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script src="js/icons.js"></script>
     <script src="js/config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -4660,6 +4767,11 @@ npx @open-wa/wa-automate -p 8080 --popup
     <script src="js/advanced-features.js"></script>
     <script src="js/mergulho-profundo.js"></script>
     <script src="js/landing-pages.js"></script>
+    <script src="js/reverse-prospecting-model.js"></script>
+    <script src="js/prospecting-intelligence.js"></script>
+    <script src="js/reverse-prospecting.js"></script>
+    <script src="js/territory-intelligence.js"></script>
     <script src="js/init.js"></script>
 </body>
 </html>
+

@@ -92,6 +92,7 @@ function renderizarMergulhoProfundo() {
     const dados = lead ? mergulhoObterDados(lead) : null;
 
     container.innerHTML = `
+        <button class="btn btn-outline" onclick="navegarPara('territory');abrirModoProspeccao('analise')">← Voltar à prospecção</button>
         <div class="mergulho-header-bar">
             <div>
                 <h3 style="font-size:20px;font-weight:700;margin:0 0 4px;display:flex;align-items:center;gap:8px;">
@@ -3047,3 +3048,4 @@ document.addEventListener('DOMContentLoaded', () => {
 window.addEventListener('hashchange', () => {
     mergulhoVerificarRotaPublica();
 });
+

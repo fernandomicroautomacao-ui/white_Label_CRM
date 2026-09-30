@@ -11,6 +11,8 @@ function setupNavegacao() {
 }
 
 function navegarPara(section) {
+    const modoProspeccao = section === 'coletor' ? 'descoberta' : section === 'territory' ? 'mapa' : null;
+    if (modoProspeccao) section = 'prospeccao';
     fecharTodosModais();
     document.getElementById('sidebar')?.classList.remove('mobile-open');
 
@@ -23,11 +25,13 @@ function navegarPara(section) {
 
     const titles = {
         dashboard: 'Dashboard',
+        prospeccao: 'Prospecção Reversa',
         pipeline: 'Pipeline',
         central: 'Central 360º',
         marketing: 'Marketing',
         whatsapp: 'WhatsApp',
         coletor: 'Coletor de Leads',
+        territory: 'Territory Intelligence',
         calendario: 'Calendário',
         comunicacao: 'Comunicação',
         pessoas: 'Pessoas & Contatos',
@@ -43,6 +47,7 @@ function navegarPara(section) {
     document.getElementById('pageTitle').innerHTML =
         `<span class="page-title-icon">${svgIcone(section)}</span> ${titles[section] || section}`;
 
+    if (section === 'prospeccao') abrirModoProspeccao(modoProspeccao || 'produto');
     if (section === 'dashboard') renderizarDashboard();
     if (section === 'pipeline') renderizarPipeline();
     if (section === 'central' && typeof renderizarCentral === 'function') renderizarCentral();
@@ -54,6 +59,7 @@ function navegarPara(section) {
     }
     if (section === 'whatsapp') renderizarWhatsapp();
     if (section === 'coletor') renderizarColetor();
+    if (section === 'territory' && typeof renderizarTerritoryIntelligence === 'function') renderizarTerritoryIntelligence();
     if (section === 'calendario') renderizarCalendario();
     if (section === 'comunicacao') renderizarComunicacao();
     if (section === 'pessoas' && typeof renderizarPessoas === 'function') renderizarPessoas();
@@ -87,3 +93,4 @@ function toggleTheme() {
     document.documentElement.setAttribute('data-theme', novo);
     localStorage.setItem('ploomesTemaV5', novo);
 }
+

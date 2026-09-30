@@ -1,0 +1,108 @@
+/* ============================================
+   TERRITORY INTELLIGENCE
+   ============================================ */
+#section-territory { --ti-bg:#081421; --ti-card:#0d1d2d; --ti-card2:#10263a; --ti-border:#1d3a53; --ti-muted:#8aa3b8; --ti-text:#eef6ff; }
+.territory-shell{display:grid;gap:14px}
+.territory-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px}
+.territory-search{min-width:280px;flex:1;position:relative}
+.territory-search input,.territory-toolbar select{width:100%;min-height:38px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);border-radius:8px;padding:8px 11px}
+.territory-toolbar select{width:auto;min-width:155px}
+.territory-toolbar-actions{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+.territory-kpis{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));gap:10px}
+.territory-kpi{background:linear-gradient(145deg,var(--ti-card),var(--ti-card2));border:1px solid var(--ti-border);color:var(--ti-text);padding:14px;border-radius:12px;display:flex;gap:10px;align-items:center;min-height:78px}
+.territory-kpi-icon{width:38px;height:38px;border-radius:10px;background:rgba(46,132,255,.16);display:grid;place-items:center;font-size:20px}
+.territory-kpi strong{font-size:24px;line-height:1;display:block}
+.territory-kpi span{font-size:11px;color:#a8bed0;display:block;margin-top:5px}
+.territory-grid{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(300px,.7fr);gap:14px;align-items:stretch}
+.territory-map-card,.territory-profile-card,.territory-list-card,.territory-insights-card{background:var(--ti-bg);border:1px solid var(--ti-border);border-radius:14px;color:var(--ti-text);overflow:hidden}
+.territory-map-head,.territory-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:1px solid var(--ti-border);background:#0b1927}
+.territory-map-head strong,.territory-card-head strong{font-size:14px}
+.territory-map-head span,.territory-card-head span{font-size:11px;color:var(--ti-muted)}
+#territoryMap{height:510px;width:100%;background:#0b1722}
+.territory-map-card .leaflet-control-attribution{font-size:9px}
+.territory-map-card .leaflet-popup-content-wrapper,.territory-map-card .leaflet-popup-tip{background:#0e2234;color:white}
+.territory-marker-wrap{background:transparent!important;border:0!important}
+.territory-marker{width:34px;height:34px;border-radius:50% 50% 50% 10%;transform:rotate(-45deg);display:grid;place-items:center;border:2px solid #fff;box-shadow:0 3px 12px rgba(0,0,0,.42)}
+.territory-marker span{transform:rotate(45deg);font-size:15px}
+.territory-marker-high{background:#ef4444}.territory-marker-medium{background:#f59e0b}.territory-marker-low{background:#22c55e}
+.territory-profile-card{min-height:510px}
+.territory-profile-placeholder{height:510px;display:grid;place-items:center;text-align:center;color:var(--ti-muted);padding:40px;line-height:1.6}
+.territory-profile-head{display:flex;justify-content:space-between;gap:15px;padding:18px;border-bottom:1px solid var(--ti-border);background:linear-gradient(150deg,#0a1724,#102943)}
+.territory-profile-head h2{font-size:19px;margin:8px 0 4px;color:#fff}
+.territory-profile-head p{font-size:12px;color:var(--ti-muted);margin:0}
+.territory-chip{display:inline-flex;border-radius:999px;padding:4px 8px;font-size:10px;font-weight:700;background:#173956;color:#9dd0ff}
+.territory-score-big{min-width:68px;height:68px;border-radius:16px;background:#12324d;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid #24577d}
+.territory-score-big strong{font-size:24px;color:#56a9ff}.territory-score-big span{font-size:9px;text-transform:uppercase;color:#8eabc2}
+.territory-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:12px 16px;border-bottom:1px solid var(--ti-border)}
+.territory-action{border:1px solid #24455f;background:#102a3f;color:#dceeff;border-radius:8px;padding:9px 10px;font-size:11px;text-decoration:none;text-align:center;cursor:pointer}
+.territory-action:hover{background:#173d5c}
+.territory-profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;padding:4px 16px}
+.territory-profile-grid>div{padding:10px 4px;border-bottom:1px solid rgba(70,105,131,.3)}
+.territory-profile-grid span{display:block;font-size:9px;color:var(--ti-muted);text-transform:uppercase;letter-spacing:.5px}.territory-profile-grid strong{font-size:11px;color:#f1f7fb}
+.territory-section-title{padding:13px 16px 7px;font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:#7fa8c7;font-weight:800}
+.territory-products{padding:0 16px 8px;display:flex;flex-wrap:wrap;gap:5px}.territory-products span{font-size:10px;background:#eef4f8;color:#19354b;border-radius:6px;padding:6px 8px}
+.territory-next-action{margin:0 16px 12px;border-left:3px solid #3b82f6;padding:9px 10px;background:#0f2638;border-radius:0 8px 8px 0;font-size:11px}.territory-next-action small{display:block;color:var(--ti-muted);margin-top:4px}
+.territory-profile-footer{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--ti-border)}.territory-profile-footer>*{flex:1}
+.territory-geocode-note{font-size:9px;color:var(--ti-muted);padding:0 16px 12px}
+.territory-bottom{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(280px,.75fr);gap:14px}
+.territory-list-card{max-height:350px}.territory-list{overflow:auto;max-height:298px}
+.territory-company-row{width:100%;border:0;border-bottom:1px solid rgba(49,79,103,.45);background:transparent;color:var(--ti-text);padding:10px 13px;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;cursor:pointer}
+.territory-company-row:hover,.territory-company-row.active{background:#12304a}
+.territory-company-main strong{display:block;font-size:12px}.territory-company-main span{display:block;margin-top:3px;color:var(--ti-muted);font-size:10px}
+.territory-company-meta{display:flex;align-items:center;gap:8px}.territory-score{min-width:31px;text-align:center;border-radius:6px;padding:4px 5px;font-size:10px;font-weight:800}
+.territory-score-alto{background:rgba(239,68,68,.2);color:#ff8585}.territory-score-medio{background:rgba(245,158,11,.2);color:#ffc65c}.territory-score-baixo{background:rgba(34,197,94,.2);color:#75e89a}
+.territory-geo-dot{width:8px;height:8px;border-radius:50%;background:#556a7b}.territory-geo-dot.ok{background:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+.territory-insights{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px}.territory-insight{border:1px solid #1d3c55;background:#0d2233;border-radius:10px;padding:12px;min-height:74px}.territory-insight strong{display:block;font-size:20px;color:#74b7ff}.territory-insight span{display:block;font-size:10px;color:var(--ti-muted);line-height:1.35;margin-top:4px}
+.territory-empty{padding:28px;text-align:center;color:var(--ti-muted)}.territory-empty strong,.territory-empty span{display:block}.territory-empty span{font-size:11px;margin-top:5px}
+@media (max-width:1300px){.territory-kpis{grid-template-columns:repeat(3,1fr)}.territory-grid{grid-template-columns:minmax(0,1.45fr) minmax(290px,.8fr)}}
+@media (max-width:980px){.territory-grid,.territory-bottom{grid-template-columns:1fr}.territory-kpis{grid-template-columns:repeat(2,1fr)}#territoryMap{height:420px}.territory-profile-card{min-height:0}.territory-profile-placeholder{height:260px}}
+@media (max-width:640px){.territory-kpis{grid-template-columns:1fr 1fr}.territory-toolbar select,.territory-search{width:100%;min-width:100%}.territory-toolbar-actions{width:100%;margin-left:0}.territory-toolbar-actions button{flex:1}.territory-profile-grid{grid-template-columns:1fr}.territory-insights{grid-template-columns:1fr}}
+
+
+/* Unified prospecting workspace */
+.prospecting-panel[hidden], #prospectingRoutePanel[hidden] { display:none !important; }
+.prospecting-field { display:block; margin:10px 0; font-size:13px; }
+.prospecting-field textarea { display:block; width:100%; box-sizing:border-box; border:1px solid var(--border-color); border-radius:8px; padding:8px; background:var(--bg-card); color:var(--text-primary); }
+.prospecting-route-row { display:flex; gap:8px; align-items:center; margin:8px 0; }
+.prospecting-route-row span { flex:1; }
+#prospectingRoutePanel { padding:16px; border:1px solid var(--border-color); border-radius:12px; margin:12px 0; }
+#section-prospeccao[data-mode="empresas"] .territory-map-card,
+#section-prospeccao[data-mode="analise"] .territory-map-card { display:none; }
+#section-prospeccao[data-mode="empresas"] .territory-grid,
+#section-prospeccao[data-mode="analise"] .territory-grid { grid-template-columns:1fr; }
+.territory-marker-discovery { background:#64748b; }
+.territory-marker-analysis { background:#8b5cf6; }
+.territory-marker-prospect { background:#2563eb; }
+.territory-marker-negotiation { background:#eab308; }
+.territory-marker-client { background:#16a34a; }
+
+/* Product-first reverse prospecting */
+.reverse-active-plan { display:flex; flex-wrap:wrap; align-items:center; gap:12px; padding:14px; border:1px solid var(--border-color); border-radius:12px; margin:16px 0; background:var(--bg-card); }
+.reverse-active-plan span { flex:1; min-width:180px; }
+.reverse-intro { padding:22px 0 12px; }
+.reverse-intro h3 { margin:8px 0; font-size:26px; }
+.reverse-eyebrow { color:var(--primary-color,#0284c7); font-size:12px; font-weight:700; letter-spacing:1px; }
+#reversePlanFields { border:0; padding:0; min-width:0; }
+.reverse-plan-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+.reverse-plan-card { border:1px solid var(--border-color); border-radius:14px; padding:20px; background:var(--bg-card); min-width:0; }
+.reverse-plan-card h3 { font-size:17px; margin:0 0 18px; }
+.reverse-plan-card label { display:block; font-size:13px; font-weight:600; margin:14px 0 6px; }
+.reverse-plan-card input,.reverse-plan-card textarea,.reverse-plan-card select,.reverse-evidence input,.reverse-evidence select { width:100%; box-sizing:border-box; margin-top:6px; padding:10px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-card); color:var(--text-primary); font:inherit; }
+.reverse-plan-card small { display:block; color:var(--text-secondary,#64748b); line-height:1.5; }
+.reverse-plan-card .reverse-checkbox { display:flex; gap:8px; align-items:flex-start; }
+.reverse-checkbox input { width:auto; margin:0; }
+.reverse-plan-actions { display:flex; gap:12px; flex-wrap:wrap; margin:16px 0; }
+.reverse-query-preview { padding:16px; border:1px dashed var(--border-color); border-radius:12px; margin-top:16px; overflow-wrap:anywhere; }
+.reverse-query-preview ul { margin:8px 0 0; padding-left:22px; }
+.reverse-search-progress { display:flex; gap:10px; align-items:center; margin:12px 0; overflow-wrap:anywhere; }
+.reverse-results-summary { font-size:13px; line-height:1.6; padding:12px; background:var(--bg-card); border-radius:10px; }
+.reverse-evidence { margin:20px 0; padding:16px; border:1px solid var(--border-color); border-radius:12px; }
+.reverse-evidence h3 { margin:0 0 10px; }
+.reverse-evidence p,.reverse-evidence li { line-height:1.5; font-size:13px; }
+.reverse-evidence small { display:block; margin:8px 0; line-height:1.5; }
+.reverse-evidence details { margin-top:14px; }
+.reverse-fit { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+.reverse-fit strong { font-size:24px; }
+#section-prospeccao > .sub-tabs { flex-wrap:wrap; }
+@media(max-width:1100px) { .reverse-plan-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:700px) { .reverse-plan-grid { grid-template-columns:1fr; } .reverse-plan-card { padding:16px; } .reverse-intro h3 { font-size:22px; } }
