@@ -148,7 +148,7 @@
             </a>
             <a data-section="prospeccao" id="navItemTerritory" title="Descoberta, empresas, mapa e rotas">
                 <span class="icon" data-icone="coletor"></span>
-                <span class="label">Inteligência de Prospecção</span>
+                <span class="label">Prospecção Reversa</span>
                 <span class="badge" id="coletorCount">0</span>
             </a>
 
@@ -2444,15 +2444,49 @@
 
         <!-- ============ TERRITORY INTELLIGENCE ============ -->
         <section class="section" id="section-prospeccao">
-            <h2>Inteligência de Prospecção</h2>
-            <p class="text-muted">Descubra empresas, avalie o potencial e planeje suas visitas. As descobertas ficam nas listas do coletor até a promoção ao CRM.</p>
-            <div class="sub-tabs mb-16" role="tablist" aria-label="Prospecção">
+            <h2>Prospecção Reversa</h2>
+            <p class="text-muted">Comece pelo produto. Defina aplicações e território, encontre empresas compatíveis e valide a oportunidade antes de promover ao CRM.</p>
+            <div id="reverseActivePlan" class="reverse-active-plan" aria-live="polite"></div>
+            <div class="sub-tabs mb-16" role="tablist" aria-label="Prospecção Reversa">
+                <button class="sub-tab" role="tab" id="prospectingTab-produto" aria-controls="reverseProductPanel" onclick="abrirModoProspeccao('produto')">Produto e aplicação</button>
                 <button class="sub-tab" role="tab" id="prospectingTab-descoberta" aria-controls="section-coletor" onclick="abrirModoProspeccao('descoberta')">Descoberta</button>
                 <button class="sub-tab" role="tab" id="prospectingTab-empresas" aria-controls="section-territory" onclick="abrirModoProspeccao('empresas')">Empresas</button>
                 <button class="sub-tab" role="tab" id="prospectingTab-analise" aria-controls="section-territory" onclick="abrirModoProspeccao('analise')">Análise rápida</button>
                 <button class="sub-tab" role="tab" id="prospectingTab-mapa" aria-controls="section-territory" onclick="abrirModoProspeccao('mapa')">Mapa</button>
                 <button class="sub-tab" role="tab" id="prospectingTab-rotas" aria-controls="section-territory" onclick="abrirModoProspeccao('rotas')">Rotas</button>
             </div>
+        <section class="prospecting-panel reverse-product-panel" id="reverseProductPanel" hidden>
+            <div class="reverse-intro"><span class="reverse-eyebrow">PRODUTO → APLICAÇÃO → EMPRESA</span><h3>Para quem este produto faz sentido?</h3><p>Use um roteiro sugerido ou seu catálogo. Revise os critérios: a busca encontra candidatos e a confirmação depende de evidência.</p></div>
+            <fieldset id="reversePlanFields">
+                <div class="reverse-plan-grid">
+                    <div class="reverse-plan-card"><h3>1. Produto e aplicação</h3>
+                        <label>Produto ou roteiro<select id="reverseProduct"></select></label>
+                        <small id="reverseProductSource">Roteiros são hipóteses editáveis. Itens do catálogo podem conter dados demonstrativos.</small>
+                        <label>Nome do produto<input id="reverseName" maxlength="180" placeholder="Ex.: cilindro sem haste"></label>
+                        <label>Aplicação que deseja investigar<textarea id="reverseApplication" rows="3"></textarea></label>
+                        <label>Pergunta de qualificação<textarea id="reverseQuestion" rows="3"></textarea></label>
+                    </div>
+                    <div class="reverse-plan-card"><h3>2. Perfil das empresas</h3>
+                        <label>Tipos de empresa para buscar · um por linha<textarea id="reverseTargets" rows="4" placeholder="Fabricantes de máquinas de embalagem"></textarea></label>
+                        <label>Termos de aplicação · um por linha<textarea id="reverseKeywords" rows="3" placeholder="transferência de peças&#10;movimentação linear"></textarea></label>
+                        <label>CNAEs ou prefixos · separados por ponto e vírgula<input id="reverseCnaes" placeholder="Opcional; revise a classificação"></label>
+                        <label>Termos que exigem revisão de exclusão<textarea id="reverseExcluded" rows="2" placeholder="Ex.: reciclagem de PET"></textarea></label>
+                    </div>
+                    <div class="reverse-plan-card"><h3>3. Território e prioridade</h3>
+                        <label>Cidade<input id="reverseCity" maxlength="100" placeholder="Boituva"></label>
+                        <label>UF<input id="reverseUF" maxlength="2" placeholder="SP"></label>
+                        <label>DDDs permitidos<input id="reverseDDDs" placeholder="14; 15; 16; 17; 18"></label>
+                        <small>Filtros de cidade/UF e DDD são combinados. Registros sem esses dados ficam fora do recorte quando o filtro está preenchido.</small>
+                        <label>Aderência mínima<select id="reverseMinScore"><option value="0">0 · incluir empresas sem indícios</option><option value="30">30 · algum indício</option><option value="60">60 · mais indícios</option><option value="100">100 · somente aplicações confirmadas</option></select></label>
+                        <label class="reverse-checkbox"><input type="checkbox" id="reverseFetchEmails"> Enriquecer contatos na busca (quando disponível)</label>
+                    </div>
+                </div>
+                <div id="reverseQueryPreview" class="reverse-query-preview"></div>
+                <div class="reverse-plan-actions"><button type="button" class="btn btn-primary" data-reverse-action="apply">Analisar minha base</button><button type="button" class="btn btn-success" data-reverse-action="search">Buscar novas empresas</button></div>
+                <p class="text-muted">Analisar a base usa seus dados atuais. Buscar novas empresas consulta o serviço Maps configurado e pode consumir sua cota. O plano fica salvo neste navegador por usuário.</p>
+            </fieldset>
+        </section>
+        <div class="reverse-search-progress" role="status"><span id="reverseSearchStatus" aria-live="polite"></span><button class="btn btn-outline btn-sm" id="reverseCancelSearch" data-reverse-action="cancel" hidden>Interromper busca</button></div>
         <section class="prospecting-panel" hidden id="section-coletor">
             <h3 style="font-size:18px;font-weight:700;margin-bottom:8px;">Coletor de Leads</h3>
             <p class="text-muted mb-16">Importe listas brutas (CSV de Google Contacts, planilhas exportadas, etc.), trate cada linha e promova os leads qualificados direto para o Pipeline do CRM</p>
@@ -2527,6 +2561,7 @@
             <div id="coletorPaginacao" class="coletor-paginacao"></div>
         </section>        <section class="prospecting-panel" hidden id="section-territory">
             <div class="territory-shell">
+                <p id="reverseResultsSummary" class="reverse-results-summary" aria-live="polite"></p>
                 <div class="territory-toolbar">
                     <div class="territory-search">
                         <input id="territorySearch" type="search" placeholder="Buscar empresa, CNPJ, cidade ou decisor..." onkeydown="territorySearchEnter(event)">
@@ -2573,7 +2608,7 @@
 
                 <div class="territory-bottom">
                     <div class="territory-list-card">
-                        <div class="territory-card-head"><strong>Empresas por prioridade</strong><span>ordenadas por score comercial</span></div>
+                        <div class="territory-card-head"><strong>Empresas por prioridade</strong><span>ordenadas pela aderência ao produto quando houver plano ativo</span></div>
                         <div class="territory-list" id="territoryLeadList"></div>
                     </div>
                     <div class="territory-insights-card">
@@ -4732,7 +4767,9 @@ npx @open-wa/wa-automate -p 8080 --popup
     <script src="js/advanced-features.js"></script>
     <script src="js/mergulho-profundo.js"></script>
     <script src="js/landing-pages.js"></script>
+    <script src="js/reverse-prospecting-model.js"></script>
     <script src="js/prospecting-intelligence.js"></script>
+    <script src="js/reverse-prospecting.js"></script>
     <script src="js/territory-intelligence.js"></script>
     <script src="js/init.js"></script>
 </body>

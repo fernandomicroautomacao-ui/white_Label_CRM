@@ -75,3 +75,34 @@
 .territory-marker-prospect { background:#2563eb; }
 .territory-marker-negotiation { background:#eab308; }
 .territory-marker-client { background:#16a34a; }
+
+/* Product-first reverse prospecting */
+.reverse-active-plan { display:flex; flex-wrap:wrap; align-items:center; gap:12px; padding:14px; border:1px solid var(--border-color); border-radius:12px; margin:16px 0; background:var(--bg-card); }
+.reverse-active-plan span { flex:1; min-width:180px; }
+.reverse-intro { padding:22px 0 12px; }
+.reverse-intro h3 { margin:8px 0; font-size:26px; }
+.reverse-eyebrow { color:var(--primary-color,#0284c7); font-size:12px; font-weight:700; letter-spacing:1px; }
+#reversePlanFields { border:0; padding:0; min-width:0; }
+.reverse-plan-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+.reverse-plan-card { border:1px solid var(--border-color); border-radius:14px; padding:20px; background:var(--bg-card); min-width:0; }
+.reverse-plan-card h3 { font-size:17px; margin:0 0 18px; }
+.reverse-plan-card label { display:block; font-size:13px; font-weight:600; margin:14px 0 6px; }
+.reverse-plan-card input,.reverse-plan-card textarea,.reverse-plan-card select,.reverse-evidence input,.reverse-evidence select { width:100%; box-sizing:border-box; margin-top:6px; padding:10px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-card); color:var(--text-primary); font:inherit; }
+.reverse-plan-card small { display:block; color:var(--text-secondary,#64748b); line-height:1.5; }
+.reverse-plan-card .reverse-checkbox { display:flex; gap:8px; align-items:flex-start; }
+.reverse-checkbox input { width:auto; margin:0; }
+.reverse-plan-actions { display:flex; gap:12px; flex-wrap:wrap; margin:16px 0; }
+.reverse-query-preview { padding:16px; border:1px dashed var(--border-color); border-radius:12px; margin-top:16px; overflow-wrap:anywhere; }
+.reverse-query-preview ul { margin:8px 0 0; padding-left:22px; }
+.reverse-search-progress { display:flex; gap:10px; align-items:center; margin:12px 0; overflow-wrap:anywhere; }
+.reverse-results-summary { font-size:13px; line-height:1.6; padding:12px; background:var(--bg-card); border-radius:10px; }
+.reverse-evidence { margin:20px 0; padding:16px; border:1px solid var(--border-color); border-radius:12px; }
+.reverse-evidence h3 { margin:0 0 10px; }
+.reverse-evidence p,.reverse-evidence li { line-height:1.5; font-size:13px; }
+.reverse-evidence small { display:block; margin:8px 0; line-height:1.5; }
+.reverse-evidence details { margin-top:14px; }
+.reverse-fit { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+.reverse-fit strong { font-size:24px; }
+#section-prospeccao > .sub-tabs { flex-wrap:wrap; }
+@media(max-width:1100px) { .reverse-plan-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:700px) { .reverse-plan-grid { grid-template-columns:1fr; } .reverse-plan-card { padding:16px; } .reverse-intro h3 { font-size:22px; } }

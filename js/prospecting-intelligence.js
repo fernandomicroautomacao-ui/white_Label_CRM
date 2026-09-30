@@ -1,7 +1,7 @@
 // Integration adapter: collector rows remain in their lists until explicitly promoted.
 (function () {
     const route = [];
-    let mode = 'descoberta';
+    let mode = 'produto';
     const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const digits = value => String(value || '').replace(/\D/g, '');
     function coords(row) {
@@ -23,7 +23,7 @@
     function match(row, crm) {
         const id = row.prospecting?.crmId;
         const cnpj = digits(row.cnpj);
-        return crm.find(l => (id && l.id === id) || (cnpj.length === 14 && digits(l.codigoUnico || l.cnpj) === cnpj));
+        return crm.find(l => (id && l.id === id) || (cnpj.length === 14 && digits(l.cnpj || l.codigoUnico) === cnpj));
     }
     function records(crm) {
         // Respect the admin's selected seller; collector lists are local to this browser.
@@ -31,7 +31,7 @@
         if (typeof filtroAdminUsuarioId !== 'undefined' && filtroAdminUsuarioId && filtroAdminUsuarioId !== usuarioAtual.id) return crm;
         const result = crm.map(l => ({...l, cnpj: l.cnpj || l.codigoUnico, tarefas: l.tarefas || (l.tarefas = {})}));
         const seen = new Set();
-        (typeof coletorListas === 'undefined' ? [] : coletorListas).forEach(list => list.linhas.forEach(row => {
+        (typeof coletorListas === 'undefined' ? [] : coletorListas).filter(list => !list.reverseOwnerId || String(list.reverseOwnerId) === String(usuarioAtual.id)).forEach(list => list.linhas.forEach(row => {
             if (match(row, crm)) return;
             const p = metadata(row);
             const cnpj = digits(row.cnpj);
@@ -79,11 +79,12 @@
         const need = quick.need || dossier?.questionario?.desafioFornecedor || '';
         const next = quick.next || lead.proximaAcao || '';
         const id = esc(JSON.stringify(String(lead.id)));
-        return `<div class="territory-section-title">Análise rápida</div>
+        return `<details ${window.ReverseProspecting?.getActive() ? '' : 'open'}><summary>Análise geral e dossiê</summary><div class="territory-section-title">Análise rápida</div>
             <p class="text-muted">Resumo editável. Preencha com informações confirmadas na pesquisa ou conversa.</p>
             ${[['activity','Atividade',activity],['process','Processo / equipamentos',process],['need','Necessidade identificada',need],['next','Próxima abordagem',next]].map(([key,label,value]) => `<label class="prospecting-field">${label}<textarea id="prospectingQuick-${key}" rows="2">${esc(value)}</textarea></label>`).join('')}
             <button class="btn btn-primary btn-sm" onclick="salvarAnaliseProspeccao(${id})">Salvar análise</button>
             ${!lead._discovery ? `<button class="btn btn-outline btn-sm" onclick="abrirMergulhoProfundoLead(${id})">Dossiê completo</button>` : ''}
+            </details>
             ${lead._discovery ? `<div class="territory-section-title">Qualificação · ${esc(lead._discovery.list.nome)}</div>
             <select aria-label="Qualificação" onchange="qualificarProspeccao(${id},this.value)">${['Nova descoberta','Analisado','Interessante','Qualificado','Descartado','Promovido'].map(s => `<option ${s===lead._status?'selected':''} ${s==='Promovido'?'disabled':''}>${s}</option>`).join('')}</select>
             ${p.reason ? `<p>${esc(p.reason)}</p>` : ''}
@@ -94,6 +95,7 @@
         const lead = find(id); if (!lead) return;
         const td = lead.tarefas.territory;
         td.quick = Object.fromEntries(['activity','process','need','next'].map(k => [k, document.getElementById('prospectingQuick-' + k).value.trim()]));
+        if (!lead._discovery) { const original = leads.find(l => l.id === lead.id); if (original) { original._modificadoLocal = true; original.atualizadoEm = new Date().toISOString(); } }
         save(); showToast('Análise rápida salva.');
     }
     function renderRoute() {
@@ -102,13 +104,16 @@
         el.innerHTML = `<h3>Rota de visitas · ${valid.length}/8</h3><p>Ordem manual de visita. Não calcula distância nem otimização de trânsito.</p>` + valid.map((l,i) => `<div class="prospecting-route-row"><span>${i+1}. ${esc(l.empresa)}</span><button class="btn btn-outline btn-sm" onclick="moverRotaProspeccao(${route.indexOf(l.id)},-1)">↑</button><button class="btn btn-outline btn-sm" onclick="moverRotaProspeccao(${route.indexOf(l.id)},1)">↓</button><button class="btn btn-outline btn-sm" onclick="removerRotaProspeccao(${route.indexOf(l.id)})">Remover</button></div>`).join('') + '<button class="btn btn-primary btn-sm" onclick="abrirRotaProspeccao()">Abrir no Google Maps</button>';
     }
     function openMode(next) {
-        mode = ['descoberta','empresas','analise','mapa','rotas'].includes(next) ? next : 'descoberta';
+        mode = ['produto','descoberta','empresas','analise','mapa','rotas'].includes(next) ? next : 'produto';
+        window.ReverseProspecting?.render();
+        const productPanel = document.getElementById('reverseProductPanel');
+        if (productPanel) productPanel.hidden = mode !== 'produto';
         document.getElementById('section-coletor').hidden = mode !== 'descoberta';
-        document.getElementById('section-territory').hidden = mode === 'descoberta';
+        document.getElementById('section-territory').hidden = mode === 'descoberta' || mode === 'produto';
         document.getElementById('section-prospeccao').dataset.mode = mode;
         document.querySelectorAll('[id^="prospectingTab-"]').forEach(b => {b.classList.toggle('active',b.id === 'prospectingTab-' + mode); b.setAttribute('aria-selected', b.id === 'prospectingTab-' + mode);});
         document.getElementById('prospectingRoutePanel').hidden = mode !== 'rotas';
-        if (mode === 'descoberta') renderizarColetor(); else { window.renderizarTerritoryIntelligence?.(); renderRoute(); }
+        if (mode === 'descoberta') renderizarColetor(); else if (mode !== 'produto') { window.renderizarTerritoryIntelligence?.(); renderRoute(); }
     }
     window.Prospecting = {records, metadata, match, coords, profile};
     window.abrirModoProspeccao = openMode;

@@ -25,7 +25,7 @@ function navegarPara(section) {
 
     const titles = {
         dashboard: 'Dashboard',
-        prospeccao: 'Inteligência de Prospecção',
+        prospeccao: 'Prospecção Reversa',
         pipeline: 'Pipeline',
         central: 'Central 360º',
         marketing: 'Marketing',
@@ -47,7 +47,7 @@ function navegarPara(section) {
     document.getElementById('pageTitle').innerHTML =
         `<span class="page-title-icon">${svgIcone(section)}</span> ${titles[section] || section}`;
 
-    if (section === 'prospeccao') abrirModoProspeccao(modoProspeccao || 'descoberta');
+    if (section === 'prospeccao') abrirModoProspeccao(modoProspeccao || 'produto');
     if (section === 'dashboard') renderizarDashboard();
     if (section === 'pipeline') renderizarPipeline();
     if (section === 'central' && typeof renderizarCentral === 'function') renderizarCentral();

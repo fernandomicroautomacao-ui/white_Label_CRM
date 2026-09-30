@@ -110,8 +110,12 @@ function coletorBadgeRelevancia(relevancia) {
 }
 
 // ---------- Listas (abas) ----------
+function coletorListasPermitidas() {
+    return coletorListas.filter(p => !p.reverseOwnerId || (usuarioAtual && String(p.reverseOwnerId) === String(usuarioAtual.id)));
+}
+
 function coletorListaAtiva() {
-    return coletorListas.find(p => p.id === coletorListaAtivaId);
+    return coletorListasPermitidas().find(p => p.id === coletorListaAtivaId);
 }
 
 function coletorDadosAtivos() {
@@ -135,6 +139,7 @@ function coletorAdicionarLista() {
 }
 
 function coletorTrocarLista(id) {
+    if (!coletorListasPermitidas().some(p => p.id === id)) return;
     coletorListaAtivaId = id;
     coletorSelecionados.clear();
     coletorPaginaAtual = 1;
@@ -149,6 +154,7 @@ function coletorMudarPagina(delta) {
 }
 
 function coletorFecharLista(id) {
+    if (!coletorListasPermitidas().some(p => p.id === id)) return;
     if (coletorListas.length === 1) {
         if (confirm('Essa é a última lista. Deseja apenas limpar os dados dela?')) {
             coletorListas[0].linhas = [];
@@ -476,6 +482,7 @@ function coletorLeadJaExisteNoCRM(linha, nomeEmpresa, codigoUnico) {
 // ---------- Promoção para o CRM ----------
 function coletorPromoverParaCRM(opcoes = null) {
     const listaOrigem = opcoes?.lista || coletorListaAtiva();
+    if (!listaOrigem || (listaOrigem.reverseOwnerId && String(listaOrigem.reverseOwnerId) !== String(usuarioAtual?.id))) return;
     const dados = opcoes?.linhas || coletorDadosAtivos();
     const candidatos = dados.filter(l => (opcoes || l.tratado === true) && l.promovido !== true && l.prospecting?.status !== 'Descartado');
 
@@ -515,6 +522,7 @@ function coletorPromoverParaCRM(opcoes = null) {
         const novoLead = {
             id: gerarId(),
             codigoUnico,
+            cnpj: linha.cnpj || '',
             empresa: nomeEmpresa,
             cidade: linha.cidade || cidade,
             estado: linha.estado || estado,
@@ -745,7 +753,7 @@ function coletorImprimirTratados() {
 function renderizarColetorAbas() {
     const container = document.getElementById('coletorAbas');
     if (!container) return;
-    container.innerHTML = coletorListas.map(p => `
+    container.innerHTML = coletorListasPermitidas().map(p => `
         <button type="button" class="sub-tab ${p.id === coletorListaAtivaId ? 'active' : ''}" onclick="coletorTrocarLista('${p.id}')">
             ${p.nome} (${p.linhas.length})
             <span class="coletor-fechar-aba" onclick="event.stopPropagation();coletorFecharLista('${p.id}')" title="Fechar lista">✕</span>
@@ -754,6 +762,12 @@ function renderizarColetorAbas() {
 }
 
 function renderizarColetor() {
+    if (!coletorListaAtiva()) {
+        let lista = coletorListasPermitidas()[0];
+        if (!lista) { lista = {id: gerarId(), nome: 'Minha lista', linhas: [], reverseOwnerId: usuarioAtual?.id}; coletorListas.push(lista); }
+        coletorListaAtivaId = lista.id;
+        coletorSelecionados.clear();
+    }
     renderizarColetorAbas();
 
     const dados = coletorDadosAtivos();

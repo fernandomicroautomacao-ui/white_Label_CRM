@@ -18,7 +18,8 @@ const ctx = {console,URLSearchParams,setTimeout: fn=>fn(),document:{getElementBy
 let sequence=0;ctx.gerarId=()=> 'id'+(++sequence);ctx.window=ctx;ctx.open=url=>{ctx.lastRoute=url};
 vm.createContext(ctx);
 for (const file of ['coletor','navigation','prospecting-intelligence','territory-intelligence']) vm.runInContext(fs.readFileSync(root+'/js/'+file+'.js','utf8'),ctx);
-ctx.navegarPara('prospeccao');assert.equal(element('section-coletor').hidden,false);
+ctx.navegarPara('prospeccao');assert.equal(element('reverseProductPanel').hidden,false);
+ctx.abrirModoProspeccao('descoberta');assert.equal(element('section-coletor').hidden,false);
 ctx.abrirModoProspeccao('mapa');assert.equal(element('section-territory').hidden,false);
 assert.equal(ctx.obterEmpresasTerritory().length,3,'CNPJ duplicate collapsed');
 const id=ctx.obterEmpresasTerritory().find(l=>l.empresa==='Máquinas Teste').id;

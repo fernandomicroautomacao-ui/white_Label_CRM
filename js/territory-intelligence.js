@@ -100,6 +100,8 @@
     }
 
     function scoreLead(lead) {
+        const reverseScore = window.ReverseProspecting?.score(lead);
+        if (reverseScore != null) return reverseScore;
         const td = territoryData(lead);
         if (td.scoreManual != null && td.scoreManual !== '' && Number.isFinite(Number(td.scoreManual))) return Math.max(0, Math.min(100, Number(td.scoreManual)));
 
@@ -133,6 +135,8 @@
     }
 
     function produtosProvaveis(lead) {
+        const product = window.ReverseProspecting?.getActive();
+        if (product) return [product.name];
         const seg = inferirSegmento(lead);
         const mapa = {
             'Metalúrgica': ['Cilindros pneumáticos', 'Válvulas direcionais', 'FRL', 'Sensores industriais', 'Conexões e mangueiras'],
@@ -172,6 +176,7 @@
     function aplicarFiltros(lista) {
         const f = state.filters;
         return lista.filter(lead => {
+            if (window.ReverseProspecting && !ReverseProspecting.matches(lead)) return false;
             if (f.origem && (lead._discovery ? 'discovery' : 'crm') !== f.origem) return false;
             if (!f.status && statusCRM(lead) === 'Descartado') return false;
             const busca = normalize([lead.empresa, lead.cnpj, lead.cidade, lead.estado, lead.decisor, lead.observacoes].join(' '));
@@ -348,7 +353,7 @@
                     <p>${safe(lead.cnpj || 'CNPJ não informado')}</p>
                 </div>
                 <div class="territory-score-big">
-                    <strong>${score}</strong><span>Score</span>
+                    <strong>${score}</strong><span>${window.ReverseProspecting?.getActive() ? 'Aderência' : 'Score'}</span>
                 </div>
             </div>
 
@@ -368,6 +373,7 @@
                 <div><span>Valor em aberto</span><strong>R$ ${Number(lead.valor || 0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong></div>
             </div>
 
+            ${window.ReverseProspecting ? ReverseProspecting.evidenceHTML(lead) : ''}
             ${window.Prospecting ? Prospecting.profile(lead) : ''}
             <div class="territory-section-title">Produtos sugeridos · validar aplicação</div>
             <div class="territory-products">${produtos.map(p=>`<span>${safe(p)}</span>`).join('')}</div>
@@ -527,6 +533,7 @@
         if (rebuildFilters) renderFiltros(base);
         state.visibleLeads = aplicarFiltros(base);
 
+        window.ReverseProspecting?.summary(base, state.visibleLeads);
         renderKpis(state.visibleLeads);
         renderMapMarkers(state.visibleLeads);
         renderLista(state.visibleLeads);
